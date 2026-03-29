@@ -73,7 +73,7 @@ const MODEL_SETTINGS_CACHE_KEY = 'model_settings_cache';
 export interface CachedModelSettings {
     mediaResolution?: MediaResolution;
     thinkingBudget?: number;
-    thinkingLevel?: 'LOW' | 'HIGH';
+    thinkingLevel?: 'MINIMAL' | 'LOW' | 'MEDIUM' | 'HIGH';
 }
 
 export const getCachedModelSettings = (modelId: string): CachedModelSettings | undefined => {

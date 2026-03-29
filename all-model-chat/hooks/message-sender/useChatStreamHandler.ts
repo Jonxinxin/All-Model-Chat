@@ -37,41 +37,127 @@ export const useChatStreamHandler = ({
     ) => {
         const newModelMessageIds = new Set<string>([generationId]);
         let firstContentPartTime: Date | null = null;
-        let firstTokenTime: Date | null = null; // Track first token (thought or content) for TTFT
+        let firstTokenTime: Date | null = null;
         let accumulatedText = "";
         let accumulatedThoughts = "";
         let accumulatedApiParts: any[] = [];
 
+        // --- rAF Batching State ---
+        // Pending data that hasn't been flushed to React state yet
+        let pendingText = "";
+        let pendingThoughts = "";
+        let pendingParts: Part[] = [];
+        let pendingTTFT: number | null = null; // Batched TTFT value
+        let rAFId: number | null = null;
+        let isCompleted = false;
+
         // Reset store for this new generation
         streamingStore.clear(generationId);
-        
-        // Helper to record TTFT immediately on first activity
-        const recordFirstToken = () => {
-            if (!firstTokenTime) {
-                firstTokenTime = new Date();
-                const ttft = firstTokenTime.getTime() - generationStartTime.getTime();
-                
-                updateAndPersistSessions(prev => {
-                    const sessionIndex = prev.findIndex(s => s.id === currentSessionId);
-                    if (sessionIndex === -1) return prev;
-                    const newSessions = [...prev];
-                    const sessionToUpdate = { ...newSessions[sessionIndex] };
-                    
-                    // Update only the specific message with TTFT to trigger UI update
+
+        /**
+         * Flush all pending data into a single updateAndPersistSessions call.
+         * This is called via requestAnimationFrame to coalesce multiple stream chunks
+         * into one React state update per frame.
+         */
+        const flush = () => {
+            rAFId = null;
+
+            // Snapshot and clear pending data
+            const textToFlush = pendingText;
+            const thoughtsToFlush = pendingThoughts;
+            const partsToFlush = pendingParts;
+            const ttftToFlush = pendingTTFT;
+
+            pendingText = "";
+            pendingThoughts = "";
+            pendingParts = [];
+            pendingTTFT = null;
+
+            if (!textToFlush && !thoughtsToFlush && partsToFlush.length === 0 && ttftToFlush === null) return;
+
+            updateAndPersistSessions(prev => {
+                const sessionIndex = prev.findIndex(s => s.id === currentSessionId);
+                if (sessionIndex === -1) return prev;
+
+                const newSessions = [...prev];
+                let sessionToUpdate = { ...newSessions[sessionIndex] };
+
+                // Apply batch message update (text + thoughts + inline files)
+                if (textToFlush || thoughtsToFlush || partsToFlush.length > 0) {
+                    sessionToUpdate.messages = updateMessagesWithBatch(
+                        sessionToUpdate.messages,
+                        partsToFlush,
+                        thoughtsToFlush,
+                        generationStartTime,
+                        newModelMessageIds,
+                        firstContentPartTime
+                    );
+
+                    // Append flushed text to the target message content
+                    if (textToFlush) {
+                        sessionToUpdate.messages = sessionToUpdate.messages.map(msg => {
+                            if (msg.id === generationId) {
+                                return { ...msg, content: (msg.content || '') + textToFlush };
+                            }
+                            return msg;
+                        });
+                    }
+
+                    // Append flushed apiParts
+                    if (partsToFlush.length > 0) {
+                        sessionToUpdate.messages = sessionToUpdate.messages.map(msg => {
+                            if (msg.id === generationId) {
+                                // Rebuild accumulated parts for this message
+                                const currentParts = msg.apiParts || [];
+                                const newParts = partsToFlush.reduce((acc, part) => appendApiPart(acc, part), currentParts);
+                                return { ...msg, apiParts: newParts };
+                            }
+                            return msg;
+                        });
+                    }
+                }
+
+                // Apply TTFT if pending
+                if (ttftToFlush !== null) {
                     sessionToUpdate.messages = sessionToUpdate.messages.map(m => {
-                        if (m.id === generationId) {
-                            return { ...m, firstTokenTimeMs: ttft };
+                        if (m.id === generationId && m.firstTokenTimeMs === undefined) {
+                            return { ...m, firstTokenTimeMs: ttftToFlush };
                         }
                         return m;
                     });
-                    
-                    newSessions[sessionIndex] = sessionToUpdate;
-                    return newSessions;
-                }, { persist: false });
+                }
+
+                newSessions[sessionIndex] = sessionToUpdate;
+                return newSessions;
+            }, { persist: false });
+        };
+
+        /**
+         * Schedule a flush via requestAnimationFrame if not already scheduled.
+         */
+        const scheduleFlush = () => {
+            if (rAFId === null && !isCompleted) {
+                rAFId = requestAnimationFrame(flush);
+            }
+        };
+
+        // Helper to record TTFT — now batched instead of immediate state update
+        const recordFirstToken = () => {
+            if (!firstTokenTime) {
+                firstTokenTime = new Date();
+                pendingTTFT = firstTokenTime.getTime() - generationStartTime.getTime();
+                scheduleFlush();
             }
         };
 
         const streamOnError = (error: Error) => {
+            // Cancel any pending batched updates
+            if (rAFId !== null) {
+                cancelAnimationFrame(rAFId);
+                rAFId = null;
+            }
+            isCompleted = true;
+
             // Pass accumulated content so it can be saved even on error/abort
             handleApiError(error, currentSessionId, generationId, "Error", accumulatedText, accumulatedThoughts);
             setSessionLoading(currentSessionId, false);
@@ -80,7 +166,14 @@ export const useChatStreamHandler = ({
         };
 
         const streamOnComplete = (usageMetadata?: UsageMetadata, groundingMetadata?: any, urlContextMetadata?: any) => {
-            const lang = appSettings.language === 'system' 
+            // Cancel any pending rAF — we'll do a single final update
+            if (rAFId !== null) {
+                cancelAnimationFrame(rAFId);
+                rAFId = null;
+            }
+            isCompleted = true;
+
+            const lang = appSettings.language === 'system'
                 ? (navigator.language.toLowerCase().startsWith('zh') ? 'zh' : 'en')
                 : appSettings.language;
 
@@ -97,14 +190,14 @@ export const useChatStreamHandler = ({
                 );
             }
 
-            // Perform the Final Update to State (and DB)
+            // Perform the Final Update to State (and DB) — includes all accumulated data
             updateAndPersistSessions(prev => {
                 const sessionIndex = prev.findIndex(s => s.id === currentSessionId);
                 if (sessionIndex === -1) return prev;
 
                 const newSessions = [...prev];
                 const sessionToUpdate = { ...newSessions[sessionIndex] };
-                
+
                 let updatedMessages = sessionToUpdate.messages.map(msg => {
                     if (msg.id === generationId) {
                         return {
@@ -116,7 +209,7 @@ export const useChatStreamHandler = ({
                     }
                     return msg;
                 });
-                
+
                 // Finalize (mark loading false, set stats)
                 const finalizationResult = finalizeMessages(
                     updatedMessages,
@@ -142,7 +235,7 @@ export const useChatStreamHandler = ({
                         const msg = finalizationResult.completedMessageForNotification;
                         const notificationBody = (msg.content || "Media or tool response received").substring(0, 150) + (msg.content && msg.content.length > 150 ? '...' : '');
                         showNotification(
-                            'Response Ready', 
+                            'Response Ready',
                             {
                                 body: notificationBody,
                                 icon: APP_LOGO_SVG_DATA_URI,
@@ -164,17 +257,17 @@ export const useChatStreamHandler = ({
         };
 
         const streamOnPart = (part: Part) => {
-            recordFirstToken(); // Capture TTFT
-            
+            recordFirstToken(); // Now batched — no immediate state update
+
             accumulatedApiParts = appendApiPart(accumulatedApiParts, part);
-            
+
             const anyPart = part as any;
-            
+
             // 1. Accumulate plain text
-            let chunkText = "";
             if (anyPart.text) {
-                chunkText = anyPart.text;
+                const chunkText = anyPart.text;
                 accumulatedText += chunkText;
+                pendingText += chunkText;
                 streamingStore.updateContent(generationId, chunkText);
             }
 
@@ -183,6 +276,7 @@ export const useChatStreamHandler = ({
                 const codePart = anyPart.executableCode as { language: string, code: string };
                 const toolContent = `\n\n\`\`\`${codePart.language.toLowerCase() || 'python'}\n${codePart.code}\n\`\`\`\n\n`;
                 accumulatedText += toolContent;
+                pendingText += toolContent;
                 streamingStore.updateContent(generationId, toolContent);
             } else if (anyPart.codeExecutionResult) {
                 const resultPart = anyPart.codeExecutionResult as { outcome: string, output?: string };
@@ -196,59 +290,50 @@ export const useChatStreamHandler = ({
                 }
                 toolContent += '</div>\n\n';
                 accumulatedText += toolContent;
+                pendingText += toolContent;
                 streamingStore.updateContent(generationId, toolContent);
             } else if (anyPart.inlineData) {
                 const { mimeType } = anyPart.inlineData;
-                
-                const isSupportedFile = 
-                    mimeType.startsWith('image/') || 
+
+                const isSupportedFile =
+                    mimeType.startsWith('image/') ||
                     mimeType.startsWith('audio/') ||
                     mimeType.startsWith('video/') ||
                     SUPPORTED_GENERATED_MIME_TYPES.has(mimeType);
 
                 if (isSupportedFile) {
-                    // Save to files array instead of hardcoding base64 into text to prevent critical performance issues
-                    updateAndPersistSessions(prev => {
-                         const sessionIndex = prev.findIndex(s => s.id === currentSessionId);
-                         if (sessionIndex === -1) return prev;
-                         const newSessions = [...prev];
-                         const sessionToUpdate = { ...newSessions[sessionIndex] };
-                         
-                         sessionToUpdate.messages = updateMessagesWithBatch(
-                             sessionToUpdate.messages,
-                             [part], 
-                             "", 
-                             generationStartTime, 
-                             newModelMessageIds, 
-                             firstContentPartTime
-                         );
-                         newSessions[sessionIndex] = sessionToUpdate;
-                         return newSessions;
-                    }, { persist: false });
+                    // Batch inline data parts instead of immediate update
+                    pendingParts.push(part);
                 }
             }
 
-            const hasMeaningfulContent = 
-                (anyPart.text && anyPart.text.trim().length > 0) || 
-                anyPart.executableCode || 
-                anyPart.codeExecutionResult || 
+            const hasMeaningfulContent =
+                (anyPart.text && anyPart.text.trim().length > 0) ||
+                anyPart.executableCode ||
+                anyPart.codeExecutionResult ||
                 anyPart.inlineData;
 
             if (appSettings.isStreamingEnabled && !firstContentPartTime && hasMeaningfulContent) {
                 firstContentPartTime = new Date();
             }
+
+            // Schedule a batched flush via rAF
+            scheduleFlush();
         };
-        
+
         const onThoughtChunk = (thoughtChunk: string) => {
-            recordFirstToken(); // Capture TTFT (thoughts usually come first)
-            
+            recordFirstToken(); // Now batched
+
             accumulatedThoughts += thoughtChunk;
+            pendingThoughts += thoughtChunk;
             streamingStore.updateThoughts(generationId, thoughtChunk);
+
+            scheduleFlush();
         };
-        
+
         return { streamOnError, streamOnComplete, streamOnPart, onThoughtChunk };
 
     }, [appSettings.isStreamingEnabled, appSettings.isCompletionNotificationEnabled, appSettings.isCompletionSoundEnabled, appSettings.language, updateAndPersistSessions, handleApiError, setSessionLoading, activeJobs]);
-    
+
     return { getStreamHandlers };
 };

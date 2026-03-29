@@ -15,8 +15,8 @@ class PCMProcessor extends AudioWorkletProcessor {
       for (let i = 0; i < channel.length; i++) {
         this.buffer[this.index++] = channel[i];
         if (this.index >= this.bufferSize) {
-          // Send a copy of the buffer
-          this.port.postMessage(this.buffer);
+          // Send a copy of the buffer to avoid data race with main thread
+          this.port.postMessage(new Float32Array(this.buffer));
           this.index = 0;
         }
       }

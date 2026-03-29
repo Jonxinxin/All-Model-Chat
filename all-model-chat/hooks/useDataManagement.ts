@@ -1,5 +1,5 @@
 
-import React, { Dispatch, SetStateAction } from 'react';
+import React, { Dispatch, SetStateAction, useMemo } from 'react';
 import { AppSettings, SavedChatSession, SavedScenario, ChatGroup, Theme } from '../types';
 import { useDataExport } from './data-management/useDataExport';
 import { useDataImport } from './data-management/useDataImport';
@@ -57,7 +57,7 @@ export const useDataManagement = (props: DataManagementProps) => {
         t: props.t
     });
 
-    return {
+    return useMemo(() => ({
         handleExportSettings,
         handleExportHistory,
         handleExportAllScenarios,
@@ -65,5 +65,13 @@ export const useDataManagement = (props: DataManagementProps) => {
         handleImportHistory,
         handleImportAllScenarios,
         exportChatLogic,
-    };
+    }), [
+        handleExportSettings,
+        handleExportHistory,
+        handleExportAllScenarios,
+        handleImportSettings,
+        handleImportHistory,
+        handleImportAllScenarios,
+        exportChatLogic,
+    ]);
 };

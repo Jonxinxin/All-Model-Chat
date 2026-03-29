@@ -14,6 +14,17 @@ export interface PyodideState {
 
 // Global cache to persist manual execution results across virtual list unmounts
 const pyodideResultCache = new Map<string, PyodideState>();
+const MAX_CACHE_SIZE = 50;
+
+function trimCache() {
+    if (pyodideResultCache.size > MAX_CACHE_SIZE) {
+        // Delete oldest entries (first inserted)
+        const keysToDelete = Array.from(pyodideResultCache.keys()).slice(0, pyodideResultCache.size - MAX_CACHE_SIZE);
+        for (const key of keysToDelete) {
+            pyodideResultCache.delete(key);
+        }
+    }
+}
 
 export const usePyodide = (codeKey?: string) => {
     const [state, setState] = useState<PyodideState>(() => {
@@ -35,6 +46,7 @@ export const usePyodide = (codeKey?: string) => {
         const runningState: PyodideState = { isRunning: true, error: null, output: null, image: null, files: [], hasRun: false };
         setState(runningState);
         pyodideResultCache.set(key, runningState);
+        trimCache();
         
         try {
             const result = await pyodideService.runPython(code);

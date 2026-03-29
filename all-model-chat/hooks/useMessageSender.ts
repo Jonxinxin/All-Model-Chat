@@ -1,5 +1,5 @@
 
-import React, { useCallback, Dispatch, SetStateAction } from 'react';
+import React, { useCallback, useRef, useEffect, Dispatch, SetStateAction } from 'react';
 import { AppSettings, ChatMessage, UploadedFile, ChatSettings as IndividualChatSettings, SavedChatSession } from '../types';
 import { generateUniqueId, getKeyForRequest, generateSessionTitle, logService, createNewSession } from '../utils/appUtils';
 import { DEFAULT_CHAT_SETTINGS } from '../constants/appConstants';
@@ -53,6 +53,10 @@ export const useMessageSender = (props: MessageSenderProps) => {
         setSessionLoading,
         updateAndPersistSessions,
     } = props;
+
+    // Use ref for messages to avoid triggering handleSendMessage rebuild on every stream chunk
+    const messagesRef = useRef(messages);
+    useEffect(() => { messagesRef.current = messages; }, [messages]);
 
     // Initialize Stream Handler Factory
     const { getStreamHandlers } = useChatStreamHandler({
@@ -150,8 +154,9 @@ export const useMessageSender = (props: MessageSenderProps) => {
         }
         
         if (isImageEditModel || (isGemini3Image && appSettings.generateQuadImages)) {
-            const editIndex = effectiveEditingId ? messages.findIndex(m => m.id === effectiveEditingId) : -1;
-            const historyMessages = editIndex !== -1 ? messages.slice(0, editIndex) : messages;
+            const currentMessages = messagesRef.current;
+            const editIndex = effectiveEditingId ? currentMessages.findIndex(m => m.id === effectiveEditingId) : -1;
+            const historyMessages = editIndex !== -1 ? currentMessages.slice(0, editIndex) : currentMessages;
             await handleImageEditMessage(keyToUse, activeSessionId, historyMessages, generationId, newAbortController, appSettings, sessionToUpdate, textToUse.trim(), filesToUse, effectiveEditingId, aspectRatio, imageSize, { shouldLockKey });
             if (editingMessageId) setEditingMessageId(null);
             return;
@@ -160,7 +165,7 @@ export const useMessageSender = (props: MessageSenderProps) => {
         await sendStandardMessage(textToUse, filesToUse, effectiveEditingId, activeModelId, isContinueMode, isFastMode);
 
     }, [
-        appSettings, currentChatSettings, messages, selectedFiles, setSelectedFiles,
+        appSettings, currentChatSettings, selectedFiles, setSelectedFiles,
         editingMessageId, setEditingMessageId, setAppFileError, aspectRatio, imageSize,
         userScrolledUp, activeSessionId, setActiveSessionId, updateAndPersistSessions,
         handleTtsImagenMessage, handleImageEditMessage, sendStandardMessage

@@ -94,6 +94,11 @@ export const MessageList: React.FC<MessageListProps> = ({
   // Determine if current model is Gemini 3 to enable per-part resolution
   const isGemini3 = useMemo(() => isGemini3Model(currentModelId), [currentModelId]);
 
+  // Stable Footer component to prevent Virtuoso re-reconciliation on every render
+  const stableFooter = useMemo(() => {
+    return () => <MessageListFooter messages={messages} chatInputHeight={chatInputHeight} />;
+  }, [messages, chatInputHeight]);
+
   return (
     <>
       <div className={`relative flex-grow h-full ${themeId === 'pearl' ? 'bg-[var(--theme-bg-primary)]' : 'bg-[var(--theme-bg-secondary)]'}`}>
@@ -117,7 +122,7 @@ export const MessageList: React.FC<MessageListProps> = ({
             className="custom-scrollbar"
             onScroll={onScrollContainerScroll} // Pass scroll event to parent handler
             components={{
-                Footer: () => <MessageListFooter messages={messages} chatInputHeight={chatInputHeight} />
+                Footer: stableFooter
             }}
             itemContent={(index, msg) => (
                 <div className="px-1.5 sm:px-2 md:px-3 max-w-7xl mx-auto w-full">

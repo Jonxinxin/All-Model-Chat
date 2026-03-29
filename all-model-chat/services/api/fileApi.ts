@@ -28,12 +28,44 @@ export const uploadFileApi = async (
         const ai = await getConfiguredApiClient(apiKey);
 
         // Use official SDK for upload, which is more stable for Auth and CORS
-        const uploadResult = await ai.files.upload({
+        const uploadPromise = ai.files.upload({
             file: file,
             config: {
                 displayName: displayName,
                 mimeType: mimeType,
             },
+        });
+
+        // Race the upload against the abort signal so cancelled uploads don't
+        // continue consuming network bandwidth and API quota.
+        const uploadResult = await new Promise<GeminiFile>((resolve, reject) => {
+            let settled = false;
+
+            const onAbort = () => {
+                if (!settled) {
+                    settled = true;
+                    const abortError = new Error("Upload cancelled by user.");
+                    abortError.name = "AbortError";
+                    reject(abortError);
+                }
+            };
+            signal.addEventListener('abort', onAbort, { once: true });
+
+            uploadPromise
+                .then(result => {
+                    if (!settled) {
+                        settled = true;
+                        signal.removeEventListener('abort', onAbort);
+                        resolve(result);
+                    }
+                })
+                .catch(err => {
+                    if (!settled) {
+                        settled = true;
+                        signal.removeEventListener('abort', onAbort);
+                        reject(err);
+                    }
+                });
         });
 
         // Since SDK doesn't provide progress, call 100% on completion to satisfy UI

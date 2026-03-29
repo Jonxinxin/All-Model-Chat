@@ -1,3 +1,12 @@
+export const escapeHtml = (str: string): string => {
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+};
+
 export const generateExportHtmlTemplate = ({
     title,
     date,
@@ -25,7 +34,7 @@ export const generateExportHtmlTemplate = ({
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Chat Export: ${title}</title>
+            <title>Chat Export: ${escapeHtml(title)}</title>
             ${styles}
             <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
             <script>
@@ -119,9 +128,9 @@ export const generateExportHtmlTemplate = ({
         <body class="${bodyClasses} theme-${themeId} is-exporting-png">
             <div class="exported-chat-container">
                 <div class="exported-chat-header">
-                    <h1 class="exported-chat-title">${title}</h1>
+                    <h1 class="exported-chat-title">${escapeHtml(title)}</h1>
                     <div class="exported-chat-meta">
-                        <span>${date}</span> • <span>${model}</span>
+                        <span>${escapeHtml(date)}</span> • <span>${escapeHtml(model)}</span>
                     </div>
                 </div>
                 ${contentHtml}

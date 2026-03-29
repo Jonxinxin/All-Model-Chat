@@ -12,7 +12,8 @@ export const triggerDownload = (href: string, filename: string, revokeBlob: bool
     link.click();
     document.body.removeChild(link);
     if (revokeBlob && href.startsWith('blob:')) {
-        URL.revokeObjectURL(href);
+        // Delay revocation to allow the browser to start the download
+        setTimeout(() => URL.revokeObjectURL(href), 1000);
     }
 };
 

@@ -61,85 +61,103 @@ export const compressAudioToMp3 = async (file: File | Blob, signal?: AbortSignal
         checkAbort();
 
         const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-        checkAbort();
+        try {
+            const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+            checkAbort();
 
-        // 优化：如果时长小于 1.5 秒，没必要压缩
-        if (audioBuffer.duration < 1.5) {
-            if (file instanceof File) return file;
-            return new File([file], `recording-${Date.now()}.webm`, { type: file.type || "audio/webm" });
-        }
-
-        const duration = audioBuffer.duration;
-        const fileSize = file.size;
-        const bitrate = duration > 0 ? (fileSize * 8) / duration : 0; 
-        
-        const isMp3 = file.type === 'audio/mpeg' || 
-                      file.type === 'audio/mp3' || 
-                      ('name' in file && (file as File).name.toLowerCase().endsWith('.mp3'));
-
-        if (isMp3 && bitrate > 0 && bitrate < 80000) {
-            if (file instanceof File) return file;
-            return new File([file], `audio-${Date.now()}.mp3`, { type: 'audio/mpeg' });
-        }
-
-        const targetSampleRate = 16000;
-        const targetChannels = 1;
-        const frameCount = Math.ceil(audioBuffer.duration * targetSampleRate);
-        
-        const offlineCtx = new OfflineAudioContext(targetChannels, frameCount, targetSampleRate);
-        const source = offlineCtx.createBufferSource();
-        source.buffer = audioBuffer;
-        source.connect(offlineCtx.destination);
-        source.start();
-
-        const renderedBuffer = await offlineCtx.startRendering();
-        checkAbort();
-        const pcmData = renderedBuffer.getChannelData(0);
-
-        return new Promise((resolve, reject) => {
-            const blob = new Blob([WORKER_CODE], { type: 'application/javascript' });
-            const workerUrl = URL.createObjectURL(blob);
-            const worker = new Worker(workerUrl);
-
-            const cleanup = () => {
-                worker.terminate();
-                URL.revokeObjectURL(workerUrl);
-            };
-
-            if (signal) {
-                if (signal.aborted) {
-                    cleanup();
-                    return reject(new DOMException('Aborted', 'AbortError'));
-                }
-                signal.addEventListener('abort', () => {
-                    cleanup();
-                    reject(new DOMException('Aborted', 'AbortError'));
-                });
+            // 优化：如果时长小于 1.5 秒，没必要压缩
+            if (audioBuffer.duration < 1.5) {
+                if (file instanceof File) return file;
+                return new File([file], `recording-${Date.now()}.webm`, { type: file.type || "audio/webm" });
             }
 
-            worker.onmessage = (e) => {
-                if (e.data.type === 'success') {
-                    const mp3Blob = new Blob(e.data.buffers, { type: 'audio/mpeg' });
-                    const originalName = (file as File).name || `audio-${Date.now()}`;
-                    const newName = originalName.replace(/\.[^/.]+$/, "") + ".mp3";
-                    cleanup();
-                    resolve(new File([mp3Blob], newName, { type: 'audio/mpeg' }));
-                } else {
-                    fallbackToOriginal();
+            const duration = audioBuffer.duration;
+            const fileSize = file.size;
+            const bitrate = duration > 0 ? (fileSize * 8) / duration : 0;
+
+            const isMp3 = file.type === 'audio/mpeg' ||
+                          file.type === 'audio/mp3' ||
+                          ('name' in file && (file as File).name.toLowerCase().endsWith('.mp3'));
+
+            if (isMp3 && bitrate > 0 && bitrate < 80000) {
+                if (file instanceof File) return file;
+                return new File([file], `audio-${Date.now()}.mp3`, { type: 'audio/mpeg' });
+            }
+
+            const targetSampleRate = 16000;
+            const targetChannels = 1;
+            const frameCount = Math.ceil(audioBuffer.duration * targetSampleRate);
+
+            const offlineCtx = new OfflineAudioContext(targetChannels, frameCount, targetSampleRate);
+            const source = offlineCtx.createBufferSource();
+            source.buffer = audioBuffer;
+            source.connect(offlineCtx.destination);
+            source.start();
+
+            const renderedBuffer = await offlineCtx.startRendering();
+            checkAbort();
+            const pcmData = renderedBuffer.getChannelData(0);
+
+            return new Promise((resolve, reject) => {
+                const blob = new Blob([WORKER_CODE], { type: 'application/javascript' });
+                const workerUrl = URL.createObjectURL(blob);
+                const worker = new Worker(workerUrl);
+
+                const cleanup = () => {
+                    worker.terminate();
+                    URL.revokeObjectURL(workerUrl);
+                };
+
+                let abortHandler: (() => void) | null = null;
+                if (signal) {
+                    if (signal.aborted) {
+                        cleanup();
+                        return reject(new DOMException('Aborted', 'AbortError'));
+                    }
+                    abortHandler = () => {
+                        cleanup();
+                        reject(new DOMException('Aborted', 'AbortError'));
+                    };
+                    signal.addEventListener('abort', abortHandler);
                 }
-            };
 
-            worker.onerror = () => fallbackToOriginal();
+                const removeAbortListener = () => {
+                    if (abortHandler && signal) {
+                        signal.removeEventListener('abort', abortHandler);
+                        abortHandler = null;
+                    }
+                };
 
-            const fallbackToOriginal = () => {
-                cleanup();
-                const originalName = (file as File).name || `recording-${Date.now()}.wav`;
-                resolve(new File([file], originalName, { type: file.type || "audio/wav" }));
-            };
+                worker.onmessage = (e) => {
+                    if (e.data.type === 'success') {
+                        const mp3Blob = new Blob(e.data.buffers, { type: 'audio/mpeg' });
+                        const originalName = (file as File).name || `audio-${Date.now()}`;
+                        const newName = originalName.replace(/\.[^/.]+$/, "") + ".mp3";
+                        removeAbortListener();
+                        cleanup();
+                        resolve(new File([mp3Blob], newName, { type: 'audio/mpeg' }));
+                    } else {
+                        removeAbortListener();
+                        fallbackToOriginal();
+                    }
+                };
 
-            worker.postMessage({ pcmData, sampleRate: targetSampleRate, kbps: 64 }, [pcmData.buffer]);
-        });
+                worker.onerror = () => {
+                    removeAbortListener();
+                    fallbackToOriginal();
+                };
+
+                const fallbackToOriginal = () => {
+                    cleanup();
+                    const originalName = (file as File).name || `recording-${Date.now()}.wav`;
+                    resolve(new File([file], originalName, { type: file.type || "audio/wav" }));
+                };
+
+                worker.postMessage({ pcmData, sampleRate: targetSampleRate, kbps: 64 }, [pcmData.buffer]);
+            });
+        } finally {
+            audioCtx.close().catch(() => {});
+        }
     } catch (error) {
         if ((error instanceof DOMException && error.name === 'AbortError') || (error instanceof Error && error.name === 'AbortError')) {
             throw error;

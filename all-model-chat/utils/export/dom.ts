@@ -156,7 +156,15 @@ export const createExportDOMHeader = (title: string, metaLeft: string, metaRight
     metaDiv.style.display = 'flex';
     metaDiv.style.gap = '1rem';
 
-    metaDiv.innerHTML = `<span>${metaLeft}</span><span>•</span><span>${metaRight}</span>`;
+    const spanLeft = document.createElement('span');
+    spanLeft.textContent = metaLeft;
+    const dot = document.createElement('span');
+    dot.textContent = '•';
+    const spanRight = document.createElement('span');
+    spanRight.textContent = metaRight;
+    metaDiv.appendChild(spanLeft);
+    metaDiv.appendChild(dot);
+    metaDiv.appendChild(spanRight);
 
     headerDiv.appendChild(titleEl);
     headerDiv.appendChild(metaDiv);

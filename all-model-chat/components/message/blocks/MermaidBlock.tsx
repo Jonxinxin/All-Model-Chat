@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useRef } from 'react';
-import mermaid from 'mermaid';
 import { SideViewContent, UploadedFile } from '../../../types';
 import { exportSvgAsImage } from '../../../utils/exportUtils';
 import { DiagramWrapper } from './parts/DiagramWrapper';
@@ -12,6 +11,20 @@ interface MermaidBlockProps {
   onOpenSidePanel: (content: SideViewContent) => void;
 }
 
+// Module-level cache for the dynamic mermaid import
+let mermaidModuleCache: any = null;
+let mermaidModulePromise: Promise<any> | null = null;
+
+async function loadMermaid() {
+  if (mermaidModuleCache) return mermaidModuleCache;
+  if (mermaidModulePromise) return mermaidModulePromise;
+  mermaidModulePromise = import('mermaid').then(m => {
+    mermaidModuleCache = m.default || m;
+    return mermaidModuleCache;
+  });
+  return mermaidModulePromise;
+}
+
 export const MermaidBlock: React.FC<MermaidBlockProps> = ({ code, onImageClick, isLoading: isMessageLoading, themeId, onOpenSidePanel }) => {
   const [svg, setSvg] = useState('');
   const [error, setError] = useState('');
@@ -21,29 +34,55 @@ export const MermaidBlock: React.FC<MermaidBlockProps> = ({ code, onImageClick, 
   const [showSource, setShowSource] = useState(false);
   const diagramContainerRef = useRef<HTMLDivElement>(null);
 
+  // Track if mermaid.initialize has been called to avoid redundant calls
+  const initializedRef = useRef(false);
+
   useEffect(() => {
     let isMounted = true;
-    
-    // Debounce rendering to avoid syntax errors while typing
+    let renderId = '';
+
     const timeoutId = setTimeout(async () => {
       if (!code) return;
 
       try {
-        const id = `mermaid-svg-${Math.random().toString(36).substring(2, 9)}`;
-        
-        mermaid.initialize({ 
-            startOnLoad: false, 
-            theme: themeId === 'onyx' ? 'dark' : 'default',
-            securityLevel: 'loose',
-            fontFamily: 'inherit'
-        });
-        
-        const { svg: renderedSvg } = await mermaid.render(id, code);
-        
+        const mermaid = await loadMermaid();
         if (!isMounted) return;
 
+        // Clean up previous render's orphaned SVG element
+        if (renderId) {
+          document.getElementById(renderId)?.remove();
+        }
+
+        const id = `mermaid-svg-${Math.random().toString(36).substring(2, 9)}`;
+        renderId = id;
+
+        // Only initialize once, then update theme as needed
+        if (!initializedRef.current) {
+          mermaid.initialize({
+              startOnLoad: false,
+              theme: themeId === 'onyx' ? 'dark' : 'default',
+              securityLevel: 'loose',
+              fontFamily: 'inherit'
+          });
+          initializedRef.current = true;
+        } else {
+          mermaid.initialize({
+              startOnLoad: false,
+              theme: themeId === 'onyx' ? 'dark' : 'default',
+              securityLevel: 'loose',
+              fontFamily: 'inherit'
+          });
+        }
+
+        const { svg: renderedSvg } = await mermaid.render(id, code);
+
+        if (!isMounted) {
+          document.getElementById(id)?.remove();
+          return;
+        }
+
         setSvg(renderedSvg);
-        
+
         const svgDataUrl = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(renderedSvg)))}`;
         setDiagramFile({
             id: id,
@@ -63,7 +102,7 @@ export const MermaidBlock: React.FC<MermaidBlockProps> = ({ code, onImageClick, 
             setIsRendering(true);
         } else {
             const errorMessage = e instanceof Error ? e.message : 'Failed to render Mermaid diagram.';
-            setError(errorMessage.replace(/.*error:\s*/, '')); 
+            setError(errorMessage.replace(/.*error:\s*/, ''));
             setSvg('');
             setIsRendering(false);
         }
@@ -73,6 +112,9 @@ export const MermaidBlock: React.FC<MermaidBlockProps> = ({ code, onImageClick, 
     return () => {
         isMounted = false;
         clearTimeout(timeoutId);
+        if (renderId) {
+            document.getElementById(renderId)?.remove();
+        }
     };
   }, [code, isMessageLoading, themeId]);
 

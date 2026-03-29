@@ -14,6 +14,7 @@ export const useMessageListScroll = ({ messages, setScrollContainerRef, activeSe
     const [atBottom, setAtBottom] = useState(true);
     const [scrollerRef, setInternalScrollerRef] = useState<HTMLElement | null>(null);
     const visibleRangeRef = useRef({ startIndex: 0, endIndex: 0 });
+    const [showScrollUp, setShowScrollUp] = useState(false);
     
     const scrollSaveTimeoutRef = useRef<number | null>(null);
     const lastRestoredSessionIdRef = useRef<string | null>(null);
@@ -35,7 +36,8 @@ export const useMessageListScroll = ({ messages, setScrollContainerRef, activeSe
     // Range tracking for navigation
     const onRangeChanged = useCallback(({ startIndex, endIndex }: { startIndex: number, endIndex: number }) => {
         visibleRangeRef.current = { startIndex, endIndex };
-    }, []);
+        setShowScrollUp(messages.length > 2 && startIndex > 0);
+    }, [messages.length]);
 
     // Handle New Turn Anchoring: When a message is sent, scroll the model's message to the top.
     useEffect(() => {
@@ -188,7 +190,6 @@ export const useMessageListScroll = ({ messages, setScrollContainerRef, activeSe
     }, [scrollerRef, handleScroll]);
 
     const showScrollDown = !atBottom;
-    const showScrollUp = messages.length > 2 && visibleRangeRef.current.startIndex > 0;
 
     return {
         virtuosoRef,

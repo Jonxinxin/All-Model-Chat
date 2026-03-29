@@ -7,19 +7,22 @@ import { useSessionData } from './state/useSessionData';
 import { useSessionPersistence } from './state/useSessionPersistence';
 
 export const useChatState = (appSettings: AppSettings) => {
-    
-    // 1. Auxiliary State (Files, Editing, Inputs, Async Flags)
-    const auxState = useChatAuxiliaryState();
 
-    // 2. Core Session Data (Active ID, Messages List, Groups List)
+    // 1. Core Session Data (Active ID, Messages List, Groups List)
     const sessionData = useSessionData();
+
+    // 2. Auxiliary State (Files, Editing, Inputs, Async Flags)
+    const auxState = useChatAuxiliaryState(sessionData.activeSessionId);
 
     // 3. Persistence & Sync (DB Operations, Broadcasts)
     const persistence = useSessionPersistence({
         setSavedSessions: sessionData.setSavedSessions,
         setSavedGroups: sessionData.setSavedGroups,
         setActiveMessages: sessionData.setActiveMessages,
+        loadingSessionIdsRef: auxState.loadingSessionIdsRef,
         setLoadingSessionIds: auxState.setLoadingSessionIds,
+        setIsCurrentSessionLoading: auxState.setIsCurrentSessionLoading,
+        isSessionLoading: auxState.isSessionLoading,
         activeSessionIdRef: sessionData.activeSessionIdRef,
         activeMessagesRef: sessionData.activeMessagesRef
     });
@@ -38,11 +41,7 @@ export const useChatState = (appSettings: AppSettings) => {
     // Fallback/Default settings
     // Use appSettings as fallback to ensure UI reflects global state (like Canvas mode) in New Chat
     const currentChatSettings = useMemo(() => activeChat?.settings || appSettings, [activeChat, appSettings]);
-    
-    const isLoading = useMemo(() => 
-        auxState.loadingSessionIds.has(sessionData.activeSessionId ?? ''), 
-    [auxState.loadingSessionIds, sessionData.activeSessionId]);
-    
+
     // Helper to update settings for the active session
     const setCurrentChatSettings = useCallback((updater: (prevSettings: IndividualChatSettings) => IndividualChatSettings) => {
         if (!sessionData.activeSessionId) return;
@@ -63,7 +62,7 @@ export const useChatState = (appSettings: AppSettings) => {
         activeSessionId: sessionData.activeSessionId, setActiveSessionId: sessionData.setActiveSessionId,
         activeMessages: sessionData.activeMessages, setActiveMessages: sessionData.setActiveMessages,
         // Compat alias
-        messages: sessionData.activeMessages, 
+        messages: sessionData.activeMessages,
 
         // From Auxiliary State
         editingMessageId: auxState.editingMessageId, setEditingMessageId: auxState.setEditingMessageId,
@@ -92,7 +91,7 @@ export const useChatState = (appSettings: AppSettings) => {
         // Computed
         activeChat,
         currentChatSettings,
-        isLoading,
+        isLoading: auxState.isLoading,
         setCurrentChatSettings,
     };
 };

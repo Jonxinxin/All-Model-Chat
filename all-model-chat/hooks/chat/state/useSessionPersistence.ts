@@ -9,7 +9,10 @@ interface UseSessionPersistenceProps {
     setSavedSessions: React.Dispatch<React.SetStateAction<SavedChatSession[]>>;
     setSavedGroups: React.Dispatch<React.SetStateAction<ChatGroup[]>>;
     setActiveMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
+    loadingSessionIdsRef: React.MutableRefObject<Set<string>>;
     setLoadingSessionIds: React.Dispatch<React.SetStateAction<Set<string>>>;
+    setIsCurrentSessionLoading: React.Dispatch<React.SetStateAction<boolean>>;
+    isSessionLoading: (sessionId: string) => boolean;
     activeSessionIdRef: React.MutableRefObject<string | null>;
     activeMessagesRef: React.MutableRefObject<ChatMessage[]>;
 }
@@ -18,7 +21,10 @@ export const useSessionPersistence = ({
     setSavedSessions,
     setSavedGroups,
     setActiveMessages,
+    loadingSessionIdsRef,
     setLoadingSessionIds,
+    setIsCurrentSessionLoading,
+    isSessionLoading,
     activeSessionIdRef,
     activeMessagesRef
 }: UseSessionPersistenceProps) => {
@@ -127,25 +133,35 @@ export const useSessionPersistence = ({
             }
         },
         onSessionLoading: (sessionId, isLoading) => {
-            // Loading state is ephemeral and visual, we can skip it if hidden or let it update (low cost)
-            // But usually we want to know if something is loading even if hidden (e.g. title/favicon updates?)
-            // For now, we allow loading state updates as they don't hit DB.
+            if (isLoading) {
+                loadingSessionIdsRef.current.add(sessionId);
+            } else {
+                loadingSessionIdsRef.current.delete(sessionId);
+            }
+            // Update sidebar state
             setLoadingSessionIds(prev => {
                 const next = new Set(prev);
                 if (isLoading) next.add(sessionId);
                 else next.delete(sessionId);
                 return next;
             });
+            // Only update React state if this is the active session
+            if (sessionId === activeSessionIdRef.current) {
+                setIsCurrentSessionLoading(isLoading);
+            }
         }
     });
 
     const setSessionLoading = useCallback((sessionId: string, isLoading: boolean) => {
         if (isLoading) {
             localLoadingSessionIds.current.add(sessionId);
+            loadingSessionIdsRef.current.add(sessionId);
         } else {
             localLoadingSessionIds.current.delete(sessionId);
+            loadingSessionIdsRef.current.delete(sessionId);
         }
 
+        // Update sidebar state
         setLoadingSessionIds(prev => {
             const next = new Set(prev);
             if (isLoading) next.add(sessionId);
@@ -153,8 +169,13 @@ export const useSessionPersistence = ({
             return next;
         });
 
+        // Only update React state if this is the active session
+        if (sessionId === activeSessionIdRef.current) {
+            setIsCurrentSessionLoading(isLoading);
+        }
+
         broadcast({ type: 'SESSION_LOADING', sessionId, isLoading });
-    }, [broadcast, setLoadingSessionIds]);
+    }, [broadcast, loadingSessionIdsRef, setLoadingSessionIds, setIsCurrentSessionLoading, activeSessionIdRef]);
 
     // Core State Updater: Handles splitting messages (active) vs metadata (list)
     const updateAndPersistSessions = useCallback(async (
@@ -169,8 +190,11 @@ export const useSessionPersistence = ({
 
             // 1. Reconstruct "Virtual" Full State
             // Attach current active messages to the matching session in the list so the updater sees full state.
+            // Optimization: Only spread the active session; others keep their existing reference
+            let activeSessionInList: SavedChatSession | undefined;
             const virtualFullSessions = prevMetadataSessions.map(s => {
                 if (s.id === currentActiveId) {
+                    activeSessionInList = s;
                     return { ...s, messages: currentActiveMsgs };
                 }
                 return s;
@@ -178,23 +202,21 @@ export const useSessionPersistence = ({
 
             // 2. Run Updater
             const newFullSessions = updater(virtualFullSessions);
-            
-            // 3. Sort
-             newFullSessions.sort((a, b) => {
-                if (a.isPinned && !b.isPinned) return -1;
-                if (!a.isPinned && b.isPinned) return 1;
-                return b.timestamp - a.timestamp;
-            });
+
+            // 3. Sort — only re-sort if session count changed (insert/delete)
+            if (newFullSessions.length !== prevMetadataSessions.length) {
+                newFullSessions.sort((a, b) => {
+                    if (a.isPinned && !b.isPinned) return -1;
+                    if (!a.isPinned && b.isPinned) return 1;
+                    return b.timestamp - a.timestamp;
+                });
+            }
 
             // 4. Update Active Messages State if changed
-            // We check if the active session still exists and update its messages
             if (currentActiveId) {
                 const newActiveSession = newFullSessions.find(s => s.id === currentActiveId);
-                if (newActiveSession) {
-                    // Update if reference changed (which it should if updater modified it)
-                    if (newActiveSession.messages !== currentActiveMsgs) {
-                        setActiveMessages(newActiveSession.messages);
-                    }
+                if (newActiveSession && newActiveSession.messages !== currentActiveMsgs) {
+                    setActiveMessages(newActiveSession.messages);
                 }
             }
 
@@ -202,11 +224,12 @@ export const useSessionPersistence = ({
             if (persist) {
                  const updates: Promise<void>[] = [];
                  const newSessionsMap = new Map(newFullSessions.map(s => [s.id, s]));
+                 const prevSessionsMap = new Map(virtualFullSessions.map(s => [s.id, s]));
                  const modifiedSessionIds: string[] = [];
-                 
-                 // Save changed sessions
+
+                 // Save changed sessions — O(n) with Map lookup instead of O(n^2) with find()
                  newFullSessions.forEach(session => {
-                     const prevSession = virtualFullSessions.find(ps => ps.id === session.id);
+                     const prevSession = prevSessionsMap.get(session.id);
                      if (prevSession !== session) {
                          updates.push(dbService.saveSession(session));
                          modifiedSessionIds.push(session.id);
@@ -234,7 +257,6 @@ export const useSessionPersistence = ({
             // 6. Return Metadata Only for `savedSessions` state
             // Strip messages to keep the list lightweight
             return newFullSessions.map(s => {
-                // Optimized strip: avoid spread if messages is already empty (mostly true for inactive)
                 if (s.messages && s.messages.length === 0) return s;
                 const { messages, ...rest } = s;
                 return { ...rest, messages: [] };

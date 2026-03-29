@@ -90,7 +90,7 @@ export const buildGenerationConfig = (
     isGoogleSearchEnabled?: boolean,
     isCodeExecutionEnabled?: boolean,
     isUrlContextEnabled?: boolean,
-    thinkingLevel?: 'LOW' | 'HIGH',
+    thinkingLevel?: 'MINIMAL' | 'LOW' | 'MEDIUM' | 'HIGH',
     aspectRatio?: string,
     isDeepSearchEnabled?: boolean,
     imageSize?: string,

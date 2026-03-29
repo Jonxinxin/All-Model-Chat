@@ -189,7 +189,7 @@ export const createChatHistoryForApi = async (
             let contentToUse = msg.content;
             if (stripThinking) {
                 // Remove <thinking> blocks including tags from the content
-                contentToUse = contentToUse.replace(/<thinking>[\s\S]*?<\/[^>]+>/gi, '').trim();
+                contentToUse = contentToUse.replace(/<thinking>[\s\S]*?<\/thinking>/gi, '').trim();
             }
             const { contentParts } = await buildContentParts(contentToUse, msg.files);
             parts = contentParts;

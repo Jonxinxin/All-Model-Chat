@@ -61,6 +61,10 @@ class LogServiceImpl {
 
   private safeSerialize(data: any): any {
     if (data === undefined || data === null) return undefined;
+    // If it's an Error object, extract enumerable-safe properties
+    if (data instanceof Error) {
+      return this.serializeError(data);
+    }
     try {
       // Simple circular reference handler
       const seen = new WeakSet();

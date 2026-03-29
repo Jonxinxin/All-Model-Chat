@@ -9,6 +9,7 @@ export const useLiveVideo = () => {
     const [videoSource, setVideoSource] = useState<VideoSource>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const pendingStartRef = useRef<Promise<MediaStream | null> | null>(null);
 
     const stopVideo = useCallback(() => {
         if (videoStream) {
@@ -20,55 +21,78 @@ export const useLiveVideo = () => {
 
     const startCamera = useCallback(async () => {
         if (videoSource === 'camera') return;
-        
+
+        // Prevent concurrent starts
+        if (pendingStartRef.current) return;
+
         // Stop existing stream if any (e.g. screen share)
         if (videoStream) {
             videoStream.getTracks().forEach(track => track.stop());
         }
 
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { 
-                    facingMode: 'user',
-                    width: { ideal: 640 },
-                    height: { ideal: 480 }
-                } 
-            });
-            setVideoStream(stream);
-            setVideoSource('camera');
-        } catch (err) {
-            logService.error("Failed to start camera", err);
-        }
+        const startPromise = (async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: 'user',
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    }
+                });
+                setVideoStream(stream);
+                setVideoSource('camera');
+                return stream;
+            } catch (err) {
+                logService.error("Failed to start camera", err);
+                return null;
+            } finally {
+                pendingStartRef.current = null;
+            }
+        })();
+
+        pendingStartRef.current = startPromise;
+        return startPromise;
     }, [videoStream, videoSource]);
 
     const startScreenShare = useCallback(async () => {
         if (videoSource === 'screen') return;
+
+        // Prevent concurrent starts
+        if (pendingStartRef.current) return;
 
         // Stop existing stream if any (e.g. camera)
         if (videoStream) {
             videoStream.getTracks().forEach(track => track.stop());
         }
 
-        try {
-            const stream = await navigator.mediaDevices.getDisplayMedia({ 
-                video: { 
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 }
-                },
-                audio: false // Audio is handled separately by useLiveAudio
-            });
-            setVideoStream(stream);
-            setVideoSource('screen');
+        const startPromise = (async () => {
+            try {
+                const stream = await navigator.mediaDevices.getDisplayMedia({
+                    video: {
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    },
+                    audio: false // Audio is handled separately by useLiveAudio
+                });
+                setVideoStream(stream);
+                setVideoSource('screen');
 
-            // Handle user stopping screen share via browser UI
-            stream.getVideoTracks()[0].onended = () => {
-                setVideoStream(null);
-                setVideoSource(null);
-            };
+                // Handle user stopping screen share via browser UI
+                stream.getVideoTracks()[0].onended = () => {
+                    setVideoStream(null);
+                    setVideoSource(null);
+                };
+                return stream;
+            } catch (err) {
+                logService.error("Failed to start screen share", err);
+                return null;
+            } finally {
+                pendingStartRef.current = null;
+            }
+        })();
 
-        } catch (err) {
-            logService.error("Failed to start screen share", err);
-        }
+        pendingStartRef.current = startPromise;
+        return startPromise;
     }, [videoStream, videoSource]);
 
     const captureFrame = useCallback((): string | null => {

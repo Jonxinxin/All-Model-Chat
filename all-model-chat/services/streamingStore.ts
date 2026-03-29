@@ -29,7 +29,15 @@ class StreamingStore {
   subscribe(id: string, listener: Listener) {
     if (!this.listeners.has(id)) this.listeners.set(id, new Set());
     this.listeners.get(id)!.add(listener);
-    return () => this.listeners.get(id)?.delete(listener);
+    return () => {
+      const set = this.listeners.get(id);
+      if (set) {
+        set.delete(listener);
+        if (set.size === 0) {
+          this.listeners.delete(id);
+        }
+      }
+    };
   }
 
   private notify(id: string) {

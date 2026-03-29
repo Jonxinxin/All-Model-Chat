@@ -78,7 +78,7 @@ export const sendStatelessMessageStreamApi = async (
 
     try {
         const ai = await getConfiguredApiClient(apiKey);
-        
+
         if (abortSignal.aborted) {
             logService.warn("Streaming aborted by signal before start.");
             return;

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { LogEntry, logService, TokenUsageStats } from '../../services/logService';
 import { AppSettings, ChatSettings } from '../../types';
 import { X, Terminal, KeyRound, Coins } from 'lucide-react';
@@ -26,28 +26,32 @@ export const LogViewer: React.FC<LogViewerProps> = ({ isOpen, onClose, appSettin
   const [activeTab, setActiveTab] = useState<'console' | 'api' | 'tokens'>('console');
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
+  const logsLengthRef = useRef(0);
+
   const fetchLogs = useCallback(async (reset = false) => {
       if (isLoading && !reset) return;
       setIsLoading(true);
       try {
-          const currentCount = reset ? 0 : logs.length;
+          const currentCount = reset ? 0 : logsLengthRef.current;
           const newLogs = await logService.getRecentLogs(100, currentCount);
-          
+
           if (reset) {
               setLogs(newLogs);
+              logsLengthRef.current = newLogs.length;
           } else {
               setLogs(prev => {
                   const existingIds = new Set(prev.map(l => l.id));
                   const uniqueNew = newLogs.filter(l => !existingIds.has(l.id));
+                  logsLengthRef.current = prev.length + uniqueNew.length;
                   return [...prev, ...uniqueNew];
               });
           }
-          
+
           setHasMore(newLogs.length === 100);
       } finally {
           setIsLoading(false);
       }
-  }, [logs.length, isLoading]);
+  }, [isLoading]);
 
   useEffect(() => {
     if (isOpen) {

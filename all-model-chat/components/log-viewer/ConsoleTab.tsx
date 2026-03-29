@@ -42,6 +42,8 @@ export const ConsoleTab: React.FC<ConsoleTabProps> = ({ logs, isLoading, hasMore
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        // Revoke blob URL after a short delay to allow download to start
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
     };
 
     return (

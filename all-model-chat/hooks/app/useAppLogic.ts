@@ -1,7 +1,7 @@
 
 
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useAppSettings } from '../core/useAppSettings';
 import { useChat } from '../chat/useChat';
 import { useAppUI } from '../core/useAppUI';
@@ -74,26 +74,30 @@ export const useAppLogic = () => {
 
   // 6. Data Management
   const dataManagement = useDataManagement({
-    appSettings, 
-    setAppSettings, 
-    savedSessions: chatState.savedSessions, 
+    appSettings,
+    setAppSettings,
+    savedSessions: chatState.savedSessions,
     updateAndPersistSessions: chatState.updateAndPersistSessions,
-    savedGroups: chatState.savedGroups, 
-    updateAndPersistGroups: chatState.updateAndPersistGroups, 
-    savedScenarios: chatState.savedScenarios, 
+    savedGroups: chatState.savedGroups,
+    updateAndPersistGroups: chatState.updateAndPersistGroups,
+    savedScenarios: chatState.savedScenarios,
     handleSaveAllScenarios: chatState.handleSaveAllScenarios,
-    t, 
-    activeChat, 
-    scrollContainerRef: chatState.scrollContainerRef, 
-    currentTheme, 
+    t,
+    activeChat,
+    scrollContainerRef: chatState.scrollContainerRef,
+    currentTheme,
     language,
   });
+
+  // Use ref to access exportChatLogic without adding dataManagement to deps
+  const exportChatLogicRef = useRef(dataManagement.exportChatLogic);
+  exportChatLogicRef.current = dataManagement.exportChatLogic;
 
   const handleExportChat = useCallback(async (format: 'png' | 'html' | 'txt' | 'json') => {
     if (!activeChat) return;
     setExportStatus('exporting');
     try {
-      await dataManagement.exportChatLogic(format);
+      await exportChatLogicRef.current(format);
     } catch (error) {
         logService.error(`Chat export failed (format: ${format})`, { error });
         alert(`Export failed: ${error instanceof Error ? error.message : String(error)}`);
@@ -101,7 +105,7 @@ export const useAppLogic = () => {
         setExportStatus('idle');
         setIsExportModalOpen(false);
     }
-  }, [activeChat, dataManagement]);
+  }, [activeChat]);
 
   // 7. Core Handlers
   const {

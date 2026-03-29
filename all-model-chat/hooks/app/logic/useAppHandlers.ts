@@ -121,7 +121,7 @@ export const useAppHandlers = ({
     }
   }, [currentChatSettings.systemInstruction, appSettings, chatState, setAppSettings, activeSessionId, setCurrentChatSettings]);
 
-  const handleSetThinkingLevel = useCallback((level: 'LOW' | 'HIGH') => {
+  const handleSetThinkingLevel = useCallback((level: 'MINIMAL' | 'LOW' | 'MEDIUM' | 'HIGH') => {
     setAppSettings(prev => ({ ...prev, thinkingLevel: level }));
     if (activeSessionId && setCurrentChatSettings) {
         setCurrentChatSettings(prev => ({ ...prev, thinkingLevel: level }));

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useLayoutEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { CodeBlock } from './blocks/CodeBlock';
 import { MermaidBlock } from './blocks/MermaidBlock';
@@ -45,6 +45,20 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = React.memo(({
 
   const rehypePlugins = useMemo(() => getRehypePlugins(allowHtml), [allowHtml]);
 
+  // Use refs for callbacks to stabilize the components object — prevents rebuilding
+  // the entire component map when parent re-renders with new callback references
+  const onImageClickRef = useRef(onImageClick);
+  const onOpenHtmlPreviewRef = useRef(onOpenHtmlPreview);
+  const onOpenSidePanelRef = useRef(onOpenSidePanel);
+  useLayoutEffect(() => { onImageClickRef.current = onImageClick; });
+  useLayoutEffect(() => { onOpenHtmlPreviewRef.current = onOpenHtmlPreview; });
+  useLayoutEffect(() => { onOpenSidePanelRef.current = onOpenSidePanel; });
+
+  // Stable wrapper functions that use refs internally
+  const stableOnImageClick = useCallback((file: UploadedFile) => onImageClickRef.current(file), []);
+  const stableOnOpenHtmlPreview = useCallback((html: string, opts?: { initialTrueFullscreen?: boolean }) => onOpenHtmlPreviewRef.current(html, opts), []);
+  const stableOnOpenSidePanel = useCallback((content: SideViewContent) => onOpenSidePanelRef.current(content), []);
+
   const components = useMemo(() => ({
     code: (props: any) => {
         return <InlineCode {...props} />;
@@ -52,10 +66,10 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = React.memo(({
     img: (props: any) => {
         const { src, alt, className, ...rest } = props;
         return (
-            <img 
-                src={src} 
-                alt={alt} 
-                className={`${className || ''} cursor-pointer hover:opacity-90 transition-opacity`} 
+            <img
+                src={src}
+                alt={alt}
+                className={`${className || ''} cursor-pointer hover:opacity-90 transition-opacity`}
                 onClick={(e) => {
                     e.stopPropagation();
                     if (src && src.startsWith('data:image/')) {
@@ -68,7 +82,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = React.memo(({
                             dataUrl: src,
                             uploadState: 'active'
                         };
-                        onImageClick(file);
+                        stableOnImageClick(file);
                     } else if (src) {
                         const file: UploadedFile = {
                             id: `inline-img-${Date.now()}`,
@@ -78,10 +92,10 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = React.memo(({
                             dataUrl: src,
                             uploadState: 'active'
                         };
-                        onImageClick(file);
+                        stableOnImageClick(file);
                     }
                 }}
-                {...rest} 
+                {...rest}
             />
         );
     },
@@ -89,12 +103,12 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = React.memo(({
     a: (props: any) => {
         const { href, children, ...rest } = props;
         const isInternal = href && (href.startsWith('#') || href.startsWith('/'));
-        
+
         return (
-            <a 
-                href={href} 
-                target={isInternal ? undefined : '_blank'} 
-                rel={isInternal ? undefined : 'noopener noreferrer'} 
+            <a
+                href={href}
+                target={isInternal ? undefined : '_blank'}
+                rel={isInternal ? undefined : 'noopener noreferrer'}
                 {...rest}
             >
                 {children}
@@ -104,28 +118,27 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = React.memo(({
     div: (props: any) => {
       const { className, children, ...rest } = props;
       if (className?.includes('tool-result')) {
-        return <ToolResultBlock className={className} files={files} onImageClick={onImageClick} {...rest}>{children}</ToolResultBlock>;
+        return <ToolResultBlock className={className} files={files} onImageClick={stableOnImageClick} {...rest}>{children}</ToolResultBlock>;
       }
       return <div className={className} {...rest}>{children}</div>;
     },
     pre: (props: any) => {
       const { node, children, ...rest } = props;
-      
+
       const codeElement = React.Children.toArray(children).find(
         (child: any) => {
             return React.isValidElement(child) && (
-                child.type === 'code' || 
-                (child.props as any).className?.includes('language-') ||
-                true 
+                child.type === 'code' ||
+                (child.props as any).className?.includes('language-')
             );
         }
       ) as React.ReactElement | undefined;
 
       const codeClassName = (codeElement?.props as any)?.className || '';
       const codeContent = (codeElement?.props as any)?.children;
-      
+
       const rawCode = extractTextFromNode(codeContent);
-      
+
       const langMatch = codeClassName.match(/language-(\S+)/);
       const language = langMatch ? langMatch[1] : '';
       const isGraphviz = language === 'graphviz' || language === 'dot';
@@ -133,7 +146,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = React.memo(({
       if (isMermaidRenderingEnabled && language === 'mermaid' && typeof rawCode === 'string') {
         return (
           <div>
-            <MermaidBlock code={rawCode} onImageClick={onImageClick} isLoading={isLoading} themeId={themeId} onOpenSidePanel={onOpenSidePanel} />
+            <MermaidBlock code={rawCode} onImageClick={stableOnImageClick} isLoading={isLoading} themeId={themeId} onOpenSidePanel={stableOnOpenSidePanel} />
           </div>
         );
       }
@@ -141,25 +154,26 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = React.memo(({
       if (isGraphvizRenderingEnabled && isGraphviz && typeof rawCode === 'string') {
         return (
           <div>
-            <GraphvizBlock code={rawCode} onImageClick={onImageClick} isLoading={isLoading} themeId={themeId} onOpenSidePanel={onOpenSidePanel} />
+            <GraphvizBlock code={rawCode} onImageClick={stableOnImageClick} isLoading={isLoading} themeId={themeId} onOpenSidePanel={stableOnOpenSidePanel} />
           </div>
         );
       }
-      
+
       return (
-        <CodeBlock 
-          {...rest} 
-          className={codeClassName} 
-          onOpenHtmlPreview={onOpenHtmlPreview} 
+        <CodeBlock
+          {...rest}
+          className={codeClassName}
+          onOpenHtmlPreview={stableOnOpenHtmlPreview}
           expandCodeBlocksByDefault={expandCodeBlocksByDefault}
           t={t}
-          onOpenSidePanel={onOpenSidePanel}
+          onOpenSidePanel={stableOnOpenSidePanel}
         >
           {codeElement || children}
         </CodeBlock>
       );
     }
-  }), [onOpenHtmlPreview, expandCodeBlocksByDefault, onImageClick, isMermaidRenderingEnabled, isGraphvizRenderingEnabled, isLoading, t, themeId, onOpenSidePanel, files]);
+  // Only rebuild when functional behavior changes, not when callback refs change
+  }), [expandCodeBlocksByDefault, isMermaidRenderingEnabled, isGraphvizRenderingEnabled, isLoading, t, themeId, files, stableOnImageClick, stableOnOpenHtmlPreview, stableOnOpenSidePanel]);
 
   const processedContent = useMemo(() => {
     if (!content) return '';
@@ -192,7 +206,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = React.memo(({
                 </div>
             </details>`;
 
-        text = text.replace(/<thinking>([\s\S]*?)<\/[^>]+>/gi, (_, content) => createDetailsBlock(content));
+        text = text.replace(/<thinking>([\s\S]*?)<\/thinking>/gi, (_, content) => createDetailsBlock(content));
 
         if (isLoading) {
              text = text.replace(/<thinking>([\s\S]*?)$/i, (_, content) => createDetailsBlock(content));

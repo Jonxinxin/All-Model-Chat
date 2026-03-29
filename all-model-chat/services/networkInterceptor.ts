@@ -112,9 +112,15 @@ export const networkInterceptor = {
 
                     if (originalRequest) {
                         // Clone the original request with the new URL
-                        // We pass the original request as the second argument to preserve body/headers/signals
+                        // We pass the original request as the second argument to preserve body/headers
+                        // Also preserve the abort signal if it was attached to the original Request
                         const newReq = new Request(newUrl, originalRequest);
-                        return originalFetch(newReq, init);
+                        // The Request constructor does not clone the signal property.
+                        // If the original request had a signal and init also has one, prefer init.signal.
+                        // Otherwise, forward the original request's signal explicitly.
+                        const signal = originalRequest.signal || init?.signal;
+                        const finalInit: RequestInit = signal ? { ...init, signal } : init;
+                        return originalFetch(newReq, finalInit);
                     }
                     
                     return originalFetch(newUrl, init);

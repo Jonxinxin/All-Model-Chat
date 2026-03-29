@@ -14,14 +14,21 @@ export const useLiveAudio = () => {
     const streamRef = useRef<MediaStream | null>(null);
     const processorRef = useRef<AudioWorkletNode | null>(null);
     const inputSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
-    
+    const isMutedRef = useRef(false);
+
     // Playback timing state
     const nextStartTimeRef = useRef<number>(0);
     const sourcesRef = useRef<Set<AudioBufferSourceNode>>(new Set());
 
+    // Keep isMutedRef in sync with state
+    const updateMutedState = useCallback((newMuted: boolean) => {
+        setIsMuted(newMuted);
+        isMutedRef.current = newMuted;
+    }, []);
+
     const initializeAudio = useCallback(async (onAudioData: (data: Float32Array) => void) => {
         const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-        
+
         // Output Context (Playback)
         const audioCtx = new AudioContextClass({ sampleRate: 24000 });
         audioContextRef.current = audioCtx;
@@ -41,9 +48,9 @@ export const useLiveAudio = () => {
         });
         streamRef.current = stream;
 
-        // Apply initial mute state
+        // Apply current mute state from ref (always up-to-date)
         stream.getAudioTracks().forEach(track => {
-            track.enabled = !isMuted;
+            track.enabled = !isMutedRef.current;
         });
 
         if (inputCtx.state === 'suspended') {
@@ -67,17 +74,15 @@ export const useLiveAudio = () => {
         processorRef.current = workletNode;
 
         // Handle Worklet Messages (Volume + Data)
+        // Use isMutedRef instead of isMuted to avoid stale closure
         workletNode.port.onmessage = (e) => {
-            // If muted, we effectively send silence or nothing.
-            // However, track.enabled = false usually stops data flow at the source level (OS/Browser).
-            // But to be safe and ensure volume is 0 in UI:
-            if (isMuted) {
+            if (isMutedRef.current) {
                 setVolume(0);
                 return;
             }
 
             const inputData = e.data; // Float32Array
-            
+
             // Calculate Volume
             let sum = 0;
             const sampleCount = inputData.length;
@@ -96,21 +101,18 @@ export const useLiveAudio = () => {
         workletNode.connect(inputCtx.destination); // Keep graph alive
 
         return { audioCtx, inputCtx };
-    }, [isMuted]);
+    }, []);
 
     const toggleMute = useCallback(() => {
+        const newMutedState = !isMutedRef.current;
         if (streamRef.current) {
             const tracks = streamRef.current.getAudioTracks();
-            const newMutedState = !isMuted;
             tracks.forEach(track => {
                 track.enabled = !newMutedState;
             });
-            setIsMuted(newMutedState);
-        } else {
-            // Even if stream is not active (yet), toggle state so it applies on next init
-            setIsMuted(prev => !prev);
         }
-    }, [isMuted]);
+        updateMutedState(newMutedState);
+    }, [updateMutedState]);
 
     const playAudioChunk = useCallback(async (base64Audio: string) => {
         const ctx = audioContextRef.current;
@@ -141,6 +143,9 @@ export const useLiveAudio = () => {
             sourcesRef.current.add(source);
         } catch (error) {
             logService.error("Failed to play audio chunk", error);
+            if (sourcesRef.current.size === 0) {
+                setIsSpeaking(false);
+            }
         }
     }, []);
 
@@ -183,8 +188,8 @@ export const useLiveAudio = () => {
         }
 
         setVolume(0);
-        setIsMuted(false); // Reset mute state on cleanup
-    }, [stopAudioPlayback]);
+        updateMutedState(false); // Reset mute state on cleanup
+    }, [stopAudioPlayback, updateMutedState]);
 
     return {
         volume,

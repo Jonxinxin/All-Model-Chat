@@ -26,8 +26,8 @@ interface ChatBehaviorSectionProps {
   setTopP: (value: number) => void;
   thinkingBudget: number;
   setThinkingBudget: (value: number) => void;
-  thinkingLevel?: 'LOW' | 'HIGH';
-  setThinkingLevel?: (value: 'LOW' | 'HIGH') => void;
+  thinkingLevel?: 'MINIMAL' | 'LOW' | 'MEDIUM' | 'HIGH';
+  setThinkingLevel?: (value: 'MINIMAL' | 'LOW' | 'MEDIUM' | 'HIGH') => void;
   showThoughts: boolean;
   setShowThoughts: (value: boolean) => void;
   safetySettings?: SafetySetting[];

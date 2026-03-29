@@ -14,7 +14,10 @@ export const generateSpeechApi = async (apiKey: string, modelId: string, text: s
 
     try {
         const ai = await getConfiguredApiClient(apiKey);
-        const response = await ai.models.generateContent({
+
+        // Race the API call against the abort signal so cancelled requests
+        // don't continue consuming network bandwidth and API quota.
+        const generatePromise = ai.models.generateContent({
             model: modelId,
             // TTS models do not support chat history roles, just plain content parts
             contents: [{ parts: [{ text: text }] }],
@@ -24,6 +27,36 @@ export const generateSpeechApi = async (apiKey: string, modelId: string, text: s
                     voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } },
                 },
             },
+        });
+
+        const response = await new Promise<typeof generatePromise extends Promise<infer T> ? T : never>((resolve, reject) => {
+            let settled = false;
+
+            const onAbort = () => {
+                if (!settled) {
+                    settled = true;
+                    const abortError = new Error("Speech generation cancelled by user.");
+                    abortError.name = "AbortError";
+                    reject(abortError);
+                }
+            };
+            abortSignal.addEventListener('abort', onAbort, { once: true });
+
+            generatePromise
+                .then(result => {
+                    if (!settled) {
+                        settled = true;
+                        abortSignal.removeEventListener('abort', onAbort);
+                        resolve(result);
+                    }
+                })
+                .catch(err => {
+                    if (!settled) {
+                        settled = true;
+                        abortSignal.removeEventListener('abort', onAbort);
+                        reject(err);
+                    }
+                });
         });
 
         if (abortSignal.aborted) {

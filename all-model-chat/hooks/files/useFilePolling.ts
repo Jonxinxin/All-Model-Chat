@@ -51,6 +51,9 @@ export const useFilePolling = ({
                     if ((Date.now() - startTime) > MAX_POLLING_DURATION_MS) {
                         logService.error(`Polling timed out for file ${fileApiName}`);
                         setSelectedFiles(prev => prev.map(f => f.id === fileId ? { ...f, error: 'File processing timed out.', uploadState: 'failed', isProcessing: false } : f));
+                        // Stop polling after marking as failed
+                        window.clearInterval(pollingIntervals.current.get(fileId));
+                        pollingIntervals.current.delete(fileId);
                         return;
                     }
 
@@ -60,6 +63,9 @@ export const useFilePolling = ({
                     if ('error' in keyResult) {
                         logService.error(`Polling for ${fileApiName} stopped: ${keyResult.error}`);
                         setSelectedFiles(prev => prev.map(f => f.id === fileId ? { ...f, error: keyResult.error, uploadState: 'failed', isProcessing: false } : f));
+                        // Stop polling after marking as failed
+                        window.clearInterval(pollingIntervals.current.get(fileId));
+                        pollingIntervals.current.delete(fileId);
                         return;
                     }
 

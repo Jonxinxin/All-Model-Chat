@@ -62,22 +62,27 @@ export const useChatInputState = (activeSessionId: string | null, isEditing: boo
         const quoteKey = `chatQuotes_${activeSessionId}`;
         const ttsKey = `chatTtsContext_${activeSessionId}`;
 
+        // Use refs to avoid re-subscribing the storage listener on every keystroke
+        const inputTextRef = { current: inputText };
+        const quotesRef = { current: quotes };
+        const ttsContextRef = { current: ttsContext };
+
         const handleStorageChange = (e: StorageEvent) => {
             if (e.key === draftKey) {
                 const newValue = e.newValue || '';
-                if (newValue !== inputText) {
+                if (newValue !== inputTextRef.current) {
                     setInputText(newValue);
                 }
             } else if (e.key === quoteKey) {
                 try {
                     const newValue = e.newValue ? JSON.parse(e.newValue) : [];
-                    if (JSON.stringify(newValue) !== JSON.stringify(quotes)) {
+                    if (JSON.stringify(newValue) !== JSON.stringify(quotesRef.current)) {
                         setQuotes(newValue);
                     }
                 } catch (e) {}
             } else if (e.key === ttsKey) {
                 const newValue = e.newValue || '';
-                if (newValue !== ttsContext) {
+                if (newValue !== ttsContextRef.current) {
                     setTtsContext(newValue);
                 }
             }
@@ -85,7 +90,7 @@ export const useChatInputState = (activeSessionId: string | null, isEditing: boo
 
         window.addEventListener('storage', handleStorageChange);
         return () => window.removeEventListener('storage', handleStorageChange);
-    }, [activeSessionId, isEditing, inputText, quotes, ttsContext]);
+    }, [activeSessionId, isEditing]);
 
     // Save draft to localStorage on input change (debounced)
     useEffect(() => {

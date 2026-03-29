@@ -16,20 +16,52 @@ export const generateImagesApi = async (apiKey: string, modelId: string, prompt:
 
     try {
         const ai = await getConfiguredApiClient(apiKey);
-        const config: any = { 
-            numberOfImages: 1, 
-            outputMimeType: 'image/png', 
-            aspectRatio: aspectRatio 
+        const config: any = {
+            numberOfImages: 1,
+            outputMimeType: 'image/png',
+            aspectRatio: aspectRatio
         };
 
         if (imageSize) {
             config.imageSize = imageSize;
         }
 
-        const response = await ai.models.generateImages({
+        // Race the API call against the abort signal so cancelled requests
+        // don't continue consuming network bandwidth and API quota.
+        const generatePromise = ai.models.generateImages({
             model: modelId,
             prompt: prompt,
             config: config,
+        });
+
+        const response = await new Promise<typeof generatePromise extends Promise<infer T> ? T : never>((resolve, reject) => {
+            let settled = false;
+
+            const onAbort = () => {
+                if (!settled) {
+                    settled = true;
+                    const abortError = new Error("Image generation cancelled by user.");
+                    abortError.name = "AbortError";
+                    reject(abortError);
+                }
+            };
+            abortSignal.addEventListener('abort', onAbort, { once: true });
+
+            generatePromise
+                .then(result => {
+                    if (!settled) {
+                        settled = true;
+                        abortSignal.removeEventListener('abort', onAbort);
+                        resolve(result);
+                    }
+                })
+                .catch(err => {
+                    if (!settled) {
+                        settled = true;
+                        abortSignal.removeEventListener('abort', onAbort);
+                        reject(err);
+                    }
+                });
         });
 
         if (abortSignal.aborted) {

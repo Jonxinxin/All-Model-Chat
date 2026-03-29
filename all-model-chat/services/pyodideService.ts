@@ -223,10 +223,21 @@ class PyodideService {
             
             this.worker = new Worker(url);
             this.worker.onmessage = this.handleMessage.bind(this);
-            
+            this.worker.onerror = (event: ErrorEvent) => {
+                logService.error("Pyodide Worker error", { error: event.message });
+                // Reject all pending promises so callers don't hang
+                for (const [id, promise] of this.pendingPromises) {
+                    promise.reject(new Error(`Worker error: ${event.message}`));
+                }
+                this.pendingPromises.clear();
+                // Terminate the dead worker so initWorker() will create a new one
+                this.worker?.terminate();
+                this.worker = null;
+            };
+
             // Clean up the object URL after worker creation
             URL.revokeObjectURL(url);
-            
+
             logService.info("Pyodide Worker initialized (Local Mode)", { baseUrl: pyodideBaseUrl });
         }
     }
@@ -282,9 +293,8 @@ class PyodideService {
              setTimeout(() => {
                 if (this.pendingPromises.has(id)) {
                     this.pendingPromises.delete(id);
-                    // Don't reject, just warn, as execution might still work if files weren't critical
                     console.warn("File mount timed out");
-                    resolve(); 
+                    reject(new Error("File mount timed out"));
                 }
             }, 10000);
         });

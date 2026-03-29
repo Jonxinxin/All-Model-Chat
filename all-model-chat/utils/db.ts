@@ -20,13 +20,15 @@ const getDb = (): Promise<IDBDatabase> => {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
       request.onerror = () => {
         console.error('IndexedDB error:', request.error);
+        // Allow retry on next call by clearing the cached promise
+        dbPromise = null;
         reject(request.error);
       };
       request.onsuccess = () => resolve(request.result);
-      
+
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
-        
+
         if (!db.objectStoreNames.contains(SESSIONS_STORE)) {
           db.createObjectStore(SESSIONS_STORE, { keyPath: 'id' });
         }
@@ -157,34 +159,50 @@ export const dbService = {
       });
   },
 
-  searchSessions: async (query: string): Promise<string[]> => {
+  searchSessions: async (query: string, signal?: AbortSignal): Promise<string[]> => {
       const db = await getDb();
       const lowerQuery = query.toLowerCase();
       return new Promise((resolve, reject) => {
+          if (signal?.aborted) { reject(new DOMException('Aborted', 'AbortError')); return; }
+
           const tx = db.transaction(SESSIONS_STORE, 'readonly');
           const store = tx.objectStore(SESSIONS_STORE);
           const request = store.openCursor();
           const results: string[] = [];
-          
+
+          const onAbort = () => {
+              tx.abort();
+              cleanup();
+              reject(new DOMException('Aborted', 'AbortError'));
+          };
+
+          const cleanup = () => {
+              signal?.removeEventListener('abort', onAbort);
+          };
+
+          signal?.addEventListener('abort', onAbort, { once: true });
+
           request.onsuccess = (event) => {
+              if (signal?.aborted) return;
               const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
               if (cursor) {
                   const session = cursor.value as SavedChatSession;
                   const titleMatch = session.title?.toLowerCase().includes(lowerQuery);
-                  const contentMatch = session.messages?.some(m => 
-                      (m.content && m.content.toLowerCase().includes(lowerQuery)) || 
+                  const contentMatch = session.messages?.some(m =>
+                      (m.content && m.content.toLowerCase().includes(lowerQuery)) ||
                       (m.thoughts && m.thoughts.toLowerCase().includes(lowerQuery))
                   );
-                  
+
                   if (titleMatch || contentMatch) {
                       results.push(session.id);
                   }
                   cursor.continue();
               } else {
+                  cleanup();
                   resolve(results);
               }
           };
-          request.onerror = () => reject(request.error);
+          request.onerror = () => { cleanup(); reject(request.error); };
       });
   },
 

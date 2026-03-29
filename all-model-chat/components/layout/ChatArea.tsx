@@ -12,7 +12,7 @@ import { getShortcutDisplay } from '../../utils/shortcutUtils';
 // Re-export props for consumers like useAppProps
 export type { ChatAreaProps };
 
-export const ChatArea: React.FC<ChatAreaProps> = (props) => {
+export const ChatArea = React.memo<ChatAreaProps>((props) => {
   const {
     activeSessionId, sessionTitle, currentChatSettings, setAppFileError,
     isAppDraggingOver, handleAppDragEnter, handleAppDragOver, handleAppDragLeave, handleAppDrop,
@@ -196,4 +196,4 @@ export const ChatArea: React.FC<ChatAreaProps> = (props) => {
       </div>
     </div>
   );
-};
+});

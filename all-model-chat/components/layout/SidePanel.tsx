@@ -34,12 +34,9 @@ export const SidePanel: React.FC<SidePanelProps> = ({ content, onClose, themeId 
         if (content) {
             setLocalCode(content.content);
             setDebouncedCode(content.content);
-            // Reset to preview tab when new content is loaded for better UX
-            if (activeTab === 'code' && content.type === 'html') {
-                // Optional: Force preview for HTML, or keep current tab? 
-                // Keeping current tab is usually better for persistent editing, 
-                // but if opening new file, preview is expected.
-                // Let's stick to user preference or default to preview if type changed.
+            // Reset to preview tab when opening new HTML content
+            if (content.type === 'html') {
+                setActiveTab('preview');
             }
         }
     }, [content]);

@@ -34,16 +34,36 @@ export default defineConfig(({ mode }) => {
           // instance as react-pdf (which is loaded via CDN/importmap).
           // This prevents the "Cannot read properties of null (reading 'useReducer')" error.
           external: [
-            'react', 
-            'react-dom', 
-            'react-dom/client', 
+            'react',
+            'react-dom',
+            'react-dom/client',
             'react/jsx-runtime',
-            'react-pdf', 
+            'react-pdf',
             'pdfjs-dist',
             '@formkit/auto-animate/react',
             'react-virtuoso',
             'xlsx'
-          ]
+          ],
+          output: {
+            manualChunks(id) {
+              if (id.includes('node_modules')) {
+                // Mermaid — huge library, lazy loaded by MermaidBlock
+                if (id.includes('mermaid')) return 'vendor-mermaid';
+                // Markdown rendering pipeline
+                if (id.includes('react-markdown') || id.includes('remark-') || id.includes('rehype-') || id.includes('unified') || id.includes('bail') || id.includes('is-plain') || id.includes('trough') || id.includes('vfile') || id.includes('unist')) return 'vendor-markdown';
+                // Highlight.js syntax themes
+                if (id.includes('highlight.js')) return 'vendor-highlight';
+                // KaTeX math rendering
+                if (id.includes('katex')) return 'vendor-katex';
+                // Utility libraries
+                if (id.includes('jszip') || id.includes('dompurify') || id.includes('turndown')) return 'vendor-utils';
+                // html2canvas (already dynamically imported in exportUtils)
+                if (id.includes('html2canvas')) return 'vendor-html2canvas';
+                // Google GenAI SDK
+                if (id.includes('@google/genai')) return 'vendor-google-genai';
+              }
+            }
+          }
         }
       }
     };

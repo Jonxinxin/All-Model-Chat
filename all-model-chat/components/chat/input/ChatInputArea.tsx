@@ -52,6 +52,7 @@ export interface ChatInputAreaProps {
         isMobile: boolean;
         initialTextareaHeight: number;
         isConverting: boolean;
+        isHistorySidebarOpen: boolean;
     };
     fileInputRefs: {
         fileInputRef: React.RefObject<HTMLInputElement>;
@@ -101,14 +102,18 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
     t,
     themeId,
 }) => {
-    const { isFullscreen, isPipActive, isAnimatingSend, isMobile, initialTextareaHeight, isConverting } = layoutProps;
+    const { isFullscreen, isPipActive, isAnimatingSend, isMobile, initialTextareaHeight, isConverting, isHistorySidebarOpen } = layoutProps;
     const { isRecording } = actionsProps;
 
     const isUIBlocked = inputProps.disabled && !isAnimatingSend && !isRecording;
 
-    const wrapperClass = isFullscreen 
-        ? "fixed inset-0 z-[2000] bg-[var(--theme-bg-secondary)] text-[var(--theme-text-primary)] p-4 sm:p-6 flex flex-col fullscreen-enter-animation" 
+    const wrapperClass = isFullscreen
+        ? "fixed inset-0 z-[2000] bg-[var(--theme-bg-secondary)] text-[var(--theme-text-primary)] p-4 sm:p-6 flex flex-col fullscreen-enter-animation"
         : `bg-transparent ${isUIBlocked ? 'opacity-30 pointer-events-none' : ''}`;
+
+    const fullScreenStyle: React.CSSProperties = isFullscreen && !isMobile ? {
+        left: isHistorySidebarOpen ? '18rem' : '4.25rem',
+    } : undefined;
 
     const innerContainerClass = isFullscreen
         ? "w-full max-w-6xl mx-auto flex flex-col h-full"
@@ -123,7 +128,7 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
         : "flex flex-col gap-2 rounded-[26px] border border-[var(--theme-border-secondary)] bg-[var(--theme-bg-input)] p-3 sm:p-4 shadow-lg transition-all duration-300 focus-within:border-[var(--theme-border-focus)] relative";
 
     return (
-        <div className={wrapperClass} aria-hidden={isUIBlocked}>
+        <div className={wrapperClass} style={fullScreenStyle} aria-hidden={isUIBlocked}>
             <div className="mx-auto w-full max-w-4xl px-2 sm:px-3">
                  {suggestionsProps && !isFullscreen && (
                     <ChatSuggestions 

@@ -156,6 +156,7 @@ export const ChatInput: React.FC<ChatInputProps> = (props) => {
             isMobile: inputState.isMobile,
             initialTextareaHeight: INITIAL_TEXTAREA_HEIGHT_PX,
             isConverting: localFileState.isConverting,
+            isHistorySidebarOpen: props.isHistorySidebarOpen,
         },
         fileInputRefs: {
             fileInputRef: modalsState.fileInputRef,
