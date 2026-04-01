@@ -37,6 +37,7 @@ export const useLiveAudio = () => {
         const inputCtx = new AudioContextClass({ sampleRate: 16000 });
         inputContextRef.current = inputCtx;
 
+        try {
         // Microphone Stream
         // Disable browser processing to prevent crosstalk/system audio leak
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -101,6 +102,15 @@ export const useLiveAudio = () => {
         workletNode.connect(inputCtx.destination); // Keep graph alive
 
         return { audioCtx, inputCtx };
+
+        } catch (err) {
+            // Clean up AudioContexts if getUserMedia fails
+            audioCtx.close().catch(() => { /* intentional */ });
+            inputCtx.close().catch(() => { /* intentional */ });
+            audioContextRef.current = null;
+            inputContextRef.current = null;
+            throw err;
+        }
     }, []);
 
     const toggleMute = useCallback(() => {
@@ -179,11 +189,11 @@ export const useLiveAudio = () => {
 
         // Close Contexts
         if (audioContextRef.current) {
-            audioContextRef.current.close().catch(() => {});
+            audioContextRef.current.close().catch(() => { /* intentional */ });
             audioContextRef.current = null;
         }
         if (inputContextRef.current) {
-            inputContextRef.current.close().catch(() => {});
+            inputContextRef.current.close().catch(() => { /* intentional */ });
             inputContextRef.current = null;
         }
 

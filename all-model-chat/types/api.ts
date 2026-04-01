@@ -1,6 +1,9 @@
 
-import { Part, UsageMetadata, File as GeminiFile, ChatHistoryItem } from "@google/genai";
+import { Part, UsageMetadata, File as GeminiFile, Content } from "@google/genai";
 import { ModelOption } from './settings';
+
+// Use Content as the history item type (SDK renamed ChatHistoryItem to Content)
+export type ChatHistoryItem = Content;
 
 export interface GeminiService {
   uploadFile: (
@@ -36,12 +39,13 @@ export interface GeminiService {
     config: any,
     abortSignal: AbortSignal,
     onError: (error: Error) => void,
-    onComplete: (parts: Part[], thoughtsText?: string, usageMetadata?: UsageMetadata, groundingMetadata?: any, urlContextMetadata?: any) => void
+    onComplete: (parts: Part[], thoughtsText?: string, usageMetadata?: UsageMetadata, groundingMetadata?: any, urlContextMetadata?: any) => void,
+    role?: 'user' | 'model'
   ) => Promise<void>;
 
   generateImages: (apiKey: string, modelId: string, prompt: string, aspectRatio: string, imageSize: string | undefined, abortSignal: AbortSignal) => Promise<string[]>;
   generateSpeech: (apiKey: string, modelId: string, text: string, voice: string, abortSignal: AbortSignal) => Promise<string>;
-  transcribeAudio: (apiKey: string, audioFile: File, modelId: string) => Promise<string>;
+  transcribeAudio: (apiKey: string, audioFile: File, modelId: string, language?: 'en' | 'zh') => Promise<string>;
   translateText(apiKey: string, text: string, targetLanguage?: string): Promise<string>;
   generateTitle(apiKey: string, userContent: string, modelContent: string, language: 'en' | 'zh'): Promise<string>;
   generateSuggestions(apiKey: string, userContent: string, modelContent: string, language: 'en' | 'zh'): Promise<string[]>;

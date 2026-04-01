@@ -50,12 +50,19 @@ export const useDataImport = ({
     const handleImportSettings = useCallback((file: File) => {
         handleImportFile(file, 'AllModelChat-Settings', (data) => {
             const importedSettings = data.settings;
+            // Sensitive fields that must never be imported from untrusted files
+            const SENSITIVE_IMPORT_FIELDS = ['apiKey', 'apiProxyUrl', 'lockedApiKey'] as const;
+
             const newSettings = { ...DEFAULT_APP_SETTINGS };
             for (const key of Object.keys(DEFAULT_APP_SETTINGS) as Array<keyof AppSettings>) {
+                if (SENSITIVE_IMPORT_FIELDS.includes(key as any)) {
+                    logService.warn(`Skipping sensitive field "${key}" during import for security.`);
+                    continue;
+                }
                 if (Object.prototype.hasOwnProperty.call(importedSettings, key)) {
                     const importedValue = importedSettings[key];
                     const defaultValue = DEFAULT_APP_SETTINGS[key];
-                    if (typeof importedValue === typeof defaultValue || (['apiKey', 'apiProxyUrl', 'lockedApiKey'].includes(key) && (typeof importedValue === 'string' || importedValue === null))) {
+                    if (typeof importedValue === typeof defaultValue || (defaultValue === null && (typeof importedValue === 'string' || importedValue === null))) {
                         (newSettings as any)[key] = importedValue;
                     } else {
                         logService.warn(`Type mismatch for setting "${key}" during import. Using default.`);

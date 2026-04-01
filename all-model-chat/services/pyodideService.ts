@@ -1,5 +1,6 @@
 
 
+/// <reference types="vite/client" />
 import { logService } from "../utils/appUtils";
 import { UploadedFile } from "../types";
 

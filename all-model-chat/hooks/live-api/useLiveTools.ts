@@ -1,6 +1,6 @@
 
 import { useCallback } from 'react';
-import { LiveServerMessage, LiveSession } from '@google/genai';
+import { LiveServerMessage, Session as LiveSession } from '@google/genai';
 import { logService } from '../../utils/appUtils';
 
 interface UseLiveToolsProps {
@@ -46,6 +46,8 @@ export const useLiveTools = ({ clientFunctions, sessionRef }: UseLiveToolsProps)
             if (functionResponses.length > 0) {
                 sessionRef.current?.then(session => {
                     session.sendToolResponse({ functionResponses });
+                }).catch(e => {
+                    logService.error("Failed to send tool response", e);
                 });
             }
         }

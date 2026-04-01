@@ -43,6 +43,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecord, onCancel
         } catch (e) {
             console.error(e);
             alert("Failed to save recording.");
+        } finally {
             setIsSaving(false);
         }
     };

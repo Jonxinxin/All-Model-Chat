@@ -47,7 +47,7 @@ export const Select: React.FC<SelectProps> = ({
                 };
             }
             return null;
-        }).filter((opt): opt is { value: string, label: React.ReactNode, disabled?: boolean } => opt !== null);
+        }).filter((opt): opt is { value: string, label: React.ReactNode, disabled: boolean | undefined } => opt !== null);
     }, [children]);
 
     const selectedOption = options.find(opt => String(opt.value) === String(value));

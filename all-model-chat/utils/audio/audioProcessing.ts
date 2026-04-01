@@ -32,7 +32,7 @@ export const float32ToPCM16Base64 = (data: Float32Array): string => {
     const l = data.length;
     const int16 = new Int16Array(l);
     for (let i = 0; i < l; i++) {
-        int16[i] = Math.max(-1, Math.min(1, data[i])) * 32768;
+        int16[i] = Math.max(-1, Math.min(1, data[i])) * 32767;
     }
     let binary = '';
     const bytes = new Uint8Array(int16.buffer);
@@ -137,9 +137,7 @@ export const getMixedAudioStream = async (micStream: MediaStream, includeSystemA
                 noiseSuppression: false,
                 autoGainControl: false,
             },
-            // @ts-ignore
             systemAudio: 'include',
-            // @ts-ignore
             selfBrowserSurface: 'include'
         } as any);
 
@@ -165,7 +163,7 @@ export const getMixedAudioStream = async (micStream: MediaStream, includeSystemA
                 micSource.disconnect();
                 sysSource.disconnect();
                 displayStream.getTracks().forEach(t => t.stop());
-                ctx.close().catch(() => {});
+                ctx.close().catch(() => { /* intentional */ });
             } catch (e) {
                 console.error("Error cleaning up mixed stream:", e);
             }

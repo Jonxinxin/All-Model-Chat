@@ -20,7 +20,7 @@ export const generateSpeechApi = async (apiKey: string, modelId: string, text: s
         const generatePromise = ai.models.generateContent({
             model: modelId,
             // TTS models do not support chat history roles, just plain content parts
-            contents: [{ parts: [{ text: text }] }],
+            contents: [{ role: 'user', parts: [{ text: text }] }],
             config: {
                 responseModalities: ['AUDIO'],
                 speechConfig: {
@@ -92,9 +92,9 @@ export const generateSpeechApi = async (apiKey: string, modelId: string, text: s
     }
 };
 
-export const transcribeAudioApi = async (apiKey: string, audioFile: File, modelId: string): Promise<string> => {
+export const transcribeAudioApi = async (apiKey: string, audioFile: File, modelId: string, language: 'en' | 'zh' = 'en'): Promise<string> => {
     logService.info(`Transcribing audio with model ${modelId}`, { fileName: audioFile.name, size: audioFile.size });
-    
+
     try {
         const ai = await getConfiguredApiClient(apiKey);
         // Use blobToBase64 which is efficient and handles Blobs/Files
@@ -110,16 +110,24 @@ export const transcribeAudioApi = async (apiKey: string, audioFile: File, modelI
         const textPart: Part = {
             text: "Transcribe audio.",
         };
-        
+
+        const systemInstructionZh = "请准确转录语音内容。使用正确的标点符号。不要描述音频、回答问题或添加对话填充词，仅返回文本。若音频中无语音或仅有背景噪音，请不要输出任何文字。";
+        const systemInstructionEn = "Accurately transcribe the speech content. Use correct punctuation. Do not describe the audio, answer questions, or add conversational filler—return only the text. If there is no speech or only background noise, output nothing.";
+
         const config: any = {
-          systemInstruction: "请准确转录语音内容。使用正确的标点符号。不要描述音频、回答问题或添加对话填充词，仅返回文本。若音频中无语音或仅有背景噪音，请不要输出任何文字。",
+          systemInstruction: language === 'zh' ? systemInstructionZh : systemInstructionEn,
         };
 
         // Apply specific defaults based on model
         if (modelId.includes('gemini-3')) {
+            // Gemini 3.1 Pro does not support 'MINIMAL' thinking level — use 'LOW'
+            let thinkingLevel: "MINIMAL" | "LOW" | "MEDIUM" | "HIGH" = "MINIMAL";
+            if (modelId.includes('gemini-3.1') && modelId.includes('pro')) {
+                thinkingLevel = "LOW";
+            }
             config.thinkingConfig = {
                 includeThoughts: false,
-                thinkingLevel: "MINIMAL"
+                thinkingLevel,
             };
         } else if (modelId === 'gemini-2.5-pro') {
             config.thinkingConfig = {
@@ -131,9 +139,10 @@ export const transcribeAudioApi = async (apiKey: string, audioFile: File, modelI
                 thinkingBudget: 512,
             };
         } else {
-            // Disable thinking for other models by default
+            // For other models, use dynamic thinking to avoid errors with
+            // models that cannot disable thinking (e.g. Gemini 2.5 Pro min budget is 128)
             config.thinkingConfig = {
-                thinkingBudget: 0,
+                thinkingBudget: -1,
             };
         }
 

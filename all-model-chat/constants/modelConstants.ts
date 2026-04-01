@@ -14,28 +14,25 @@ export const INITIAL_PINNED_MODELS: string[] = [
     'gemini-3-flash-preview',
     'gemini-3.1-flash-lite-preview',
     'gemini-3.1-pro-preview',
-    'gemini-3-pro-preview',
     'gemini-2.5-pro',
-    'gemini-2.5-flash-preview-09-2025',
-    'gemini-2.5-flash-lite-preview-09-2025',
+    'gemini-2.5-flash',
+    'gemini-2.5-flash-lite',
     'gemini-2.5-flash-native-audio-preview-12-2025',
     'gemma-3-27b-it',
 ];
 
 export const GEMINI_3_RO_MODELS: string[] = [
-    'gemini-3-pro-preview', 
-    'models/gemini-3-pro-preview',
     'gemini-3.1-pro-preview',
     'models/gemini-3.1-pro-preview',
     'gemini-3-flash-preview',
     'models/gemini-3-flash-preview',
     'gemini-3.1-flash-lite-preview',
     'models/gemini-3.1-flash-lite-preview',
+    'gemini-3.1-flash-live-preview',
+    'models/gemini-3.1-flash-live-preview',
 ];
 
 export const MODELS_MANDATORY_THINKING = [
-    'gemini-3-pro-preview',
-    'models/gemini-3-pro-preview',
     'gemini-3.1-pro-preview',
     'models/gemini-3.1-pro-preview',
     'gemini-3-flash-preview',
@@ -48,11 +45,10 @@ export const MODELS_MANDATORY_THINKING = [
 export const MODELS_SUPPORTING_RAW_MODE = [
     'gemini-3-flash-preview',
     'gemini-3.1-flash-lite-preview',
-    'gemini-3-pro-preview',
     'gemini-3.1-pro-preview',
     'gemini-2.5-pro',
-    'gemini-2.5-flash-preview-09-2025',
-    'gemini-2.5-flash-lite-preview-09-2025',
+    'gemini-2.5-flash',
+    'gemini-2.5-flash-lite',
 ];
 
 export const THINKING_LEVELS = [
@@ -65,17 +61,11 @@ export const THINKING_LEVELS = [
 export const DEFAULT_THINKING_LEVEL = 'HIGH';
 
 export const THINKING_BUDGET_RANGES: { [key: string]: { min: number; max: number } } = {
-    'gemini-2.5-flash-preview-09-2025': { min: 0, max: 24576 },
+    'gemini-2.5-flash': { min: 0, max: 24576 },
+    'gemini-2.5-flash-preview-09-2025': { min: 0, max: 24576 }, // backward compat
     'gemini-2.5-pro': { min: 128, max: 32768 },
-    'gemini-3-pro-preview': { min: 128, max: 32768 }, 
-    'models/gemini-3-pro-preview': { min: 128, max: 32768 },
-    'gemini-3.1-pro-preview': { min: 128, max: 32768 },
-    'models/gemini-3.1-pro-preview': { min: 128, max: 32768 },
-    'gemini-3-flash-preview': { min: 128, max: 32768 },
-    'models/gemini-3-flash-preview': { min: 128, max: 32768 },
-    'gemini-3.1-flash-lite-preview': { min: 128, max: 32768 },
-    'models/gemini-3.1-flash-lite-preview': { min: 128, max: 32768 },
-    'gemini-2.5-flash-lite-preview-09-2025': { min: 512, max: 24576 },
+    'gemini-2.5-flash-lite': { min: 512, max: 24576 },
+    'gemini-2.5-flash-lite-preview-09-2025': { min: 512, max: 24576 }, // backward compat
     'gemini-2.5-flash-native-audio-preview-12-2025': { min: 0, max: 24576 },
 };
 
@@ -105,11 +95,10 @@ export const STATIC_IMAGEN_MODELS: ModelOption[] = [
 export const AVAILABLE_TRANSCRIPTION_MODELS: { id: string; name: string }[] = [
     { id: 'gemini-3-flash-preview', name: 'Gemini 3.0 Flash (Fastest)' },
     { id: 'gemini-3.1-flash-lite-preview', name: 'Gemini 3.1 Flash Lite' },
-    { id: 'gemini-3-pro-preview', name: 'Gemini 3.0 Pro' },
     { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro' },
-    { id: 'gemini-2.5-flash-preview-09-2025', name: 'Gemini 2.5 Flash' },
+    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash' },
     { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro (Higher Quality)' },
-    { id: 'gemini-2.5-flash-lite-preview-09-2025', name: 'Gemini 2.5 Flash Lite' },
+    { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash Lite' },
     { id: 'gemini-2.5-flash-native-audio-preview-12-2025', name: 'Gemini 2.5 Flash Native Audio' },
 ];
 

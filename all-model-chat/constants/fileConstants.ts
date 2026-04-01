@@ -167,7 +167,8 @@ export const EXTENSION_TO_MIME: Record<string, string> = {
     '.md': 'text/markdown',
     '.sql': 'application/sql',
     '.txt': 'text/plain',
-    '.log': 'text/plain'
+    '.log': 'text/plain',
+    '.markdown': 'text/markdown',
 };
 
 // Centralized map for generating file extensions from MIME types

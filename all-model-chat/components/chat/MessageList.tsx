@@ -96,8 +96,8 @@ export const MessageList: React.FC<MessageListProps> = ({
 
   // Stable Footer component to prevent Virtuoso re-reconciliation on every render
   const stableFooter = useMemo(() => {
-    return () => <MessageListFooter messages={messages} chatInputHeight={chatInputHeight} />;
-  }, [messages, chatInputHeight]);
+    return () => <MessageListFooter isLastMessageLoading={false} chatInputHeight={chatInputHeight} />;
+  }, [chatInputHeight]);
 
   return (
     <>

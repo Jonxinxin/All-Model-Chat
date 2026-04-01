@@ -70,36 +70,51 @@ export const useCreateFileEditor = ({
             return null;
         }
 
-        // 1. Deep clone the content
-        const clone = printRef.current.cloneNode(true) as HTMLElement;
+        // If printRef has no rendered content (e.g. preview pane hidden on small screens),
+        // fall back to rendering markdown from textContent directly into a temp element.
+        const hasContent = printRef.current.innerHTML.trim().length > 0 && printRef.current.offsetHeight > 0;
 
-        // 2. Remove any constraints that might cut off content (Fix overflow issues)
-        clone.style.height = 'auto';
-        clone.style.minHeight = '100px';
-        clone.style.maxHeight = 'none';
-        clone.style.overflow = 'visible';
-        clone.style.display = 'block'; 
-        clone.style.position = 'static'; // 修复点：恢复标准文档流
+        let sourceEl: HTMLElement;
+        if (!hasContent) {
+            // Build a minimal HTML rendering of the text content as fallback
+            const wrapper = document.createElement('div');
+            wrapper.style.padding = '24px';
+            wrapper.style.fontSize = '16px';
+            wrapper.style.lineHeight = '1.7';
+            wrapper.style.whiteSpace = 'pre-wrap';
+            wrapper.style.wordBreak = 'break-word';
+            wrapper.textContent = textContent;
+            sourceEl = wrapper;
+        } else {
+            sourceEl = printRef.current.cloneNode(true) as HTMLElement;
+        }
 
-        // 3. Create a wrapper to hold the clone
+        // Remove any constraints that might cut off content
+        sourceEl.style.height = 'auto';
+        sourceEl.style.minHeight = '100px';
+        sourceEl.style.maxHeight = 'none';
+        sourceEl.style.overflow = 'visible';
+        sourceEl.style.display = 'block';
+        sourceEl.style.position = 'static';
+
+        // Create a wrapper to hold the source
         const tempContainer = document.createElement('div');
         tempContainer.className = `theme-${themeId} html2pdf-export-container`;
-        
-        // 修复点：将其水平移出屏幕，而不是使用负 z-index 藏在背后，更安全
+
         tempContainer.style.position = 'absolute';
-        tempContainer.style.left = '-9999px'; 
+        tempContainer.style.left = '-9999px';
         tempContainer.style.top = '0px';
         tempContainer.style.width = '800px'; // A4-like width
-        tempContainer.style.height = 'auto'; // 修复点：强制高度自适应
-        tempContainer.style.opacity = '1'; 
-        tempContainer.style.visibility = 'visible'; 
+        tempContainer.style.height = 'auto';
+        tempContainer.style.opacity = '1';
+        tempContainer.style.visibility = 'visible';
         tempContainer.style.pointerEvents = 'none';
 
         const isDark = themeId === 'onyx';
         tempContainer.style.backgroundColor = isDark ? '#09090b' : '#ffffff';
         tempContainer.style.color = isDark ? '#f4f4f5' : '#000000';
 
-        tempContainer.appendChild(clone);
+        tempContainer.appendChild(sourceEl);
         document.body.appendChild(tempContainer);
 
         // Force layout calculation so it gets an actual height in DOM
@@ -113,16 +128,15 @@ export const useCreateFileEditor = ({
         margin: [10, 15, 10, 15],
         filename: `${finalName}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { 
-            scale: 2, 
-            useCORS: true, 
-            logging: false, // 关闭日志
+        html2canvas: {
+            scale: 2,
+            useCORS: true,
+            logging: false,
             letterRendering: true,
             backgroundColor: themeId === 'onyx' ? '#09090b' : '#ffffff',
             windowWidth: 800,
             scrollY: 0,
             onclone: (clonedDoc: Document) => {
-                // 【核心修复】：解除克隆文档中全局的溢出隐藏限制，这是导致空白的根本原因
                 if (clonedDoc.documentElement) {
                     clonedDoc.documentElement.style.overflow = 'visible';
                     clonedDoc.documentElement.style.height = 'auto';
@@ -132,7 +146,6 @@ export const useCreateFileEditor = ({
                     clonedDoc.body.style.height = 'auto';
                 }
 
-                // 将用于导出的容器在克隆体中重置回原位，以便截图被正确截取
                 const el = clonedDoc.querySelector('.html2pdf-export-container') as HTMLElement;
                 if (el) {
                     el.style.position = 'static';
@@ -151,13 +164,22 @@ export const useCreateFileEditor = ({
     const generatePdfBlob = async (): Promise<Blob | null> => {
         const container = createPdfContainer();
         if (!container) return null;
-        
+
         try {
-            // @ts-ignore
+            // @ts-expect-error
             if (window.html2pdf) {
-                // @ts-ignore
-                return await window.html2pdf().set(getPdfOpt('temp')).from(container).output('blob');
+                // Wait for a frame to ensure the DOM is fully rendered before capture
+                await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+                // @ts-expect-error
+                const blob: Blob = await window.html2pdf().set(getPdfOpt('temp')).from(container).output('blob');
+                if (blob && blob.size > 0) {
+                    return blob;
+                }
+                console.error("Generated PDF blob is empty (size=0).");
+                return null;
             }
+            console.error("html2pdf library not loaded.");
             return null;
         } finally {
             if (document.body.contains(container)) {
@@ -168,23 +190,26 @@ export const useCreateFileEditor = ({
 
     const handleSave = async (isProcessing: boolean) => {
         if (isProcessing) return;
-        
+
         let finalName = filenameBase.trim() || `file-${Date.now()}`;
-        if (!finalName.endsWith(extension)) {
-            finalName += extension;
+        // Strip any existing extension from filenameBase to avoid double extensions (e.g. "test.md.txt")
+        const dotIndex = finalName.lastIndexOf('.');
+        if (dotIndex > 0 && SUPPORTED_EXTENSIONS.includes(finalName.substring(dotIndex))) {
+            finalName = finalName.substring(0, dotIndex);
         }
-        
+        finalName += extension;
+
         if (isPdf) {
             setIsExportingPdf(true);
             try {
-                // Wait briefly to ensure any recent state changes are painted
-                await new Promise(resolve => setTimeout(resolve, 300));
-                
+                // Wait for debounced content to flush and preview to render
+                await new Promise(resolve => setTimeout(resolve, 500));
+
                 const pdfBlob = await generatePdfBlob();
-                if (pdfBlob) {
+                if (pdfBlob && pdfBlob.size > 0) {
                     onConfirm(pdfBlob, finalName);
                 } else {
-                    alert("Failed to generate PDF. Please ensure preview is loaded.");
+                    alert("Failed to generate PDF. Please ensure the content is not empty and the preview has loaded.");
                 }
             } catch (error) {
                 console.error("PDF generation error:", error);
@@ -206,20 +231,23 @@ export const useCreateFileEditor = ({
     const handleDownloadPdf = async () => {
         const container = createPdfContainer();
         if (!container) return;
-        
-        setIsExportingPdf(true);
-        let finalName = filenameBase.trim() || 'document';
-    
-        try {
-          // Wait briefly for fonts/images to stabilize in the clone
-          await new Promise(resolve => setTimeout(resolve, 300));
 
-          // @ts-ignore
+        setIsExportingPdf(true);
+        const finalName = filenameBase.trim() || 'document';
+
+        try {
+          // Wait for fonts/images to stabilize in the clone
+          await new Promise(resolve => setTimeout(resolve, 500));
+
+          // Wait for a frame to ensure the DOM is fully rendered before capture
+          await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+          // @ts-expect-error
           if (window.html2pdf) {
-            // @ts-ignore
+            // @ts-expect-error
             await window.html2pdf().set(getPdfOpt(finalName)).from(container).save();
           } else {
-            alert("PDF generator not loaded.");
+            alert("PDF generator not loaded. Please check your network connection and reload the page.");
           }
         } catch (error) {
           console.error("PDF Export failed:", error);

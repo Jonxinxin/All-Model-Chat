@@ -38,9 +38,9 @@ export const sortModels = (models: ModelOption[]): ModelOption[] => {
 export const getDefaultModelOptions = (): ModelOption[] => {
     const pinnedInternalModels: ModelOption[] = INITIAL_PINNED_MODELS.map(id => {
         let name;
-        if (id === 'gemini-2.5-flash-preview-09-2025') {
+        if (id === 'gemini-2.5-flash') {
             name = 'Gemini 2.5 Flash';
-        } else if (id === 'gemini-2.5-flash-lite-preview-09-2025') {
+        } else if (id === 'gemini-2.5-flash-lite') {
             name = 'Gemini 2.5 Flash Lite';
         } else if (id === 'gemini-2.5-flash-native-audio-preview-12-2025') {
             name = 'Gemini 2.5 Flash Native Audio';
@@ -64,7 +64,8 @@ export const getDefaultModelOptions = (): ModelOption[] => {
 export const isGemini3Model = (modelId: string): boolean => {
     if (!modelId) return false;
     const lowerId = modelId.toLowerCase();
-    return GEMINI_3_RO_MODELS.some(m => lowerId.includes(m)) || lowerId.includes('gemini-3-pro') || lowerId.includes('gemini-3.1-flash');
+    // Match any gemini-3.x or gemini-3- model ID pattern
+    return /gemini-3[.-]/.test(lowerId);
 };
 
 // --- Model Settings Cache ---
@@ -105,34 +106,36 @@ export const calculateTokenStats = (usageMetadata?: UsageMetadata) => {
     const totalTokens = usageMetadata.totalTokenCount || 0;
     const promptTokens = usageMetadata.promptTokenCount || 0;
     // Fallback if completion count missing
-    let completionTokens = usageMetadata.candidatesTokenCount || 0;
+    let completionTokens = (usageMetadata as any).candidatesTokenCount || 0;
     
     if (!completionTokens && totalTokens > 0 && promptTokens > 0) {
         completionTokens = totalTokens - promptTokens;
     }
 
-    // @ts-ignore - thoughtsTokenCount might be missing in older SDK types
-    const thoughtTokens = usageMetadata.thoughtsTokenCount || 0;
+    const thoughtTokens = (usageMetadata as any).thoughtsTokenCount || 0;
 
     return { promptTokens, completionTokens, totalTokens, thoughtTokens };
 };
 
 // --- Thinking Budget Logic Extraction ---
 export const adjustThinkingBudget = (modelId: string, currentBudget: number): number => {
+    // Gemini 3 models use thinkingLevel, not thinkingBudget — skip budget adjustment
+    const isGemini3 = modelId.includes('gemini-3');
+    if (isGemini3) return currentBudget;
+
     const range = THINKING_BUDGET_RANGES[modelId];
     let newBudget = currentBudget;
 
     if (range) {
-        const isGemini3 = modelId.includes('gemini-3');
         const isMandatory = MODELS_MANDATORY_THINKING.includes(modelId);
 
         // Case A: Mandatory Thinking Check
         if (isMandatory && newBudget === 0) {
-            newBudget = isGemini3 ? -1 : range.max;
+            newBudget = range.max;
         }
 
-        // Case B: Auto (-1) Compatibility for non-G3 models
-        if (!isGemini3 && newBudget === -1) {
+        // Case B: Auto (-1) Compatibility
+        if (newBudget === -1) {
             newBudget = range.max;
         }
 

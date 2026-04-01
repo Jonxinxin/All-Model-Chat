@@ -156,7 +156,7 @@ export const compressAudioToMp3 = async (file: File | Blob, signal?: AbortSignal
                 worker.postMessage({ pcmData, sampleRate: targetSampleRate, kbps: 64 }, [pcmData.buffer]);
             });
         } finally {
-            audioCtx.close().catch(() => {});
+            audioCtx.close().catch(() => { /* intentional */ });
         }
     } catch (error) {
         if ((error instanceof DOMException && error.name === 'AbortError') || (error instanceof Error && error.name === 'AbortError')) {

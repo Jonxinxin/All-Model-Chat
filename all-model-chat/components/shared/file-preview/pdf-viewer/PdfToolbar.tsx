@@ -17,6 +17,7 @@ interface PdfToolbarProps {
     onZoomOut: () => void;
     onRotate: () => void;
     onToggleSidebar: () => void;
+    isInputFocusedRef: React.MutableRefObject<boolean>;
 }
 
 export const PdfToolbar: React.FC<PdfToolbarProps> = ({
@@ -32,7 +33,8 @@ export const PdfToolbar: React.FC<PdfToolbarProps> = ({
     onZoomIn,
     onZoomOut,
     onRotate,
-    onToggleSidebar
+    onToggleSidebar,
+    isInputFocusedRef
 }) => {
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -42,6 +44,15 @@ export const PdfToolbar: React.FC<PdfToolbarProps> = ({
             onPageInputCommit();
             inputRef.current?.blur();
         }
+    };
+
+    const handleFocus = () => {
+        isInputFocusedRef.current = true;
+    };
+
+    const handleBlur = () => {
+        isInputFocusedRef.current = false;
+        onPageInputCommit();
     };
 
     if (!numPages || numPages <= 0) return null;
@@ -61,13 +72,14 @@ export const PdfToolbar: React.FC<PdfToolbarProps> = ({
                     </ToolbarButton>
                     
                     <div className="flex items-center gap-1.5 px-2">
-                        <input 
+                        <input
                             ref={inputRef}
-                            type="text" 
+                            type="text"
                             value={pageInput}
                             onChange={(e) => onPageInputChange(e.target.value)}
                             onKeyDown={handleKeyDown}
-                            onBlur={onPageInputCommit}
+                            onFocus={handleFocus}
+                            onBlur={handleBlur}
                             className="w-8 bg-transparent text-center font-mono text-sm text-white border-b border-white/20 focus:border-white/80 outline-none p-0 transition-colors"
                             aria-label="Page number"
                         />

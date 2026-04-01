@@ -86,7 +86,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   apiKey: null,
   apiProxyUrl: "https://api-proxy.de/gemini/v1beta",
   useApiProxy: false,
-  language: 'system',
+  language: 'zh',
   isStreamingEnabled: DEFAULT_IS_STREAMING_ENABLED,
   transcriptionModelId: DEFAULT_TRANSCRIPTION_MODEL_ID,
   filesApiConfig: DEFAULT_FILES_API_CONFIG,

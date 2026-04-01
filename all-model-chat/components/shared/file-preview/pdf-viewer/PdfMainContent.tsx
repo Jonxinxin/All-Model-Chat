@@ -1,16 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Document, Page } from 'react-pdf';
+import { Page } from 'react-pdf';
 import { Loader2, AlertCircle } from 'lucide-react';
 
 interface PdfMainContentProps {
-    fileUrl: string | undefined;
     numPages: number | null;
     scale: number;
     rotation: number;
     isLoading: boolean;
     error: string | null;
-    onLoadSuccess: (data: { numPages: number }) => void;
-    onLoadError: (err: Error) => void;
     setPageRef: (pageNum: number, element: HTMLDivElement | null) => void;
     containerRef: React.RefObject<HTMLDivElement>;
 }
@@ -74,23 +71,23 @@ const LazyPdfPage = ({
     }, [scale, rotation]);
 
     return (
-        <div 
+        <div
             ref={(el) => {
                 wrapperRef.current = el;
                 setPageRef(pageNum, el);
             }}
             data-page-number={pageNum}
             className="shadow-2xl relative bg-white flex items-center justify-center transition-all duration-200"
-            style={{ 
+            style={{
                 // 如果 Canvas 被卸载，使用缓存的尺寸或估算尺寸撑起高度，防止滚动条乱跳
                 height: isVisible ? 'auto' : (dimensions.height ? `${dimensions.height}px` : `${estimatedHeight}px`),
                 width: isVisible ? 'auto' : (dimensions.width ? `${dimensions.width}px` : `${estimatedWidth}px`),
             }}
         >
             {isVisible ? (
-                <Page 
+                <Page
                     pageNumber={pageNum}
-                    scale={scale} 
+                    scale={scale}
                     rotate={rotation}
                     renderTextLayer={true}
                     renderAnnotationLayer={true}
@@ -112,47 +109,35 @@ const LazyPdfPage = ({
 };
 
 export const PdfMainContent: React.FC<PdfMainContentProps> = ({
-    fileUrl,
     numPages,
     scale,
     rotation,
     isLoading,
     error,
-    onLoadSuccess,
-    onLoadError,
     setPageRef,
     containerRef
 }) => {
     return (
         <div className="flex-grow h-full relative flex flex-col min-w-0">
-            <div 
+            <div
                 ref={containerRef}
                 className="flex-grow overflow-y-auto custom-scrollbar p-4 sm:p-8 relative"
             >
                 {/* PDF Content */}
                 <div className={`flex flex-col items-center gap-6 transition-opacity duration-300 ${isLoading ? 'opacity-0' : 'opacity-100'}`}>
-                    <Document
-                        file={fileUrl}
-                        onLoadSuccess={onLoadSuccess}
-                        onLoadError={onLoadError}
-                        loading={null}
-                        error={null}
-                        className="flex flex-col items-center gap-6 w-full"
-                    >
-                        {numPages && Array.from(new Array(numPages), (_, index) => {
-                            const pageNum = index + 1;
-                            return (
-                                <LazyPdfPage 
-                                    key={pageNum}
-                                    pageNum={pageNum}
-                                    scale={scale}
-                                    rotation={rotation}
-                                    setPageRef={setPageRef}
-                                    containerRef={containerRef}
-                                />
-                            );
-                        })}
-                    </Document>
+                    {numPages && Array.from(new Array(numPages), (_, index) => {
+                        const pageNum = index + 1;
+                        return (
+                            <LazyPdfPage
+                                key={pageNum}
+                                pageNum={pageNum}
+                                scale={scale}
+                                rotation={rotation}
+                                setPageRef={setPageRef}
+                                containerRef={containerRef}
+                            />
+                        );
+                    })}
                 </div>
 
                 {/* Loading Indicator */}
@@ -164,7 +149,7 @@ export const PdfMainContent: React.FC<PdfMainContentProps> = ({
                         </div>
                     </div>
                 )}
-                
+
                 {/* Error Indicator */}
                 {error && (
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -178,4 +163,3 @@ export const PdfMainContent: React.FC<PdfMainContentProps> = ({
         </div>
     );
 };
-

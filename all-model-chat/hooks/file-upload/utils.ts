@@ -22,7 +22,7 @@ export const formatSpeed = (bytesPerSecond: number): string => {
 };
 
 export const getEffectiveMimeType = (file: File): string => {
-    let effectiveMimeType = file.type;
+    const effectiveMimeType = file.type;
     const fileExtension = `.${file.name.split('.').pop()?.toLowerCase()}`;
 
     // 1. Force text/plain for code/text extensions

@@ -25,7 +25,7 @@ export interface HistorySidebarProps {
   onTogglePinSession: (sessionId: string) => void;
   onDuplicateSession: (sessionId: string) => void;
   onOpenExportModal: () => void;
-  onAddNewGroup: () => void;
+  onAddNewGroup: (title?: string) => void;
   onDeleteGroup: (groupId: string) => void;
   onRenameGroup: (groupId: string, newTitle: string) => void;
   onMoveSessionToGroup: (sessionId: string, groupId: string | null) => void;

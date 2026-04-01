@@ -1,5 +1,6 @@
 import { useMemo, useRef, useLayoutEffect, useCallback } from 'react';
 import { useAppLogic } from '../useAppLogic';
+import { useUIStore } from '../../../stores/uiStore';
 import { CANVAS_SYSTEM_PROMPT, BBOX_SYSTEM_PROMPT, HD_GUIDE_SYSTEM_PROMPT } from '../../../constants/appConstants';
 
 // 核心优化：创建一个永远稳定的回调函数引用
@@ -18,7 +19,6 @@ export const useChatAreaProps = (logic: ReturnType<typeof useAppLogic>) => {
   const {
     appSettings,
     chatState,
-    uiState,
     pipState,
     currentTheme,
     language,
@@ -33,11 +33,18 @@ export const useChatAreaProps = (logic: ReturnType<typeof useAppLogic>) => {
     handleOpenSidePanel,
   } = logic;
 
+  // UI state from Zustand store
+  const isHistorySidebarOpen = useUIStore(s => s.isHistorySidebarOpen);
+  const setIsHistorySidebarOpen = useUIStore(s => s.setIsHistorySidebarOpen);
+  const setIsSettingsModalOpen = useUIStore(s => s.setIsSettingsModalOpen);
+  const setIsPreloadedMessagesModalOpen = useUIStore(s => s.setIsPreloadedMessagesModalOpen);
+  const setIsLogViewerOpen = useUIStore(s => s.setIsLogViewerOpen);
+
   // 使用 useStableCallback 包裹所有会传递给子组件的函数
   const onNewChat = useStableCallback(() => chatState.startNewChat());
-  const onOpenSettingsModal = useStableCallback(() => uiState.setIsSettingsModalOpen(true));
-  const onOpenScenariosModal = useStableCallback(() => uiState.setIsPreloadedMessagesModalOpen(true));
-  const onToggleHistorySidebar = useStableCallback(() => uiState.setIsHistorySidebarOpen(prev => !prev));
+  const onOpenSettingsModal = useStableCallback(() => setIsSettingsModalOpen(true));
+  const onOpenScenariosModal = useStableCallback(() => setIsPreloadedMessagesModalOpen(true));
+  const onToggleHistorySidebar = useStableCallback(() => setIsHistorySidebarOpen(prev => !prev));
   
   const onLoadCanvasPrompt = useStableCallback(handleLoadCanvasPromptAndSave);
   const onToggleBBox = useStableCallback(handleToggleBBoxMode);
@@ -83,7 +90,7 @@ export const useChatAreaProps = (logic: ReturnType<typeof useAppLogic>) => {
   const onToggleDeepSearch = useStableCallback(chatState.toggleDeepSearch);
   
   const onClearChat = useStableCallback(chatState.handleClearCurrentChat);
-  const onOpenSettings = useStableCallback(() => uiState.setIsSettingsModalOpen(true));
+  const onOpenSettings = useStableCallback(() => setIsSettingsModalOpen(true));
   const onToggleCanvasPrompt = useStableCallback(handleLoadCanvasPromptAndSave);
   const onTogglePinCurrentSession = useStableCallback(chatState.handleTogglePinCurrentSession);
   const onRetryLastTurn = useStableCallback(chatState.handleRetryLastTurn);
@@ -127,7 +134,7 @@ export const useChatAreaProps = (logic: ReturnType<typeof useAppLogic>) => {
     selectedModelId: chatState.currentChatSettings.modelId || appSettings.modelId,
     onSelectModel,
     isSwitchingModel: chatState.isSwitchingModel,
-    isHistorySidebarOpen: uiState.isHistorySidebarOpen,
+    isHistorySidebarOpen,
     onLoadCanvasPrompt,
     isCanvasPromptActive: chatState.currentChatSettings.systemInstruction === CANVAS_SYSTEM_PROMPT,
     isBBoxModeActive: chatState.currentChatSettings.systemInstruction === BBOX_SYSTEM_PROMPT,
@@ -144,7 +151,7 @@ export const useChatAreaProps = (logic: ReturnType<typeof useAppLogic>) => {
     onEditMessage,
     onDeleteMessage,
     onRetryMessage,
-    onEditMessageContent, 
+    onUpdateMessageContent: onEditMessageContent, 
     onUpdateMessageFile,
     showThoughts: chatState.currentChatSettings.showThoughts,
     baseFontSize: appSettings.baseFontSize,
@@ -201,7 +208,7 @@ export const useChatAreaProps = (logic: ReturnType<typeof useAppLogic>) => {
     onTogglePinCurrentSession,
     onRetryLastTurn,
     onEditLastUserMessage,
-    onOpenLogViewer: () => uiState.setIsLogViewerOpen(true),
+    onOpenLogViewer: () => setIsLogViewerOpen(true),
     onClearAllHistory: chatState.clearAllHistory,
     isPipSupported: pipState.isPipSupported && appSettings.useCustomApiConfig,
     isPipActive: pipState.isPipActive,
@@ -236,8 +243,8 @@ export const useChatAreaProps = (logic: ReturnType<typeof useAppLogic>) => {
     chatState.aspectRatio,
     chatState.imageSize, 
     
-    uiState.isHistorySidebarOpen, 
-    pipState.isPipSupported, 
+    isHistorySidebarOpen,
+    pipState.isPipSupported,
     pipState.isPipActive,
     
     appSettings, 

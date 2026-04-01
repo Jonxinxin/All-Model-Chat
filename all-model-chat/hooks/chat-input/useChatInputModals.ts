@@ -64,26 +64,26 @@ export const useChatInputModals = ({
 
   const handleConfirmCreateTextFile = async (content: string | Blob, filename: string) => {
     justInitiatedFileOpRef.current = true;
-    
+
     const sanitizeFilename = (name: string): string => {
       return name.trim().replace(/[<>:"/\\|?*]+/g, '_');
     };
-    
+
     let finalFilename = filename.trim() ? sanitizeFilename(filename) : `file-${Date.now()}.txt`;
-    
+
     // Ensure extension if missing (fallback logic, though modal usually handles this)
     if (!finalFilename.includes('.')) {
         finalFilename += '.md';
     }
 
     const extension = `.${finalFilename.split('.').pop()?.toLowerCase()}`;
-    // Determine mime type based on centralized constant
-    const mimeType = EXTENSION_TO_MIME[extension] || 'text/plain';
+    // Determine mime type: prefer Blob's own type, then lookup by extension, then fallback
+    const mimeType = content instanceof Blob && content.type
+      ? content.type
+      : (EXTENSION_TO_MIME[extension] || 'text/plain');
 
-    // If content is already a Blob (e.g. PDF), use it directly, otherwise treat as string
-    const blobParts = [content];
-    const newFile = new File(blobParts, finalFilename, { type: mimeType });
-    
+    const newFile = new File([content], finalFilename, { type: mimeType });
+
     setShowCreateTextFileEditor(false);
     setEditingFile(null);
     onProcessFiles([newFile]);
@@ -97,6 +97,8 @@ export const useChatInputModals = ({
   };
 
   const handleEditFile = (file: UploadedFile) => {
+      // Only allow editing text files with actual text content
+      if (file.textContent === undefined) return;
       setEditingFile(file);
       setShowCreateTextFileEditor(true);
   };

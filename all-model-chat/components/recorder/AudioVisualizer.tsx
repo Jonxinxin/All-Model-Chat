@@ -82,7 +82,7 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ stream }) => {
             if (animationFrameIdRef.current) cancelAnimationFrame(animationFrameIdRef.current);
             sourceRef.current?.disconnect();
             analyserRef.current?.disconnect();
-            audioContextRef.current?.close().catch(() => {});
+            audioContextRef.current?.close().catch(() => { /* intentional */ });
         };
     }, [stream]);
 

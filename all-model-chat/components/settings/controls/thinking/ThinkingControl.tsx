@@ -31,7 +31,7 @@ export const ThinkingControl: React.FC<ThinkingControlProps> = ({
 }) => {
   const isGemini3 = isGemini3Model(modelId);
   const isFlash3 = isGemini3 && modelId.toLowerCase().includes('flash');
-  const isGemini3ProPreview = modelId === 'gemini-3-pro-preview' || modelId === 'models/gemini-3-pro-preview';
+  const isGemini3ProPreview = modelId === 'gemini-3.1-pro-preview' || modelId === 'models/gemini-3.1-pro-preview';
   const budgetConfig = THINKING_BUDGET_RANGES[modelId];
   
   const isMandatoryThinking = MODELS_MANDATORY_THINKING.includes(modelId);

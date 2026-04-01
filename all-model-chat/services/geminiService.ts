@@ -1,6 +1,6 @@
 
-import { GeminiService, ModelOption } from '../types';
-import { Part, UsageMetadata, File as GeminiFile, ChatHistoryItem, Modality } from "@google/genai";
+import { GeminiService, ModelOption, ChatHistoryItem } from '../types';
+import { Part, UsageMetadata, File as GeminiFile, Content, Modality } from "@google/genai";
 import { uploadFileApi, getFileMetadataApi } from './api/fileApi';
 import { generateImagesApi, generateSpeechApi, transcribeAudioApi, translateTextApi, generateTitleApi, generateSuggestionsApi, countTokensApi } from './api/generationApi';
 import { sendStatelessMessageStreamApi, sendStatelessMessageNonStreamApi } from './api/chatApi';
@@ -34,8 +34,8 @@ class GeminiServiceImpl implements GeminiService {
         return generateSpeechApi(apiKey, modelId, text, voice, abortSignal);
     }
 
-    async transcribeAudio(apiKey: string, audioFile: File, modelId: string): Promise<string> {
-        return transcribeAudioApi(apiKey, audioFile, modelId);
+    async transcribeAudio(apiKey: string, audioFile: File, modelId: string, language: 'en' | 'zh' = 'en'): Promise<string> {
+        return transcribeAudioApi(apiKey, audioFile, modelId, language);
     }
 
     async translateText(apiKey: string, text: string, targetLanguage?: string): Promise<string> {
@@ -61,10 +61,21 @@ class GeminiServiceImpl implements GeminiService {
                 abortError.name = "AbortError";
                 return reject(abortError);
             }
+
+            // Listen for abort during the call
+            const onAbort = () => {
+                const abortError = new Error("aborted");
+                abortError.name = "AbortError";
+                reject(abortError);
+            };
+            abortSignal.addEventListener('abort', onAbort);
+
             const handleComplete = (responseParts: Part[]) => {
+                abortSignal.removeEventListener('abort', onAbort);
                 resolve(responseParts);
             };
             const handleError = (error: Error) => {
+                abortSignal.removeEventListener('abort', onAbort);
                 reject(error);
             };
             
@@ -77,7 +88,7 @@ class GeminiServiceImpl implements GeminiService {
                 config.imageConfig.aspectRatio = aspectRatio;
             }
 
-            if ((modelId === 'gemini-3-pro-image-preview' || modelId === 'gemini-3.1-flash-image-preview') && imageSize) {
+            if ((modelId === 'gemini-3.1-flash-image-preview' || modelId === 'gemini-3-pro-image-preview') && imageSize) {
                 if (!config.imageConfig) config.imageConfig = {};
                 config.imageConfig.imageSize = imageSize;
             }
@@ -90,7 +101,8 @@ class GeminiServiceImpl implements GeminiService {
                 config,
                 abortSignal,
                 handleError,
-                (responseParts, thoughts, usage, grounding) => handleComplete(responseParts)
+                (responseParts, thoughts, usage, grounding, urlContext) => handleComplete(responseParts),
+                'user'
             );
         });
     }
@@ -121,10 +133,11 @@ class GeminiServiceImpl implements GeminiService {
         config: any,
         abortSignal: AbortSignal,
         onError: (error: Error) => void,
-        onComplete: (parts: Part[], thoughtsText?: string, usageMetadata?: UsageMetadata, groundingMetadata?: any, urlContextMetadata?: any) => void
+        onComplete: (parts: Part[], thoughtsText?: string, usageMetadata?: UsageMetadata, groundingMetadata?: any, urlContextMetadata?: any) => void,
+        role: 'user' | 'model' = 'user'
     ): Promise<void> {
         return sendStatelessMessageNonStreamApi(
-            apiKey, modelId, history, parts, config, abortSignal, onError, onComplete
+            apiKey, modelId, history, parts, config, abortSignal, onError, onComplete, role
         );
     }
 }

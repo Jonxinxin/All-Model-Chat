@@ -1,5 +1,6 @@
 
 import { Theme, ThemeColors } from '../types/theme';
+export type { Theme } from '../types/theme';
 
 export const ONYX_THEME_COLORS: ThemeColors = {
   // Backgrounds

@@ -315,7 +315,7 @@ self.onmessage = async function(e) {
 `;
 
 export const generateZipContext = async (zipFile: File): Promise<File> => {
-    let rootName = zipFile.name.replace(/\.zip$/i, '');
+    const rootName = zipFile.name.replace(/\.zip$/i, '');
     
     return new Promise<File>((resolve, reject) => {
         const blob = new Blob([ZIP_WORKER_CODE], { type: 'application/javascript' });

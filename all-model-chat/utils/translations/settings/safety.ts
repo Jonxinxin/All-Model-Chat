@@ -11,4 +11,8 @@ export const safetySettings = {
     safety_threshold_BLOCK_ONLY_HIGH: { en: 'Block Few', zh: '拦截少量' },
     safety_threshold_BLOCK_MEDIUM_AND_ABOVE: { en: 'Block Some', zh: '拦截部分' },
     safety_threshold_BLOCK_LOW_AND_ABOVE: { en: 'Block Most', zh: '拦截大部分' },
+    safety_warning_off: {
+        en: 'Warning: One or more safety categories are disabled. The model may generate harmful or inappropriate content.',
+        zh: '警告：一个或多个安全类别已被禁用。模型可能会生成有害或不当内容。'
+    },
 };

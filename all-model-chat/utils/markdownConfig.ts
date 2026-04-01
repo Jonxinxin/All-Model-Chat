@@ -1,7 +1,7 @@
 
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
-import rehypeHighlight from 'rehype-highlight';
+import rehypeHighlight from '../utils/lightweight-highlight';
 import rehypeRaw from 'rehype-raw';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
@@ -45,7 +45,7 @@ export const getRehypePlugins = (allowHtml: boolean) => {
       ...defaultSchema.protocols,
       src: ['http', 'https', 'data', 'blob'],
     },
-    clobberPrefix: '', 
+    clobberPrefix: 'user-content-',
   };
 
   const plugins: any[] = [];

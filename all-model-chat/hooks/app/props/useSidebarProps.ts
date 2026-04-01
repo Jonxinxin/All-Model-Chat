@@ -1,22 +1,28 @@
 
 import { useMemo } from 'react';
 import { useAppLogic } from '../useAppLogic';
+import { useUIStore } from '../../../stores/uiStore';
 import { getShortcutDisplay } from '../../../utils/shortcutUtils';
 
 export const useSidebarProps = (logic: ReturnType<typeof useAppLogic>) => {
   const {
     appSettings,
     chatState,
-    uiState,
     currentTheme,
     language,
     t,
     setIsExportModalOpen,
   } = logic;
 
+  // UI state from Zustand store
+  const isHistorySidebarOpen = useUIStore(s => s.isHistorySidebarOpen);
+  const setIsHistorySidebarOpen = useUIStore(s => s.setIsHistorySidebarOpen);
+  const setIsSettingsModalOpen = useUIStore(s => s.setIsSettingsModalOpen);
+  const setIsPreloadedMessagesModalOpen = useUIStore(s => s.setIsPreloadedMessagesModalOpen);
+
   return useMemo(() => ({
-    isOpen: uiState.isHistorySidebarOpen,
-    onToggle: () => uiState.setIsHistorySidebarOpen(prev => !prev),
+    isOpen: isHistorySidebarOpen,
+    onToggle: () => setIsHistorySidebarOpen(prev => !prev),
     sessions: chatState.savedSessions,
     groups: chatState.savedGroups,
     activeSessionId: chatState.activeSessionId,
@@ -34,22 +40,22 @@ export const useSidebarProps = (logic: ReturnType<typeof useAppLogic>) => {
     onRenameGroup: chatState.handleRenameGroup,
     onMoveSessionToGroup: chatState.handleMoveSessionToGroup,
     onToggleGroupExpansion: chatState.handleToggleGroupExpansion,
-    onOpenSettingsModal: () => uiState.setIsSettingsModalOpen(true),
-    onOpenScenariosModal: () => uiState.setIsPreloadedMessagesModalOpen(true),
+    onOpenSettingsModal: () => setIsSettingsModalOpen(true),
+    onOpenScenariosModal: () => setIsPreloadedMessagesModalOpen(true),
     t,
     themeId: currentTheme.id,
     language,
     newChatShortcut: getShortcutDisplay('general.newChat', appSettings),
   }), [
-    uiState.isHistorySidebarOpen, 
-    uiState.setIsHistorySidebarOpen,
-    uiState.setIsSettingsModalOpen,
-    uiState.setIsPreloadedMessagesModalOpen,
-    chatState.savedSessions, 
-    chatState.savedGroups, 
+    isHistorySidebarOpen,
+    setIsHistorySidebarOpen,
+    setIsSettingsModalOpen,
+    setIsPreloadedMessagesModalOpen,
+    chatState.savedSessions,
+    chatState.savedGroups,
     chatState.activeSessionId,
-    chatState.loadingSessionIds, 
-    chatState.generatingTitleSessionIds, 
+    chatState.loadingSessionIds,
+    chatState.generatingTitleSessionIds,
     chatState.loadChatSession,
     chatState.startNewChat,
     chatState.handleDeleteChatHistorySession,
@@ -61,9 +67,9 @@ export const useSidebarProps = (logic: ReturnType<typeof useAppLogic>) => {
     chatState.handleRenameGroup,
     chatState.handleMoveSessionToGroup,
     chatState.handleToggleGroupExpansion,
-    currentTheme, 
-    language, 
-    t, 
+    currentTheme,
+    language,
+    t,
     appSettings,
     setIsExportModalOpen
   ]);

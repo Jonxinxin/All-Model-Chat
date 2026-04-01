@@ -18,6 +18,34 @@ let originalFetch: typeof window.fetch = window.fetch;
 let currentProxyUrl: string | null = null;
 let isInterceptorEnabled = false;
 
+const ALLOWED_PROXY_PROTOCOLS = ['https:', 'http:'];
+const ALLOWED_PROXY_HOSTNAMES: string[] = []; // Empty = allow all, or restrict to specific domains
+
+const isValidProxyUrl = (url: string): boolean => {
+    try {
+        const parsed = new URL(url);
+        if (!ALLOWED_PROXY_PROTOCOLS.includes(parsed.protocol)) {
+            logService.error(`[NetworkInterceptor] Blocked proxy URL with invalid protocol: ${parsed.protocol}`);
+            return false;
+        }
+        // Block obviously malicious hosts (localhost bypass is allowed for dev)
+        const hostname = parsed.hostname.toLowerCase();
+        if (hostname === '0.0.0.0' || hostname === '') {
+            logService.error(`[NetworkInterceptor] Blocked proxy URL with invalid hostname: ${hostname}`);
+            return false;
+        }
+        // If whitelist is configured, enforce it
+        if (ALLOWED_PROXY_HOSTNAMES.length > 0 && !ALLOWED_PROXY_HOSTNAMES.includes(hostname)) {
+            logService.error(`[NetworkInterceptor] Blocked proxy URL with unapproved hostname: ${hostname}`);
+            return false;
+        }
+        return true;
+    } catch {
+        logService.error(`[NetworkInterceptor] Blocked invalid proxy URL: ${url}`);
+        return false;
+    }
+};
+
 export const networkInterceptor = {
     /**
      * Configure the interceptor with current settings.
@@ -25,7 +53,14 @@ export const networkInterceptor = {
     configure: (enabled: boolean, proxyUrl: string | null) => {
         isInterceptorEnabled = enabled;
         // Remove trailing slash to ensure clean path concatenation
-        currentProxyUrl = proxyUrl ? proxyUrl.replace(/\/$/, '') : null;
+        const trimmedUrl = proxyUrl ? proxyUrl.replace(/\/$/, '') : null;
+        if (trimmedUrl && !isValidProxyUrl(trimmedUrl)) {
+            logService.error("[NetworkInterceptor] Proxy URL validation failed. Proxy disabled.");
+            currentProxyUrl = null;
+            isInterceptorEnabled = false;
+            return;
+        }
+        currentProxyUrl = trimmedUrl;
         
         if (isInterceptorEnabled && currentProxyUrl) {
             logService.debug(`[NetworkInterceptor] Configured. Target: ${currentProxyUrl}`, { category: 'NETWORK' });

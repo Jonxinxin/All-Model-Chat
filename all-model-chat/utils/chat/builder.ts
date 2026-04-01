@@ -72,7 +72,7 @@ export const buildContentParts = async (
                 let base64DataForApi: string | undefined;
                 
                 // Prioritize rawFile (Blob/File) for conversion
-                if (fileSource && (fileSource instanceof Blob || fileSource instanceof File)) {
+                if (fileSource && ((fileSource as any) instanceof Blob || (fileSource as any) instanceof File)) {
                     try {
                         base64DataForApi = await blobToBase64(fileSource);
                     } catch (error) {
@@ -196,8 +196,16 @@ export const createChatHistoryForApi = async (
         }
 
         // Attach Thought Signatures (Crucial for Gemini 3 Pro reasoning continuity)
+        // Per API docs: for function calling, the signature MUST be on the first functionCall part.
+        // For non-FC responses, it goes on the last part as before.
         if (msg.role === 'model' && msg.thoughtSignatures && msg.thoughtSignatures.length > 0 && parts.length > 0) {
-            parts[parts.length - 1].thoughtSignature = msg.thoughtSignatures[msg.thoughtSignatures.length - 1];
+            const signature = msg.thoughtSignatures[msg.thoughtSignatures.length - 1];
+            const firstFunctionCallIndex = parts.findIndex((p: any) => p.functionCall);
+            if (firstFunctionCallIndex !== -1) {
+                (parts[firstFunctionCallIndex] as any).thoughtSignature = signature;
+            } else {
+                (parts[parts.length - 1] as any).thoughtSignature = signature;
+            }
         }
 
         const role = msg.role as 'user' | 'model';
@@ -205,9 +213,9 @@ export const createChatHistoryForApi = async (
         // Merge consecutive messages of the same role to prevent API 400 errors
         const lastHistoryItem = historyItems[historyItems.length - 1];
         if (lastHistoryItem && lastHistoryItem.role === role) {
-            lastHistoryItem.parts = lastHistoryItem.parts.concat(parts);
+            lastHistoryItem.parts = lastHistoryItem.parts.concat(parts as any[]);
         } else {
-            historyItems.push({ role, parts });
+            historyItems.push({ role, parts: parts as any[] });
         }
     }
     

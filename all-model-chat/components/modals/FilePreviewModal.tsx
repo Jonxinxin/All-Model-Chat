@@ -80,7 +80,13 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
           if (isEditing) return; // Disable nav when editing
 
           // Copy Shortcut (Ctrl+C or Cmd+C)
+          // Only intercept if there's no user text selection to avoid blocking normal copy
           if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+              const selection = window.getSelection();
+              if (selection && selection.toString().length > 0) {
+                  // User has text selected — let the browser handle the copy natively
+                  return;
+              }
               e.preventDefault();
               handleCopy();
               return;

@@ -1,8 +1,50 @@
 
-import { GenerateContentResponse, Part, UsageMetadata, ChatHistoryItem } from "@google/genai";
+import { GenerateContentResponse, Part, UsageMetadata, Content } from "@google/genai";
 import { ThoughtSupportingPart } from '../../types';
 import { logService } from "../logService";
 import { getConfiguredApiClient } from "./baseApi";
+
+const MAX_429_RETRIES = 3;
+const BASE_429_DELAY_MS = 1000;
+
+const sleep = (ms: number, abortSignal?: AbortSignal): Promise<void> => {
+    return new Promise((resolve, reject) => {
+        if (abortSignal?.aborted) { reject(new Error("Request aborted")); return; }
+        const timer = setTimeout(() => {
+            abortSignal?.removeEventListener('abort', onAbort);
+            resolve();
+        }, ms);
+        const onAbort = () => { clearTimeout(timer); reject(new Error("Request aborted")); };
+        abortSignal?.addEventListener('abort', onAbort, { once: true });
+    });
+};
+
+const is429Error = (error: any): boolean => {
+    if (!(error instanceof Error)) return false;
+    const msg = error.message || '';
+    // Check for HTTP 429 or rate limit indicators in error message
+    return msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('rate limit') || msg.includes('quota');
+};
+
+const with429Retry = async <T>(fn: () => Promise<T>, label: string, abortSignal?: AbortSignal): Promise<T> => {
+    let lastError: any;
+    for (let attempt = 0; attempt <= MAX_429_RETRIES; attempt++) {
+        if (abortSignal?.aborted) throw new Error("Request aborted");
+        try {
+            return await fn();
+        } catch (error) {
+            lastError = error;
+            if (is429Error(error) && attempt < MAX_429_RETRIES) {
+                const delay = BASE_429_DELAY_MS * Math.pow(2, attempt);
+                logService.warn(`${label}: 429 rate limit hit. Retrying in ${delay}ms (attempt ${attempt + 1}/${MAX_429_RETRIES})`);
+                await sleep(delay, abortSignal);
+                continue;
+            }
+            throw error;
+        }
+    }
+    throw lastError;
+};
 
 /**
  * Shared helper to parse GenAI responses.
@@ -31,23 +73,11 @@ const processResponse = (response: GenerateContentResponse) => {
     const groundingMetadata = candidate?.groundingMetadata;
     const finalMetadata: any = groundingMetadata ? { ...groundingMetadata } : {};
     
-    // @ts-ignore - Handle potential snake_case from raw API responses
+    // @ts-expect-error - Handle potential snake_case from raw API responses
     const urlContextMetadata = candidate?.urlContextMetadata || candidate?.url_context_metadata;
 
-    const toolCalls = candidate?.toolCalls;
-    if (toolCalls) {
-        for (const toolCall of toolCalls) {
-            if (toolCall.functionCall?.args?.urlContextMetadata) {
-                if (!finalMetadata.citations) finalMetadata.citations = [];
-                const newCitations = toolCall.functionCall.args.urlContextMetadata.citations || [];
-                for (const newCitation of newCitations) {
-                    if (!finalMetadata.citations.some((c: any) => c.uri === newCitation.uri)) {
-                        finalMetadata.citations.push(newCitation);
-                    }
-                }
-            }
-        }
-    }
+    // toolCalls removed from Candidate in new SDK - function calls are in Content.parts
+    // Grounding/URL context metadata already captured above
 
     return {
         parts: responseParts,
@@ -61,7 +91,7 @@ const processResponse = (response: GenerateContentResponse) => {
 export const sendStatelessMessageStreamApi = async (
     apiKey: string,
     modelId: string,
-    history: ChatHistoryItem[],
+    history: Content[],
     parts: Part[],
     config: any,
     abortSignal: AbortSignal,
@@ -84,11 +114,15 @@ export const sendStatelessMessageStreamApi = async (
             return;
         }
 
-        const result = await ai.models.generateContentStream({
-            model: modelId,
-            contents: [...history, { role: role, parts }],
-            config: config
-        });
+        const result = await with429Retry(
+            () => ai.models.generateContentStream({
+                model: modelId,
+                contents: [...history, { role: role, parts }],
+                config: config
+            }),
+            `Stream ${modelId}`,
+            abortSignal
+        );
 
         for await (const chunkResponse of result) {
             if (abortSignal.aborted) {
@@ -106,27 +140,13 @@ export const sendStatelessMessageStreamApi = async (
                     finalGroundingMetadata = metadataFromChunk;
                 }
                 
-                // @ts-ignore
+                // @ts-expect-error
                 const urlMetadata = candidate.urlContextMetadata || candidate.url_context_metadata;
                 if (urlMetadata) {
                     finalUrlContextMetadata = urlMetadata;
                 }
 
-                const toolCalls = candidate.toolCalls;
-                if (toolCalls) {
-                    for (const toolCall of toolCalls) {
-                        if (toolCall.functionCall?.args?.urlContextMetadata) {
-                            if (!finalGroundingMetadata) finalGroundingMetadata = {};
-                            if (!finalGroundingMetadata.citations) finalGroundingMetadata.citations = [];
-                            const newCitations = toolCall.functionCall.args.urlContextMetadata.citations || [];
-                            for (const newCitation of newCitations) {
-                                if (!finalGroundingMetadata.citations.some((c: any) => c.uri === newCitation.uri)) {
-                                    finalGroundingMetadata.citations.push(newCitation);
-                                }
-                            }
-                        }
-                    }
-                }
+                // toolCalls removed from Candidate in new SDK
                 
                 if (candidate.content?.parts?.length) {
                     for (const part of candidate.content.parts) {
@@ -141,39 +161,59 @@ export const sendStatelessMessageStreamApi = async (
                 }
             }
         }
+        if (abortSignal.aborted) {
+            logService.warn("Streaming aborted by signal, skipping onComplete.");
+            return;
+        }
+
+        logService.info("Streaming complete.", { usage: finalUsageMetadata, hasGrounding: !!finalGroundingMetadata });
+        onComplete(finalUsageMetadata, finalGroundingMetadata, finalUrlContextMetadata);
     } catch (error) {
         logService.error("Error sending message (stream):", error);
         onError(error instanceof Error ? error : new Error(String(error) || "Unknown error during streaming."));
-    } finally {
-        logService.info("Streaming complete.", { usage: finalUsageMetadata, hasGrounding: !!finalGroundingMetadata });
-        onComplete(finalUsageMetadata, finalGroundingMetadata, finalUrlContextMetadata);
+        return; // Don't call onComplete after onError
     }
 };
 
 export const sendStatelessMessageNonStreamApi = async (
     apiKey: string,
     modelId: string,
-    history: ChatHistoryItem[],
+    history: Content[],
     parts: Part[],
     config: any,
     abortSignal: AbortSignal,
     onError: (error: Error) => void,
-    onComplete: (parts: Part[], thoughtsText?: string, usageMetadata?: UsageMetadata, groundingMetadata?: any, urlContextMetadata?: any) => void
+    onComplete: (parts: Part[], thoughtsText?: string, usageMetadata?: UsageMetadata, groundingMetadata?: any, urlContextMetadata?: any) => void,
+    role: 'user' | 'model' = 'user'
 ): Promise<void> => {
     logService.info(`Sending message via stateless generateContent (non-stream) for model ${modelId}`);
-    
+
     try {
         const ai = await getConfiguredApiClient(apiKey);
 
-        if (abortSignal.aborted) { onComplete([], "", undefined, undefined, undefined); return; }
+        if (abortSignal.aborted) {
+            const abortError = new Error("Request aborted");
+            abortError.name = "AbortError";
+            onError(abortError);
+            return;
+        }
 
-        const response = await ai.models.generateContent({
-            model: modelId,
-            contents: [...history, { role: 'user', parts }],
-            config: config
-        });
+        const response = await with429Retry(
+            () => ai.models.generateContent({
+                model: modelId,
+                contents: [...history, { role: role, parts }],
+                config: config
+            }),
+            `NonStream ${modelId}`,
+            abortSignal
+        );
 
-        if (abortSignal.aborted) { onComplete([], "", undefined, undefined, undefined); return; }
+        if (abortSignal.aborted) {
+            const abortError = new Error("Request aborted");
+            abortError.name = "AbortError";
+            onError(abortError);
+            return;
+        }
 
         const { parts: responseParts, thoughts, usage, grounding, urlContext } = processResponse(response);
 

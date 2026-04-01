@@ -5,6 +5,9 @@ import { logService } from '../../services/logService';
 import { useFilePreProcessing } from '../file-upload/useFilePreProcessing';
 import { useFileUploader } from '../file-upload/useFileUploader';
 import { useFileIdAdder } from '../file-upload/useFileIdAdder';
+import { dbService } from '../../utils/db';
+
+const MAX_SINGLE_FILE_SIZE = 100 * 1024 * 1024; // 100MB per file
 
 interface UseFileUploadProps {
     appSettings: AppSettings;
@@ -25,13 +28,13 @@ export const useFileUpload = ({
 }: UseFileUploadProps) => {
 
     const { processFiles } = useFilePreProcessing({ appSettings, setSelectedFiles });
-    
-    const { uploadFiles, cancelUpload } = useFileUploader({ 
-        appSettings, 
-        setSelectedFiles, 
-        setAppFileError, 
-        currentChatSettings, 
-        setCurrentChatSettings 
+
+    const { uploadFiles, cancelUpload } = useFileUploader({
+        appSettings,
+        setSelectedFiles,
+        setAppFileError,
+        currentChatSettings,
+        setCurrentChatSettings
     });
 
     const { addFileById } = useFileIdAdder({
@@ -46,7 +49,25 @@ export const useFileUpload = ({
     const handleProcessAndAddFiles = useCallback(async (files: FileList | File[]) => {
         if (!files || files.length === 0) return;
         setAppFileError(null);
-        logService.info(`Processing ${files.length} files.`);
+
+        const rawFilesArray = Array.isArray(files) ? files : Array.from(files);
+
+        // Check individual file sizes
+        const oversized = rawFilesArray.find(f => f.size > MAX_SINGLE_FILE_SIZE);
+        if (oversized) {
+            setAppFileError(`File "${oversized.name}" exceeds the 100MB size limit.`);
+            return;
+        }
+
+        // Check storage quota before processing
+        const totalBytes = rawFilesArray.reduce((sum, f) => sum + f.size, 0);
+        const hasQuota = await dbService.checkStorageAvailable(totalBytes);
+        if (!hasQuota) {
+            setAppFileError('Not enough storage space. Please delete some chat history to free up space.');
+            return;
+        }
+
+        logService.info(`Processing ${rawFilesArray.length} files.`);
 
         // 1. Pre-process files (ZIP extraction, Audio compression, etc.)
         const processedFiles = await processFiles(files);

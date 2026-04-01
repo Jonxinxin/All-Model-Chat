@@ -9,7 +9,7 @@ import { base64ToBlob } from '../fileHelpers';
 export const createMessage = (
     role: 'user' | 'model' | 'error',
     content: string,
-    options: Partial<Exclude<ChatMessage, 'id' | 'role' | 'content' | 'timestamp'>> & { id?: string; timestamp?: Date } = {}
+    options: Partial<Omit<ChatMessage, 'id' | 'role' | 'content' | 'timestamp'>> & { id?: string; timestamp?: Date } = {}
 ): ChatMessage => ({
     id: options.id || generateUniqueId(),
     role,
@@ -72,7 +72,7 @@ export const rehydrateSessionFiles = (session: SavedChatSession): SavedChatSessi
             }
 
             // 2. Standard Rehydration from IndexedDB Blob (rawFile)
-            const isValidRawFile = file.rawFile && (file.rawFile instanceof Blob || file.rawFile instanceof File);
+            const isValidRawFile = file.rawFile && ((file.rawFile as any) instanceof Blob || (file.rawFile as any) instanceof File);
             
             // Always create Object URL for Blobs if we have the raw file, needed for previewing (text, images, media, etc.)
             // Previously this logic was restricted to visual media/PDFs, causing text files to have stale/invalid dataUrls on reload.

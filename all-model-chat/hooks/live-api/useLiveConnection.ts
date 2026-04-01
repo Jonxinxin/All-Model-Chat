@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { LiveSession, Tool } from '@google/genai';
+import { Session as LiveSession, Tool } from '@google/genai';
 import { AppSettings, ChatSettings } from '../../types';
 import { logService } from '../../utils/appUtils';
 import { getKeyForRequest } from '../../utils/apiUtils';
@@ -213,8 +213,15 @@ export const useLiveConnection = ({
         }
     }, [appSettings, chatSettings, modelId, onClose, onTranscript, initializeAudio, cleanupAudio, triggerReconnect, liveConfig, tools, handleMessage, sessionRef, sessionHandleRef]);
 
+    const MAX_LIVE_TEXT_LENGTH = 100000; // ~100KB limit for Live API text messages
+
     const sendText = useCallback(async (text: string) => {
         if (!sessionRef.current) return;
+        if (text.length > MAX_LIVE_TEXT_LENGTH) {
+            logService.error(`Live API text message too large: ${text.length} chars (max ${MAX_LIVE_TEXT_LENGTH})`);
+            setError(`Message too long (${text.length} chars). Maximum is ${MAX_LIVE_TEXT_LENGTH} characters.`);
+            return;
+        }
         try {
             const session = await sessionRef.current;
             await session.sendClientContent({ turns: [{ role: 'user', parts: [{ text }] }], turnComplete: true });
@@ -255,15 +262,14 @@ export const useLiveConnection = ({
         connectRef.current = connect;
     }, [connect]);
 
-    // Cleanup on unmount
+    // Cleanup on unmount only
     useEffect(() => {
         return () => {
             isUserDisconnectRef.current = true;
-            if (isConnected || isReconnecting) {
-                disconnect();
-            }
+            disconnect();
         };
-    }, [disconnect, isConnected, isReconnecting]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     return {
         isConnected,

@@ -27,21 +27,30 @@ export const useChatInputLocalState = ({
 
     const handleSaveTextFile = async (content: string | Blob, filename: string) => {
         if (editingFile) {
-            // Note: If content is a Blob (PDF), we essentially overwrite the text file with a binary file.
-            // Editing functionality for PDFs isn't fully supported in this flow, but this handles the save.
-            const size = content instanceof Blob ? content.size : content.length;
-            const type = content instanceof Blob ? content.type : 'text/markdown'; // Fallback if string
-            
-            setSelectedFiles(prev => prev.map(f => f.id === editingFile.id ? {
-                ...f,
-                // Default to .md if no extension provided, otherwise respect input
-                name: filename.includes('.') ? filename : `${filename}.md`,
-                textContent: typeof content === 'string' ? content : undefined,
-                size: size,
-                rawFile: new File([content], filename, { type: type }),
-                // If it became a binary blob (PDF), ensure we have a dataUrl for preview if possible
-                dataUrl: content instanceof Blob ? URL.createObjectURL(content) : f.dataUrl
-            } : f));
+            const size = content instanceof Blob ? content.size : new Blob([content]).size;
+            const type = content instanceof Blob ? content.type : 'text/markdown';
+
+            setSelectedFiles(prev => prev.map(f => {
+                if (f.id !== editingFile.id) return f;
+
+                // Revoke old blob URL to prevent memory leak
+                if (f.dataUrl && f.dataUrl.startsWith('blob:')) {
+                    URL.revokeObjectURL(f.dataUrl);
+                }
+
+                return {
+                    ...f,
+                    name: filename.includes('.') ? filename : `${filename}.md`,
+                    textContent: typeof content === 'string' ? content : undefined,
+                    size: size,
+                    rawFile: new File([content], filename, { type: type }),
+                    dataUrl: content instanceof Blob ? URL.createObjectURL(content) : f.dataUrl,
+                    // Reset upload state so the edited file gets re-uploaded with new content
+                    uploadState: 'pending' as const,
+                    fileUri: undefined,
+                    fileApiName: undefined,
+                };
+            }));
             setShowCreateTextFileEditor(false);
             setEditingFile(null);
         } else {
@@ -50,14 +59,23 @@ export const useChatInputLocalState = ({
     };
 
     const handleSavePreviewTextFile = (fileId: string, content: string, newName: string) => {
-        setSelectedFiles(prev => prev.map(f => f.id === fileId ? {
-            ...f,
-            name: newName,
-            textContent: content,
-            size: content.length,
-            dataUrl: URL.createObjectURL(new File([content], newName, { type: 'text/plain' })),
-            rawFile: new File([content], newName, { type: 'text/plain' })
-        } : f));
+        setSelectedFiles(prev => prev.map(f => {
+            if (f.id !== fileId) return f;
+
+            // Revoke old blob URL to prevent memory leak
+            if (f.dataUrl && f.dataUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(f.dataUrl);
+            }
+
+            return {
+                ...f,
+                name: newName,
+                textContent: content,
+                size: new Blob([content]).size,
+                dataUrl: URL.createObjectURL(new File([content], newName, { type: 'text/plain' })),
+                rawFile: new File([content], newName, { type: 'text/plain' })
+            };
+        }));
     };
 
     const handleConfigureFile = (file: UploadedFile) => {

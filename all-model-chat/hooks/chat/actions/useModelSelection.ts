@@ -52,7 +52,7 @@ export const useModelSelection = ({
         let newThinkingBudget = cached?.thinkingBudget ?? sourceSettings.thinkingBudget;
         let newThinkingLevel = cached?.thinkingLevel ?? sourceSettings.thinkingLevel;
 
-        if ((modelId === 'gemini-3-pro-preview' || modelId === 'models/gemini-3-pro-preview') && newThinkingLevel === 'MEDIUM') {
+        if ((modelId === 'gemini-3.1-pro-preview' || modelId === 'models/gemini-3.1-pro-preview') && newThinkingLevel === 'MEDIUM') {
             newThinkingLevel = 'HIGH';
         }
 

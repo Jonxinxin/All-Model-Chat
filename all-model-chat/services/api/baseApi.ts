@@ -14,6 +14,26 @@ const MAX_POLLING_DURATION_MS = 10 * 60 * 1000; // 10 minutes
 
 export { POLLING_INTERVAL_MS, MAX_POLLING_DURATION_MS };
 
+// ---------------------------------------------------------------------------
+// In-memory cache for proxy settings so we don't read IndexedDB on every API call.
+// Invalidated when app settings are saved (via invalidateProxyCache()) or when
+// the broadcast channel signals a settings update from another tab.
+// ---------------------------------------------------------------------------
+let _cachedProxy: { baseUrl: string | null; httpOptions: any } | null = null;
+
+export const invalidateProxyCache = () => { _cachedProxy = null; };
+
+// Listen for cross-tab settings updates to keep the cache fresh.
+// Uses the shared BroadcastChannel singleton from utils/broadcastChannel.ts.
+import { getSyncChannel } from '../../utils/broadcastChannel';
+try {
+    getSyncChannel().addEventListener('message', (e) => {
+        if ((e as MessageEvent).data?.type === 'SETTINGS_UPDATED') {
+            _cachedProxy = null;
+        }
+    });
+} catch { /* BroadcastChannel not available */ }
+
 export const getClient = (apiKey: string, baseUrl?: string | null, httpOptions?: any): GoogleGenAI => {
   try {
       // Sanitize the API key to replace common non-ASCII characters that might
@@ -61,24 +81,26 @@ export const getApiClient = (apiKey?: string | null, baseUrl?: string | null, ht
 
 /**
  * Async helper to get an API client with settings (proxy, etc) loaded from DB.
- * Respects the `useApiProxy` toggle.
+ * Respects the `useApiProxy` toggle. Results are cached in memory and
+ * invalidated on settings save or cross-tab sync.
  */
 export const getConfiguredApiClient = async (apiKey: string, httpOptions?: any): Promise<GoogleGenAI> => {
-    const settings = await dbService.getAppSettings();
-    
-    // Only use the proxy URL if Custom Config AND Use Proxy are both enabled
-    // Explicitly check for truthiness to handle undefined/null
-    const shouldUseProxy = !!(settings?.useCustomApiConfig && settings?.useApiProxy);
-    const apiProxyUrl = shouldUseProxy ? settings?.apiProxyUrl : null;
-    
-    if (settings?.useCustomApiConfig && !shouldUseProxy) {
-        // Debugging aid: if user expects proxy but it's not active
-        if (settings?.apiProxyUrl && !settings?.useApiProxy) {
-             logService.debug("[API Config] Proxy URL present but 'Use API Proxy' toggle is OFF.");
+    if (!_cachedProxy) {
+        const settings = await dbService.getAppSettings();
+
+        const shouldUseProxy = !!(settings?.useCustomApiConfig && settings?.useApiProxy);
+        const apiProxyUrl = shouldUseProxy ? settings?.apiProxyUrl : null;
+
+        if (settings?.useCustomApiConfig && !shouldUseProxy) {
+            if (settings?.apiProxyUrl && !settings?.useApiProxy) {
+                 logService.debug("[API Config] Proxy URL present but 'Use API Proxy' toggle is OFF.");
+            }
         }
+
+        _cachedProxy = { baseUrl: apiProxyUrl ?? null, httpOptions: undefined };
     }
-    
-    return getClient(apiKey, apiProxyUrl, httpOptions);
+
+    return getClient(apiKey, _cachedProxy.baseUrl, httpOptions);
 };
 
 export const buildGenerationConfig = (
@@ -98,40 +120,42 @@ export const buildGenerationConfig = (
     mediaResolution?: MediaResolution,
     isLocalPythonEnabled?: boolean
 ): any => {
-    if (modelId === 'gemini-2.5-flash-image-preview' || modelId === 'gemini-2.5-flash-image') {
+    if (modelId === 'gemini-2.5-flash-image') {
         const imageConfig: any = {};
         if (aspectRatio && aspectRatio !== 'Auto') imageConfig.aspectRatio = aspectRatio;
-        
-        const config: any = {
+
+        const generationConfig: any = {
+            ...config,
             responseModalities: [Modality.IMAGE, Modality.TEXT],
         };
         if (Object.keys(imageConfig).length > 0) {
-            config.imageConfig = imageConfig;
+            generationConfig.imageConfig = imageConfig;
         }
-        return config;
+        return generationConfig;
     }
 
-    if (modelId === 'gemini-3-pro-image-preview' || modelId === 'gemini-3.1-flash-image-preview') {
+    if (modelId === 'gemini-3.1-flash-image-preview' || modelId === 'gemini-3-pro-image-preview') {
          const imageConfig: any = {
             imageSize: imageSize || '1K',
          };
          if (aspectRatio && aspectRatio !== 'Auto') {
             imageConfig.aspectRatio = aspectRatio;
          }
-         
-         const config: any = {
-            responseModalities: ['IMAGE', 'TEXT'],
+
+         const generationConfig: any = {
+            ...config,
+            responseModalities: [Modality.IMAGE, Modality.TEXT],
             imageConfig,
          };
          
          // Add tools if enabled
          const tools = [];
          if (isGoogleSearchEnabled || isDeepSearchEnabled) tools.push({ googleSearch: {} });
-         if (tools.length > 0) config.tools = tools;
-         
-         if (systemInstruction) config.systemInstruction = systemInstruction;
-         
-         return config;
+         if (tools.length > 0) generationConfig.tools = tools;
+
+         if (systemInstruction) generationConfig.systemInstruction = systemInstruction;
+
+         return generationConfig;
     }
     
     let finalSystemInstruction = systemInstruction;
@@ -174,17 +198,24 @@ export const buildGenerationConfig = (
 
     // Robust check for Gemini 3
     if (isGemini3) {
-        // Gemini 3.0 supports both thinkingLevel and thinkingBudget.
-        // We prioritize budget if it's explicitly set (>0).
+        // Per Gemini 3 docs: strongly recommend temperature=1.0.
+        // Lower values may cause looping or degraded performance.
+        if (config.temperature === undefined) {
+            generationConfig.temperature = 1.0;
+        }
+
+        // Gemini 3 should use thinkingLevel, NOT thinkingBudget.
+        // Per API docs: using thinkingBudget with Gemini 3 Pro may result in unexpected performance.
         generationConfig.thinkingConfig = {
             includeThoughts: true, // Always capture thoughts in data; UI toggles visibility
         };
 
-        if (thinkingBudget > 0) {
-            generationConfig.thinkingConfig.thinkingBudget = thinkingBudget;
-        } else {
-            generationConfig.thinkingConfig.thinkingLevel = thinkingLevel || 'HIGH';
+        // Gemini 3.1 Pro does not support 'MINIMAL' thinking level — upgrade to 'LOW'
+        let effectiveThinkingLevel = thinkingLevel || 'HIGH';
+        if (effectiveThinkingLevel === 'MINIMAL' && modelId.includes('gemini-3.1') && modelId.includes('pro')) {
+            effectiveThinkingLevel = 'LOW';
         }
+        generationConfig.thinkingConfig.thinkingLevel = effectiveThinkingLevel;
     } else {
         const modelSupportsThinking = [
             'gemini-2.5-pro',

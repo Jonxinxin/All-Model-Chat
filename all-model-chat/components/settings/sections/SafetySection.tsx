@@ -2,7 +2,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { SafetySetting, HarmCategory, HarmBlockThreshold } from '../../../types/settings';
 import { translations } from '../../../utils/appUtils';
-import { Shield, Info } from 'lucide-react';
+import { Shield, Info, AlertTriangle } from 'lucide-react';
 import { DEFAULT_SAFETY_SETTINGS } from '../../../constants/appConstants';
 
 interface SafetySectionProps {
@@ -121,8 +121,23 @@ export const SafetySection: React.FC<SafetySectionProps> = ({ safetySettings, se
     [setSafetySettings]
   );
 
+  // Check if any category is set to OFF or BLOCK_NONE
+  const hasUnsafeCategory = useMemo(() => {
+    return normalizedSettings.some(
+      s => s.threshold === HarmBlockThreshold.OFF || s.threshold === HarmBlockThreshold.BLOCK_NONE
+    );
+  }, [normalizedSettings]);
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+      {hasUnsafeCategory && (
+        <div className="flex items-start gap-3 p-3 bg-red-500/10 border border-red-500/30 rounded-xl">
+          <AlertTriangle size={18} className="text-red-500 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-red-400 leading-relaxed">
+            {t('safety_warning_off')}
+          </p>
+        </div>
+      )}
       <div className="flex items-start gap-3 p-4 bg-[var(--theme-bg-secondary)] border border-[var(--theme-border-secondary)] rounded-xl">
         <Shield size={24} className="text-[var(--theme-text-link)] flex-shrink-0 mt-0.5" />
         <div>

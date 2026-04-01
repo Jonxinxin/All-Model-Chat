@@ -9,7 +9,7 @@ import { INITIAL_TEXTAREA_HEIGHT_PX } from '../../../hooks/chat-input/useChatInp
 
 export type { ChatInputProps };
 
-export const ChatInput: React.FC<ChatInputProps> = (props) => {
+export const ChatInput = React.memo((props: ChatInputProps) => {
     // 1. 获取所有核心逻辑和状态
     const {
         inputState,
@@ -123,7 +123,7 @@ export const ChatInput: React.FC<ChatInputProps> = (props) => {
         slashCommandProps: {
             isOpen: slashCommandState.slashCommandState.isOpen,
             commands: slashCommandState.slashCommandState.filteredCommands,
-            onSelect: handlers.handleCommandSelect,
+            onSelect: slashCommandState.handleCommandSelect,
             selectedIndex: slashCommandState.slashCommandState.selectedIndex,
         },
         fileDisplayProps: {
@@ -248,4 +248,4 @@ export const ChatInput: React.FC<ChatInputProps> = (props) => {
             {inputState.isFullscreen ? createPortal(chatInputContent, targetDocument.body) : chatInputContent}
         </>
     );
-};
+});

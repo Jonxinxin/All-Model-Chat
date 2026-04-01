@@ -51,7 +51,7 @@ export const useTokenCountLogic = ({
                 return;
             }
 
-            const count = await geminiServiceInstance.countTokens(keyResult.key, modelId, contentParts);
+            const count = await geminiServiceInstance.countTokens(keyResult.key, modelId, contentParts as any[]);
             setTokenCount(count);
         } catch (err) {
             console.error("Token calculation failed", err);

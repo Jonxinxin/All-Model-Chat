@@ -8,6 +8,7 @@ import { pyodideService } from '../../../services/pyodideService';
 import { isLikelyHtml } from '../../../utils/codeUtils';
 import { GetStreamHandlers } from '../types';
 import { ContentPart } from '../../../types/chat';
+import type { Part } from '@google/genai';
 
 interface UseApiInteractionProps {
     appSettings: AppSettings;
@@ -26,6 +27,10 @@ export const useApiInteraction = ({
     setSessionLoading,
     activeJobs
 }: UseApiInteractionProps) => {
+
+    // Use ref for messages to avoid recreating performApiCall on every stream chunk
+    const messagesRef = React.useRef(messages);
+    React.useEffect(() => { messagesRef.current = messages; }, [messages]);
 
     const performApiCall = useCallback(async (params: {
         finalSessionId: string;
@@ -51,12 +56,12 @@ export const useApiInteraction = ({
             textToUse, enrichedFiles
         } = params;
 
-        let baseMessagesForApi: ChatMessage[] = messages;
+        let baseMessagesForApi: ChatMessage[] = messagesRef.current;
 
         if (effectiveEditingId) {
-            const index = messages.findIndex(m => m.id === effectiveEditingId);
+            const index = messagesRef.current.findIndex(m => m.id === effectiveEditingId);
             if (index !== -1) {
-                baseMessagesForApi = messages.slice(0, index);
+                baseMessagesForApi = messagesRef.current.slice(0, index);
             }
         }
 
@@ -65,7 +70,7 @@ export const useApiInteraction = ({
 
         if (isContinueMode) {
             finalRole = 'model';
-            const targetMsg = messages.find(m => m.id === effectiveEditingId);
+            const targetMsg = messagesRef.current.find(m => m.id === effectiveEditingId);
             const currentContent = targetMsg?.content || '';
             const isG3 = isGemini3Model(activeModelId);
 
@@ -154,7 +159,7 @@ export const useApiInteraction = ({
                 keyToUse,
                 activeModelId,
                 historyForChat,
-                finalParts,
+                finalParts as Part[],
                 config,
                 newAbortController.signal,
                 streamOnPart,
@@ -168,7 +173,7 @@ export const useApiInteraction = ({
                 keyToUse,
                 activeModelId,
                 historyForChat,
-                finalParts,
+                finalParts as Part[],
                 config,
                 newAbortController.signal,
                 streamOnError,
@@ -176,10 +181,11 @@ export const useApiInteraction = ({
                     for (const part of parts) streamOnPart(part);
                     if (thoughts) onThoughtChunk(thoughts);
                     streamOnComplete(usage, grounding);
-                }
+                },
+                finalRole
             );
         }
-    }, [appSettings, messages, getStreamHandlers, handleGenerateCanvas, setSessionLoading, activeJobs]);
+    }, [appSettings, getStreamHandlers, handleGenerateCanvas, setSessionLoading, activeJobs]);
 
     return { performApiCall };
 };

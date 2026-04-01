@@ -1,6 +1,6 @@
 
 import { useEffect, useRef } from 'react';
-import { LiveSession } from '@google/genai';
+import { Session as LiveSession } from '@google/genai';
 
 interface UseLiveFrameCaptureProps {
     isConnected: boolean;

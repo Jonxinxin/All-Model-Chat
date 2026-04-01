@@ -110,7 +110,7 @@ export const playCompletionSound = () => {
 
     // Ensure audio context is running (it might be suspended if no user interaction yet)
     if (ctx.state === 'suspended') {
-        ctx.resume().catch(() => {});
+        ctx.resume().catch(() => { /* intentional */ });
     }
 
     const playNote = (frequency: number, startTime: number, duration: number) => {

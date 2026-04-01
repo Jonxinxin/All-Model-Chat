@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Document } from 'react-pdf';
 import { UploadedFile } from '../../../types';
 import { usePdfViewer } from '../../../hooks/ui/usePdfViewer';
 import { PdfSidebar } from './pdf-viewer/PdfSidebar';
@@ -23,6 +24,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ file }) => {
         showSidebar,
         containerRef,
         sidebarRef,
+        isInputFocusedRef,
         setPageRef,
         onDocumentLoadSuccess,
         onDocumentLoadError,
@@ -37,10 +39,15 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ file }) => {
     } = usePdfViewer(file);
 
     return (
-        <div className="w-full h-full relative flex flex-row bg-gray-900 overflow-hidden select-none">
-            
-            <PdfSidebar 
-                fileUrl={file.dataUrl}
+        <Document
+            file={file.dataUrl}
+            onLoadSuccess={onDocumentLoadSuccess}
+            onLoadError={onDocumentLoadError}
+            loading={null}
+            error={null}
+            className="w-full h-full relative flex flex-row bg-gray-900 overflow-hidden select-none"
+        >
+            <PdfSidebar
                 numPages={numPages}
                 currentPage={currentPage}
                 showSidebar={showSidebar}
@@ -50,19 +57,16 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ file }) => {
 
             <div className="flex-grow h-full relative flex flex-col min-w-0">
                 <PdfMainContent
-                    fileUrl={file.dataUrl}
                     numPages={numPages}
                     scale={scale}
                     rotation={rotation}
                     isLoading={isLoading}
                     error={error}
-                    onLoadSuccess={onDocumentLoadSuccess}
-                    onLoadError={onDocumentLoadError}
                     setPageRef={setPageRef}
                     containerRef={containerRef}
                 />
 
-                <PdfToolbar 
+                <PdfToolbar
                     currentPage={currentPage}
                     numPages={numPages}
                     scale={scale}
@@ -76,8 +80,9 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ file }) => {
                     onZoomOut={handleZoomOut}
                     onRotate={handleRotate}
                     onToggleSidebar={toggleSidebar}
+                    isInputFocusedRef={isInputFocusedRef}
                 />
             </div>
-        </div>
+        </Document>
     );
 };

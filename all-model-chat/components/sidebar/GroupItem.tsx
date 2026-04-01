@@ -24,7 +24,7 @@ interface GroupItemProps extends SessionItemPassedProps {
   t: (key: keyof typeof translations) => string;
 }
 
-export const GroupItem: React.FC<GroupItemProps> = (props) => {
+export const GroupItem = React.memo((props: GroupItemProps) => {
   const { 
     group, sessions, editingItem, dragOverId, onToggleGroupExpansion, 
     handleGroupStartEdit, handleDrop, handleDragOver, setDragOverId,
@@ -91,4 +91,4 @@ export const GroupItem: React.FC<GroupItemProps> = (props) => {
       </details>
     </div>
   );
-};
+});

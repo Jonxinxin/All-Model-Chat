@@ -175,7 +175,7 @@ export const useCodeBlock = ({
 
     // Language processing
     const langMatch = className?.match(/language-(\S+)/);
-    let language = langMatch ? langMatch[1].toLowerCase() : 'txt';
+    const language = langMatch ? langMatch[1].toLowerCase() : 'txt';
 
     let mimeType = 'text/plain';
     if (['html', 'xml', 'svg'].includes(language)) mimeType = 'text/html';
@@ -216,13 +216,13 @@ export const useCodeBlock = ({
     };
 
     const handleDownload = () => {
-        let ext = LANGUAGE_EXTENSION_MAP[finalLanguage.toLowerCase()] || finalLanguage;
+        const ext = LANGUAGE_EXTENSION_MAP[finalLanguage.toLowerCase()] || finalLanguage;
         let filename = `snippet.${ext}`;
         
         if (downloadMimeType === 'text/html' || ext === 'html') {
             const titleMatch = codeText.current.match(/<title[^>]*>([^<]+)<\/title>/i);
             if (titleMatch && titleMatch[1]) {
-                let saneTitle = sanitizeFilename(titleMatch[1].trim());
+                const saneTitle = sanitizeFilename(titleMatch[1].trim());
                 if (saneTitle) filename = `${saneTitle}.html`;
             }
         }

@@ -80,7 +80,7 @@ export const useChatStreamHandler = ({
                 if (sessionIndex === -1) return prev;
 
                 const newSessions = [...prev];
-                let sessionToUpdate = { ...newSessions[sessionIndex] };
+                const sessionToUpdate = { ...newSessions[sessionIndex] };
 
                 // Apply batch message update (text + thoughts + inline files)
                 if (textToFlush || thoughtsToFlush || partsToFlush.length > 0) {
@@ -158,8 +158,13 @@ export const useChatStreamHandler = ({
             }
             isCompleted = true;
 
+            // Merge pending text/thoughts into accumulated values before error handling.
+            // Without this, any data buffered since the last rAF flush is permanently lost.
+            const finalText = accumulatedText + pendingText;
+            const finalThoughts = accumulatedThoughts + pendingThoughts;
+
             // Pass accumulated content so it can be saved even on error/abort
-            handleApiError(error, currentSessionId, generationId, "Error", accumulatedText, accumulatedThoughts);
+            handleApiError(error, currentSessionId, generationId, "Error", finalText, finalThoughts);
             setSessionLoading(currentSessionId, false);
             activeJobs.current.delete(generationId);
             streamingStore.clear(generationId);
@@ -198,13 +203,19 @@ export const useChatStreamHandler = ({
                 const newSessions = [...prev];
                 const sessionToUpdate = { ...newSessions[sessionIndex] };
 
-                let updatedMessages = sessionToUpdate.messages.map(msg => {
+                const updatedMessages = sessionToUpdate.messages.map(msg => {
                     if (msg.id === generationId) {
                         return {
                             ...msg,
-                            content: (msg.content || '') + accumulatedText,
-                            thoughts: (msg.thoughts || '') + accumulatedThoughts,
-                            apiParts: msg.apiParts ? [...msg.apiParts, ...accumulatedApiParts] : accumulatedApiParts
+                            // Use accumulatedText directly instead of appending —
+                            // flush() already appends incremental text during streaming,
+                            // and accumulatedText contains the complete canonical text.
+                            content: accumulatedText,
+                            thoughts: accumulatedThoughts,
+                            // Only set apiParts from accumulated data — flush() already
+                            // appended inline data parts during streaming via pendingParts,
+                            // so we use accumulatedApiParts as the authoritative source.
+                            apiParts: accumulatedApiParts
                         };
                     }
                     return msg;

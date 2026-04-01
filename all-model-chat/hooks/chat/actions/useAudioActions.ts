@@ -44,7 +44,8 @@ export const useAudioActions = ({
             const transcribedText = await geminiServiceInstance.transcribeAudio(
                 keyResult.key,
                 audioFile,
-                modelToUse
+                modelToUse,
+                appSettings.language === 'zh' ? 'zh' : 'en'
             );
             return transcribedText;
         } catch (error) {

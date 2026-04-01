@@ -139,7 +139,7 @@ export const useAppHandlers = ({
     const model = apiModels.find((m: ModelOption) => m.id === modelIdToDisplay);
     if (model) return model.name;
     if (modelIdToDisplay) { 
-        let n = modelIdToDisplay.split('/').pop()?.replace('gemini-','Gemini ') || modelIdToDisplay; 
+        const n = modelIdToDisplay.split('/').pop()?.replace('gemini-','Gemini ') || modelIdToDisplay; 
         return n.split('-').map((w: string)=>w.charAt(0).toUpperCase()+w.slice(1)).join(' ').replace(' Preview ',' Preview ');
     }
     return apiModels.length === 0 ? t('appNoModelsAvailable') : t('appNoModelSelected');

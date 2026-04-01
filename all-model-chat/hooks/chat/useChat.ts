@@ -1,9 +1,10 @@
 
 
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useCallback, useEffect } from 'react';
 import { AppSettings, UploadedFile } from '../../types';
-import { useModels } from '../core/useModels';
-import { useChatHistory } from './useChatHistory';
+import { useSettingsStore } from '../../stores/settingsStore';
+import { useChatStore } from '../../stores/chatStore';
+import { useSessionStore } from '../../stores/sessionStore';
 import { useFileHandling } from '../files/useFileHandling';
 import { useFileDragDrop } from '../files/useFileDragDrop';
 import { usePreloadedScenarios } from '../usePreloadedScenarios';
@@ -11,60 +12,97 @@ import { useMessageHandler } from '../useMessageHandler';
 import { useChatScroll } from './useChatScroll';
 import { useAutoTitling } from './useAutoTitling';
 import { useSuggestions } from './useSuggestions';
-import { useChatState } from './useChatState';
 import { useChatActions } from './useChatActions';
 import { useChatEffects } from './useChatEffects';
 import { useBackgroundKeepAlive } from '../core/useBackgroundKeepAlive';
 import { useLocalPythonAgent } from '../features/useLocalPythonAgent';
 
 export const useChat = (appSettings: AppSettings, setAppSettings: React.Dispatch<React.SetStateAction<AppSettings>>, language: 'en' | 'zh') => {
-    
-    const chatState = useChatState(appSettings);
+
+    // Read state from Zustand chatStore
+    const savedSessions = useChatStore(s => s.savedSessions);
+    const savedGroups = useChatStore(s => s.savedGroups);
+    const activeSessionId = useChatStore(s => s.activeSessionId);
+    const activeMessages = useChatStore(s => s.activeMessages);
+    const editingMessageId = useChatStore(s => s.editingMessageId);
+    const editMode = useChatStore(s => s.editMode);
+    const commandedInput = useChatStore(s => s.commandedInput);
+    const loadingSessionIds = useChatStore(s => s.loadingSessionIds);
+    const generatingTitleSessionIds = useChatStore(s => s.generatingTitleSessionIds);
+    const selectedFiles = useChatStore(s => s.selectedFiles);
+    const appFileError = useChatStore(s => s.appFileError);
+    const isAppProcessingFile = useChatStore(s => s.isAppProcessingFile);
+    const aspectRatio = useChatStore(s => s.aspectRatio);
+    const imageSize = useChatStore(s => s.imageSize);
+    const ttsMessageId = useChatStore(s => s.ttsMessageId);
+    const isSwitchingModel = useChatStore(s => s.isSwitchingModel);
+    const isLoading = useChatStore(s => s.isLoading);
+
+    // Read actions from Zustand chatStore
     const {
-        savedSessions, setSavedSessions, savedGroups, setSavedGroups,
-        activeSessionId, setActiveSessionId, setActiveMessages, // Get setter
-        editingMessageId, setEditingMessageId,
-        editMode, setEditMode,
-        commandedInput, setCommandedInput,
-        loadingSessionIds, setLoadingSessionIds,
-        generatingTitleSessionIds, setGeneratingTitleSessionIds,
-        activeJobs,
-        selectedFiles, setSelectedFiles,
-        appFileError, setAppFileError,
-        isAppProcessingFile, setIsAppProcessingFile,
-        aspectRatio, setAspectRatio,
-        imageSize, setImageSize,
-        ttsMessageId, setTtsMessageId,
-        isSwitchingModel, setIsSwitchingModel,
-        userScrolledUp,
-        activeChat, messages, currentChatSettings, isLoading,
-        setCurrentChatSettings, updateAndPersistSessions, updateAndPersistGroups,
-        fileDraftsRef,
-        refreshSessions,
-        setSessionLoading 
-    } = chatState;
+        setActiveSessionId, setActiveMessages, setSavedSessions, setSavedGroups,
+        setEditingMessageId, setEditMode, setCommandedInput,
+        setLoadingSessionIds, setGeneratingTitleSessionIds,
+        setSelectedFiles, setAppFileError, setIsAppProcessingFile,
+        setAspectRatio, setImageSize, setTtsMessageId, setIsSwitchingModel,
+        setIsLoading, setScrollContainerRef,
+        updateAndPersistSessions, updateAndPersistGroups,
+        refreshSessions, setSessionLoading, getRefs,
+    } = useChatStore.getState();
+
+    // Refs from chatStore
+    const refs = getRefs();
+    const activeJobs = refs.activeJobs;
+    const userScrolledUp = refs.userScrolledUp;
+    const fileDraftsRef = refs.fileDraftsRef;
+    const sessionKeyMapRef = refs.sessionKeyMapRef;
+
+    // Read state from Zustand sessionStore
+    const {
+        startNewChat, loadChatSession, handleDeleteChatHistorySession,
+        handleRenameSession, handleTogglePinSession,
+        handleDuplicateSession, handleAddNewGroup, handleDeleteGroup,
+        handleRenameGroup, handleMoveSessionToGroup, handleToggleGroupExpansion,
+        clearAllHistory, clearCacheAndReload, loadInitialData,
+    } = useSessionStore.getState();
+
+    // Computed state
+    const activeChat = savedSessions.find(s => s.id === activeSessionId);
+    const messages = activeMessages;
+    const currentChatSettings = activeChat?.settings || appSettings;
+
+    const setCurrentChatSettings = useCallback((updater: (prevSettings: any) => any) => {
+        if (!activeSessionId) return;
+        updateAndPersistSessions(prevSessions =>
+            prevSessions.map(s =>
+                s.id === activeSessionId
+                    ? { ...s, settings: updater(s.settings) }
+                    : s
+            )
+        );
+    }, [activeSessionId, updateAndPersistSessions]);
+
+    // Read models from Zustand settingsStore
+    const apiModels = useSettingsStore(s => s.apiModels);
+    const setApiModels = useSettingsStore(s => s.setApiModels);
+    const isModelsLoading = useSettingsStore(s => s.isModelsLoading);
+    const modelsLoadingError = useSettingsStore(s => s.modelsLoadingError);
 
     // Optimize background performance when loading
     useBackgroundKeepAlive(isLoading);
 
-    const sessionKeyMapRef = useRef<Map<string, string>>(new Map());
+    // Initialize multi-tab sync once
+    useEffect(() => {
+        const cleanup = useChatStore.getState().initMultiTabSync();
+        return cleanup;
+    }, []);
 
-    const { apiModels, isModelsLoading, modelsLoadingError, setApiModels } = useModels();
-    
-    const historyHandler = useChatHistory({ 
-        appSettings, setSavedSessions, setSavedGroups, setActiveSessionId, setActiveMessages, // Pass setter
-        setEditingMessageId, setCommandedInput, setSelectedFiles, activeJobs, 
-        updateAndPersistSessions, activeChat, language, updateAndPersistGroups,
-        userScrolledUp, selectedFiles, fileDraftsRef, activeSessionId,
-        savedSessions
+    const fileHandler = useFileHandling({
+        appSettings, selectedFiles, setSelectedFiles, setAppFileError,
+        isAppProcessingFile, setIsAppProcessingFile, currentChatSettings,
+        setCurrentChatSettings
     });
-    
-    const fileHandler = useFileHandling({ 
-        appSettings, selectedFiles, setSelectedFiles, setAppFileError, 
-        isAppProcessingFile, setIsAppProcessingFile, currentChatSettings, 
-        setCurrentChatSettings 
-    });
-    
+
     const handleAddTempFile = useCallback((file: UploadedFile) => {
         setSelectedFiles(prev => [...prev, file]);
     }, [setSelectedFiles]);
@@ -72,8 +110,8 @@ export const useChat = (appSettings: AppSettings, setAppSettings: React.Dispatch
     const handleRemoveTempFile = useCallback((id: string) => {
         setSelectedFiles(prev => prev.filter(f => f.id !== id));
     }, [setSelectedFiles]);
-    
-    const dragDropHandler = useFileDragDrop({ 
+
+    const dragDropHandler = useFileDragDrop({
         onFilesDropped: fileHandler.handleProcessAndAddFiles,
         onAddTempFile: handleAddTempFile,
         onRemoveTempFile: handleRemoveTempFile
@@ -85,24 +123,22 @@ export const useChat = (appSettings: AppSettings, setAppSettings: React.Dispatch
         updateAndPersistSessions,
         setActiveSessionId,
     });
-    
+
     const scrollHandler = useChatScroll({ messages, userScrolledUp });
-    
-    const messageHandler = useMessageHandler({ 
-        appSettings, messages, isLoading, currentChatSettings, selectedFiles, 
-        setSelectedFiles, editingMessageId, setEditingMessageId, setEditMode, setAppFileError, 
-        aspectRatio, userScrolledUp, ttsMessageId, setTtsMessageId, activeSessionId, 
-        setActiveSessionId, setCommandedInput, activeJobs, loadingSessionIds, 
-        setLoadingSessionIds, updateAndPersistSessions, language, 
+
+    const messageHandler = useMessageHandler({
+        appSettings, messages, isLoading, currentChatSettings, selectedFiles,
+        setSelectedFiles, editingMessageId, setEditingMessageId, setEditMode, setAppFileError,
+        aspectRatio, userScrolledUp, ttsMessageId, setTtsMessageId, activeSessionId,
+        setActiveSessionId, setCommandedInput, activeJobs, loadingSessionIds,
+        setLoadingSessionIds, updateAndPersistSessions, language,
         scrollContainerRef: scrollHandler.scrollContainerRef,
         sessionKeyMapRef,
-        setSessionLoading 
+        setSessionLoading
     });
 
     useAutoTitling({ appSettings, activeChat, updateAndPersistSessions, language, generatingTitleSessionIds, setGeneratingTitleSessionIds, sessionKeyMapRef });
     useSuggestions({ appSettings, activeChat, isLoading, updateAndPersistSessions, language, sessionKeyMapRef });
-
-    const { loadChatSession, startNewChat, handleDeleteChatHistorySession } = historyHandler;
 
     const chatActions = useChatActions({
         appSettings,
@@ -117,8 +153,8 @@ export const useChat = (appSettings: AppSettings, setAppSettings: React.Dispatch
         setSelectedFiles,
         updateAndPersistSessions,
         handleStopGenerating: messageHandler.handleStopGenerating,
-        startNewChat,
-        handleTogglePinSession: historyHandler.handleTogglePinSession,
+        startNewChat: () => startNewChat(appSettings),
+        handleTogglePinSession,
         userScrolledUp
     });
 
@@ -149,9 +185,9 @@ export const useChat = (appSettings: AppSettings, setAppSettings: React.Dispatch
         currentChatSettings,
         aspectRatio,
         setAspectRatio,
-        loadInitialData: historyHandler.loadInitialData,
+        loadInitialData: () => loadInitialData(appSettings),
         loadChatSession,
-        startNewChat,
+        startNewChat: () => startNewChat(appSettings),
         messages
     });
 
@@ -184,28 +220,28 @@ export const useChat = (appSettings: AppSettings, setAppSettings: React.Dispatch
         imageSize,
         setImageSize,
         ttsMessageId,
-        
+
         updateAndPersistSessions,
         updateAndPersistGroups,
-        
+
         scrollContainerRef: scrollHandler.scrollContainerRef,
         setScrollContainerRef: scrollHandler.setScrollContainerRef,
         onScrollContainerScroll: scrollHandler.handleScroll,
-        
+
         loadChatSession,
-        startNewChat,
+        startNewChat: () => startNewChat(appSettings),
         handleDeleteChatHistorySession,
-        handleRenameSession: historyHandler.handleRenameSession,
-        handleTogglePinSession: historyHandler.handleTogglePinSession,
-        handleDuplicateSession: historyHandler.handleDuplicateSession,
-        handleAddNewGroup: historyHandler.handleAddNewGroup,
-        handleDeleteGroup: historyHandler.handleDeleteGroup,
-        handleRenameGroup: historyHandler.handleRenameGroup,
-        handleMoveSessionToGroup: historyHandler.handleMoveSessionToGroup,
-        handleToggleGroupExpansion: historyHandler.handleToggleGroupExpansion,
-        clearCacheAndReload: historyHandler.clearCacheAndReload,
-        clearAllHistory: historyHandler.clearAllHistory,
-        
+        handleRenameSession,
+        handleTogglePinSession,
+        handleDuplicateSession,
+        handleAddNewGroup,
+        handleDeleteGroup,
+        handleRenameGroup,
+        handleMoveSessionToGroup,
+        handleToggleGroupExpansion,
+        clearCacheAndReload,
+        clearAllHistory,
+
         isAppDraggingOver: dragDropHandler.isAppDraggingOver,
         isProcessingDrop: dragDropHandler.isProcessingDrop,
         handleProcessAndAddFiles: fileHandler.handleProcessAndAddFiles,
@@ -216,7 +252,7 @@ export const useChat = (appSettings: AppSettings, setAppSettings: React.Dispatch
         handleCancelFileUpload: fileHandler.handleCancelFileUpload,
         handleCancelUpload: fileHandler.handleCancelFileUpload,
         handleAddFileById: fileHandler.handleAddFileById,
-        
+
         handleSendMessage: messageHandler.handleSendMessage,
         handleGenerateCanvas: messageHandler.handleGenerateCanvas,
         handleStopGenerating: messageHandler.handleStopGenerating,
@@ -229,11 +265,11 @@ export const useChat = (appSettings: AppSettings, setAppSettings: React.Dispatch
         handleQuickTTS: messageHandler.handleQuickTTS,
         handleEditLastUserMessage: messageHandler.handleEditLastUserMessage,
         handleContinueGeneration: messageHandler.handleContinueGeneration,
-        
+
         savedScenarios: scenarioHandler.savedScenarios,
         handleSaveAllScenarios: scenarioHandler.handleSaveAllScenarios,
         handleLoadPreloadedScenario: scenarioHandler.handleLoadPreloadedScenario,
-        
+
         handleTranscribeAudio: chatActions.handleTranscribeAudio,
         setCurrentChatSettings,
         handleSelectModelInHeader: chatActions.handleSelectModelInHeader,

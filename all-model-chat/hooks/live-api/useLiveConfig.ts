@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { AppSettings, ChatSettings } from '../../types';
 import { Tool } from '@google/genai';
 import { MediaResolution } from '../../types/settings';
+import { isGemini3Model } from '../../utils/appUtils';
 
 interface UseLiveConfigProps {
     appSettings: AppSettings;
@@ -54,9 +55,12 @@ export const useLiveConfig = ({ chatSettings, sessionHandle, clientFunctions }: 
         // 0 means disabled. -1 means auto. >0 means manual budget.
         if (chatSettings.thinkingBudget !== 0) {
              const thinkingConfig: any = {
-                includeThoughts: true 
+                includeThoughts: true
              };
-             if (chatSettings.thinkingBudget > 0) {
+             if (isGemini3Model(chatSettings.modelId)) {
+                 // Gemini 3 models use thinkingLevel, not thinkingBudget
+                 thinkingConfig.thinkingLevel = chatSettings.thinkingLevel || 'HIGH';
+             } else if (chatSettings.thinkingBudget > 0) {
                  thinkingConfig.thinkingBudget = chatSettings.thinkingBudget;
              }
              liveConfig.thinkingConfig = thinkingConfig;

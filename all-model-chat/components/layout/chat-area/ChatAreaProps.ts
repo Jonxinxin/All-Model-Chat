@@ -64,8 +64,6 @@ export interface ChatAreaProps {
   onQuickTTS: (text: string) => Promise<string | null>;
   language: 'en' | 'zh';
   
-  // Edit Content
-  onEditMessageContent: (message: ChatMessage) => void;
   onUpdateMessageFile: (messageId: string, fileId: string, updates: { videoMetadata?: VideoMetadata, mediaResolution?: MediaResolution }) => void;
 
   // ChatInput Props

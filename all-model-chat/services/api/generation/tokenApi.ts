@@ -8,19 +8,12 @@ export const countTokensApi = async (apiKey: string, modelId: string, parts: Par
     try {
         const ai = await getConfiguredApiClient(apiKey);
         
-        // Sanitize parts to remove custom internal properties.
-        // We MUST retain mediaResolution and videoMetadata as they significantly affect token counts
-        // for Gemini 3.0 models (resolution) and video inputs (cropping).
-        const sanitizedParts = parts.map(p => {
-            // Create a shallow copy to avoid mutating the original array elements
-            // Only exclude internal app fields like thoughtSignature
-            const { thoughtSignature, ...rest } = p as any;
-            return rest as Part;
-        });
+        // Pass parts as-is. thoughtSignature is a valid API field for Gemini 3 models
+        // and must be retained for accurate token counting.
 
         const response = await ai.models.countTokens({
             model: modelId,
-            contents: [{ role: 'user', parts: sanitizedParts }]
+            contents: [{ role: 'user', parts }]
         });
         return response.totalTokens || 0;
     } catch (error) {

@@ -24,7 +24,7 @@ export const useSessionData = () => {
         if (activeSessionId) {
             try {
                 sessionStorage.setItem(ACTIVE_CHAT_SESSION_ID_KEY, activeSessionId);
-            } catch (e) {}
+            } catch (e) { /* ignore */ }
             
             const targetPath = `/chat/${activeSessionId}`;
             try {
@@ -41,7 +41,7 @@ export const useSessionData = () => {
         } else {
             try {
                 sessionStorage.removeItem(ACTIVE_CHAT_SESSION_ID_KEY);
-            } catch (e) {}
+            } catch (e) { /* ignore */ }
             
             try {
                 if (window.location.pathname !== '/' && !window.location.pathname.startsWith('/chat/')) {

@@ -1,6 +1,6 @@
 
 import React, { useRef, useEffect } from 'react';
-import hljs from 'highlight.js';
+import { hljs } from '../../utils/lightweight-highlight';
 
 interface CodeEditorProps {
     value: string;

@@ -3,8 +3,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { pdfjs } from 'react-pdf';
 import { UploadedFile } from '../../types';
 
-// Configure PDF worker globally
-pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+// Configure PDF worker globally — use CDN to match the esm.sh pdfjs-dist version
+pdfjs.GlobalWorkerOptions.workerSrc = `https://esm.sh/pdfjs-dist@4.4.168/build/pdf.worker.min.mjs`;
 
 // Determine responsive initial scale
 const getInitialScale = () => {
@@ -24,10 +24,11 @@ export const usePdfViewer = (file: UploadedFile) => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showSidebar, setShowSidebar] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
-    
+
     const containerRef = useRef<HTMLDivElement>(null);
     const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
     const sidebarRef = useRef<HTMLDivElement>(null);
+    const isInputFocusedRef = useRef(false);
 
     // Reset state when file changes
     useEffect(() => {
@@ -48,14 +49,21 @@ export const usePdfViewer = (file: UploadedFile) => {
 
         const observer = new IntersectionObserver(
             (entries) => {
-                entries.forEach((entry) => {
+                // Find the topmost intersecting page (smallest page number)
+                let topmostPage: number | null = null;
+                for (const entry of entries) {
                     if (entry.isIntersecting) {
                         const pageNum = Number(entry.target.getAttribute('data-page-number'));
                         if (!isNaN(pageNum)) {
-                            setCurrentPage(pageNum);
+                            if (topmostPage === null || pageNum < topmostPage) {
+                                topmostPage = pageNum;
+                            }
                         }
                     }
-                });
+                }
+                if (topmostPage !== null) {
+                    setCurrentPage(topmostPage);
+                }
             },
             {
                 root: container,
@@ -71,13 +79,12 @@ export const usePdfViewer = (file: UploadedFile) => {
         return () => observer.disconnect();
     }, [numPages, isLoading]);
 
-    // Sync input with current page when scrolling (auto-update input value if not user-focused)
+    // Sync input with current page when scrolling (skip if user is typing in the input)
     useEffect(() => {
-        // We use a simplified check here since we don't have direct access to the input ref in the hook easily 
-        // without passing it back and forth. Instead, we just update the state.
-        // The Toolbar component handles not overwriting if focused via its own logic or simply responding to this state update.
-        setPageInput(String(currentPage));
-        
+        if (!isInputFocusedRef.current) {
+            setPageInput(String(currentPage));
+        }
+
         // Auto-scroll sidebar to keep current page thumbnail in view
         if (showSidebar && sidebarRef.current) {
             const thumbnail = sidebarRef.current.querySelector(`[data-thumbnail-page="${currentPage}"]`);
@@ -152,6 +159,7 @@ export const usePdfViewer = (file: UploadedFile) => {
         showSidebar,
         containerRef,
         sidebarRef,
+        isInputFocusedRef,
         setPageRef,
         onDocumentLoadSuccess,
         onDocumentLoadError,

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import DOMPurify from 'dompurify';
 import { SideViewContent, UploadedFile } from '../../../types';
 import { exportSvgAsImage } from '../../../utils/exportUtils';
 import { DiagramWrapper } from './parts/DiagramWrapper';
@@ -34,9 +35,6 @@ export const MermaidBlock: React.FC<MermaidBlockProps> = ({ code, onImageClick, 
   const [showSource, setShowSource] = useState(false);
   const diagramContainerRef = useRef<HTMLDivElement>(null);
 
-  // Track if mermaid.initialize has been called to avoid redundant calls
-  const initializedRef = useRef(false);
-
   useEffect(() => {
     let isMounted = true;
     let renderId = '';
@@ -56,23 +54,12 @@ export const MermaidBlock: React.FC<MermaidBlockProps> = ({ code, onImageClick, 
         const id = `mermaid-svg-${Math.random().toString(36).substring(2, 9)}`;
         renderId = id;
 
-        // Only initialize once, then update theme as needed
-        if (!initializedRef.current) {
-          mermaid.initialize({
-              startOnLoad: false,
-              theme: themeId === 'onyx' ? 'dark' : 'default',
-              securityLevel: 'loose',
-              fontFamily: 'inherit'
-          });
-          initializedRef.current = true;
-        } else {
-          mermaid.initialize({
-              startOnLoad: false,
-              theme: themeId === 'onyx' ? 'dark' : 'default',
-              securityLevel: 'loose',
-              fontFamily: 'inherit'
-          });
-        }
+        mermaid.initialize({
+            startOnLoad: false,
+            theme: themeId === 'onyx' ? 'dark' : 'default',
+            securityLevel: 'strict',
+            fontFamily: 'inherit'
+        });
 
         const { svg: renderedSvg } = await mermaid.render(id, code);
 
@@ -83,7 +70,8 @@ export const MermaidBlock: React.FC<MermaidBlockProps> = ({ code, onImageClick, 
 
         setSvg(renderedSvg);
 
-        const svgDataUrl = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(renderedSvg)))}`;
+        const sanitizedSvg = DOMPurify.sanitize(renderedSvg);
+        const svgDataUrl = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(sanitizedSvg)))}`;
         setDiagramFile({
             id: id,
             name: 'mermaid-diagram.svg',
@@ -147,7 +135,7 @@ export const MermaidBlock: React.FC<MermaidBlockProps> = ({ code, onImageClick, 
         themeId={themeId}
         containerRef={diagramContainerRef}
     >
-        <div dangerouslySetInnerHTML={{ __html: svg }} />
+        <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(svg) }} />
     </DiagramWrapper>
   );
 };

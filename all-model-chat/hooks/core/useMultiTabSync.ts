@@ -1,13 +1,9 @@
 
 import { useEffect, useCallback, useRef } from 'react';
 import { logService } from '../../utils/appUtils';
+import { type SyncMessage, getSyncChannel } from '../../utils/broadcastChannel';
 
-export type SyncMessage =
-    | { type: 'SETTINGS_UPDATED' }
-    | { type: 'SESSIONS_UPDATED' } 
-    | { type: 'GROUPS_UPDATED' }
-    | { type: 'SESSION_CONTENT_UPDATED'; sessionId: string } 
-    | { type: 'SESSION_LOADING'; sessionId: string; isLoading: boolean };
+export type { SyncMessage };
 
 interface UseMultiTabSyncProps {
     onSettingsUpdated?: () => void;
@@ -27,7 +23,7 @@ export const useMultiTabSync = ({
     const channelRef = useRef<BroadcastChannel | null>(null);
 
     useEffect(() => {
-        const channel = new BroadcastChannel('all_model_chat_sync_v1');
+        const channel = getSyncChannel();
         channelRef.current = channel;
 
         channel.onmessage = (event: MessageEvent<SyncMessage>) => {
@@ -56,7 +52,8 @@ export const useMultiTabSync = ({
         };
 
         return () => {
-            channel.close();
+            // Don't close the shared singleton channel — just detach the handler.
+            channel.onmessage = null;
         };
     }, [onSettingsUpdated, onSessionsUpdated, onGroupsUpdated, onSessionContentUpdated, onSessionLoading]);
 

@@ -5,6 +5,7 @@ import { MermaidBlock } from './blocks/MermaidBlock';
 import { GraphvizBlock } from './blocks/GraphvizBlock';
 import { TableBlock } from './blocks/TableBlock';
 import { ToolResultBlock } from './blocks/ToolResultBlock';
+import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { UploadedFile, SideViewContent } from '../../types';
 import { translations } from '../../utils/appUtils';
 import { extractTextFromNode } from '../../utils/uiUtils';
@@ -146,7 +147,9 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = React.memo(({
       if (isMermaidRenderingEnabled && language === 'mermaid' && typeof rawCode === 'string') {
         return (
           <div>
-            <MermaidBlock code={rawCode} onImageClick={stableOnImageClick} isLoading={isLoading} themeId={themeId} onOpenSidePanel={stableOnOpenSidePanel} />
+            <ErrorBoundary>
+              <MermaidBlock code={rawCode} onImageClick={stableOnImageClick} isLoading={isLoading} themeId={themeId} onOpenSidePanel={stableOnOpenSidePanel} />
+            </ErrorBoundary>
           </div>
         );
       }
@@ -154,13 +157,16 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = React.memo(({
       if (isGraphvizRenderingEnabled && isGraphviz && typeof rawCode === 'string') {
         return (
           <div>
-            <GraphvizBlock code={rawCode} onImageClick={stableOnImageClick} isLoading={isLoading} themeId={themeId} onOpenSidePanel={stableOnOpenSidePanel} />
+            <ErrorBoundary>
+              <GraphvizBlock code={rawCode} onImageClick={stableOnImageClick} isLoading={isLoading} themeId={themeId} onOpenSidePanel={stableOnOpenSidePanel} />
+            </ErrorBoundary>
           </div>
         );
       }
 
       return (
-        <CodeBlock
+        <ErrorBoundary>
+          <CodeBlock
           {...rest}
           className={codeClassName}
           onOpenHtmlPreview={stableOnOpenHtmlPreview}
@@ -170,6 +176,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = React.memo(({
         >
           {codeElement || children}
         </CodeBlock>
+        </ErrorBoundary>
       );
     }
   // Only rebuild when functional behavior changes, not when callback refs change
@@ -246,7 +253,14 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = React.memo(({
         remarkPlugins={remarkPlugins as any}
         rehypePlugins={rehypePlugins as any}
         components={components}
-        urlTransform={(url) => url}
+        urlTransform={(url) => {
+          // Block dangerous URL schemes to prevent XSS
+          const trimmed = (url || '').trim().toLowerCase();
+          if (trimmed.startsWith('javascript:') || trimmed.startsWith('data:text/html') || trimmed.startsWith('vbscript:')) {
+            return '';
+          }
+          return url;
+        }}
       >
         {processedContent}
       </ReactMarkdown>

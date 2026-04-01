@@ -26,7 +26,7 @@ export const ChatArea = React.memo<ChatAreaProps>((props) => {
     onDeleteMessage, onRetryMessage, showThoughts, baseFontSize,
     expandCodeBlocksByDefault, isMermaidRenderingEnabled, isGraphvizRenderingEnabled,
     onSuggestionClick, onOrganizeInfoClick, onFollowUpSuggestionClick, onTextToSpeech, onGenerateCanvas, onContinueGeneration, ttsMessageId, onQuickTTS, language,
-    onEditMessageContent, onUpdateMessageFile,
+    onUpdateMessageFile,
     appSettings, commandedInput, setCommandedInput, onMessageSent,
     selectedFiles, setSelectedFiles, onSendMessage, isEditing, editMode, editingMessageId, setEditingMessageId, onStopGenerating,
     onCancelEdit, onProcessFiles, onAddFileById, onCancelUpload, onTranscribeAudio,
@@ -96,7 +96,6 @@ export const ChatArea = React.memo<ChatAreaProps>((props) => {
         onEditMessage={onEditMessage}
         onDeleteMessage={onDeleteMessage}
         onRetryMessage={onRetryMessage}
-        onEditMessageContent={onEditMessageContent}
         showThoughts={showThoughts}
         themeId={themeId}
         baseFontSize={baseFontSize}

@@ -17,7 +17,7 @@ import {
     SYSTEM_SCENARIO_IDS 
 } from '../constants/defaultScenarios';
 
-type SessionsUpdater = (updater: (prev: SavedChatSession[]) => SavedChatSession[], options?: { persist?: boolean }) => Promise<void>;
+type SessionsUpdater = (updater: (prev: SavedChatSession[]) => SavedChatSession[], options?: { persist?: boolean }) => void;
 
 interface PreloadedScenariosProps {
     appSettings: AppSettings;

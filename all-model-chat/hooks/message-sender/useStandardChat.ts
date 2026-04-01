@@ -1,7 +1,7 @@
 
 import { useCallback } from 'react';
 import { generateUniqueId, buildContentParts, getKeyForRequest, performOptimisticSessionUpdate, logService } from '../../utils/appUtils';
-import { DEFAULT_CHAT_SETTINGS, MODELS_SUPPORTING_RAW_MODE } from '../../constants/appConstants';
+import { DEFAULT_CHAT_SETTINGS, MODELS_SUPPORTING_RAW_MODE, THINKING_BUDGET_RANGES } from '../../constants/appConstants';
 import { UploadedFile, ChatMessage } from '../../types';
 import { StandardChatProps } from './types';
 import { useSessionUpdate } from './standard/useSessionUpdate';
@@ -55,15 +55,25 @@ export const useStandardChat = ({
         isFastMode: boolean = false
     ) => {
         const settingsForPersistence = { ...currentChatSettings };
-        let settingsForApi = { ...currentChatSettings };
+        const settingsForApi = { ...currentChatSettings };
         
         if (isFastMode) {
-            const isGemini3Flash = activeModelId.includes('gemini-3') && activeModelId.includes('flash');
-            const targetLevel = isGemini3Flash ? 'MINIMAL' : 'LOW';
+            const isGemini3 = activeModelId.includes('gemini-3');
+            const isGemini3Flash = isGemini3 && activeModelId.includes('flash');
+            const isGemini31Pro = activeModelId.includes('gemini-3.1') && activeModelId.includes('pro');
 
-            settingsForApi.thinkingLevel = targetLevel;
-            settingsForApi.thinkingBudget = 0; 
-            logService.info(`Fast Mode activated (One-off): Overriding thinking level to ${targetLevel}.`);
+            if (isGemini3) {
+                // Gemini 3 uses thinkingLevel; MINIMAL not supported on 3.1 Pro
+                const targetLevel = (isGemini3Flash && !isGemini31Pro) ? 'MINIMAL' : 'LOW';
+                settingsForApi.thinkingLevel = targetLevel;
+                settingsForApi.thinkingBudget = 0;
+            } else {
+                // Gemini 2.5 uses thinkingBudget; set to minimum supported value
+                const range = THINKING_BUDGET_RANGES[activeModelId];
+                settingsForApi.thinkingBudget = range ? range.min : 0;
+            }
+
+            logService.info(`Fast Mode activated (One-off): Overriding thinking for ${activeModelId}.`);
         }
 
         const keyResult = getKeyForRequest(appSettings, settingsForApi);
@@ -77,7 +87,6 @@ export const useStandardChat = ({
                  newSessionId,
                  newMessages: [errorMsg],
                  settings: { ...DEFAULT_CHAT_SETTINGS, ...appSettings },
-                 appSettings,
                  title: "API Key Error"
              }));
              setActiveSessionId(newSessionId);

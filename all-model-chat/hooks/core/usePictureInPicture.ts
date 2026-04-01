@@ -1,6 +1,7 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { logService } from '../../utils/appUtils';
+import { useUIStore } from '../../stores/uiStore';
 
 declare global {
     interface Window {
@@ -15,6 +16,8 @@ export const usePictureInPicture = (setIsHistorySidebarOpen: (value: boolean | (
     const [isPipSupported, setIsPipSupported] = useState(false);
     const [pipWindow, setPipWindow] = useState<Window | null>(null);
     const [pipContainer, setPipContainer] = useState<HTMLElement | null>(null);
+    const pendingOpenRef = useRef(false);
+    const sidebarWasOpenRef = useRef<boolean | null>(null);
 
     useEffect(() => {
         if ('documentPictureInPicture' in window) {
@@ -30,9 +33,11 @@ export const usePictureInPicture = (setIsHistorySidebarOpen: (value: boolean | (
     }, [pipWindow]);
 
     const openPip = useCallback(async () => {
-        if (!isPipSupported || pipWindow) return;
+        if (!isPipSupported || pipWindow || pendingOpenRef.current) return;
+        pendingOpenRef.current = true;
 
-        // Collapse sidebar when entering PiP mode
+        // Collapse sidebar when entering PiP mode, but remember its previous state
+        sidebarWasOpenRef.current = useUIStore.getState().isHistorySidebarOpen;
         setIsHistorySidebarOpen(false);
 
         try {
@@ -73,8 +78,14 @@ export const usePictureInPicture = (setIsHistorySidebarOpen: (value: boolean | (
             pipWin.addEventListener('pagehide', () => {
                 setPipWindow(null);
                 setPipContainer(null);
-                // Expand sidebar when exiting PiP mode
-                setIsHistorySidebarOpen(true);
+                // Restore sidebar to its previous state before PiP was opened
+                const prevSidebarState = sidebarWasOpenRef.current;
+                if (prevSidebarState !== null) {
+                    setIsHistorySidebarOpen(prevSidebarState);
+                    sidebarWasOpenRef.current = null;
+                } else {
+                    setIsHistorySidebarOpen(true);
+                }
                 logService.info('PiP window closed.');
             }, { once: true });
 
@@ -86,8 +97,15 @@ export const usePictureInPicture = (setIsHistorySidebarOpen: (value: boolean | (
             logService.error('Error opening Picture-in-Picture window:', error);
             setPipWindow(null);
             setPipContainer(null);
-            // If opening fails, revert the sidebar state
-            setIsHistorySidebarOpen(true);
+            // If opening fails, restore the sidebar state
+            if (sidebarWasOpenRef.current !== null) {
+                setIsHistorySidebarOpen(sidebarWasOpenRef.current);
+                sidebarWasOpenRef.current = null;
+            } else {
+                setIsHistorySidebarOpen(true);
+            }
+        } finally {
+            pendingOpenRef.current = false;
         }
     }, [isPipSupported, pipWindow, setIsHistorySidebarOpen]);
 

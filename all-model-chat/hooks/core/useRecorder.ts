@@ -91,7 +91,19 @@ export const useRecorder = (options: UseRecorderOptions = {}) => {
             
             setStream(finalStream);
             
-            const recorder = new MediaRecorder(finalStream, { mimeType: 'audio/webm' });
+            // Detect supported MIME type — Safari doesn't support 'audio/webm'
+            const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+                ? 'audio/webm;codecs=opus'
+                : MediaRecorder.isTypeSupported('audio/webm')
+                    ? 'audio/webm'
+                    : MediaRecorder.isTypeSupported('audio/mp4')
+                        ? 'audio/mp4'
+                        : '';
+
+            const recorderOptions: MediaRecorderOptions = {};
+            if (mimeType) recorderOptions.mimeType = mimeType;
+
+            const recorder = new MediaRecorder(finalStream, recorderOptions);
             mediaRecorderRef.current = recorder;
             chunksRef.current = [];
 
@@ -100,7 +112,7 @@ export const useRecorder = (options: UseRecorderOptions = {}) => {
             };
 
             recorder.onstop = () => {
-                const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+                const blob = new Blob(chunksRef.current, { type: recorder.mimeType });
                 // Only fire callback if we have data
                 if (blob.size > 0 && onStop) {
                     onStop(blob);

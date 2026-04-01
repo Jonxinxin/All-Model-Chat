@@ -70,7 +70,6 @@ export const useMessageHandler = (props: MessageHandlerProps) => {
         updateAndPersistSessions,
         userScrolledUp,
         handleSendMessage,
-        setLoadingSessionIds,
         setSessionLoading
     });
     

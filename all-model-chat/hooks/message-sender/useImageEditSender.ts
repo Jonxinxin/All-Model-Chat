@@ -65,7 +65,6 @@ export const useImageEditSender = ({
             newMessages: [userMessage, modelMessage],
             settings: { ...DEFAULT_CHAT_SETTINGS, ...appSettings, ...currentChatSettings },
             editingMessageId: effectiveEditingId,
-            appSettings,
             title: newTitle,
             shouldLockKey: options.shouldLockKey,
             keyToLock: keyToUse
@@ -92,7 +91,7 @@ export const useImageEditSender = ({
             
             const historyForApi = await createChatHistoryForApi(historyMessages, shouldStripThinking);
             
-            const callApi = () => geminiServiceInstance.editImage(keyToUse, currentChatSettings.modelId, historyForApi, promptParts, newAbortController.signal, aspectRatio, imageSize);
+            const callApi = () => geminiServiceInstance.editImage(keyToUse, currentChatSettings.modelId, historyForApi, promptParts as Part[], newAbortController.signal, aspectRatio, imageSize);
 
             const apiCalls = appSettings.generateQuadImages ? [callApi(), callApi(), callApi(), callApi()] : [callApi()];
             const results = await Promise.allSettled(apiCalls);

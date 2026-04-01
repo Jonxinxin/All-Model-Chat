@@ -2,9 +2,9 @@
 
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useAppSettings } from '../core/useAppSettings';
+import { useSettingsStore, useCurrentTheme } from '../../stores/settingsStore';
+import { useUIStore } from '../../stores/uiStore';
 import { useChat } from '../chat/useChat';
-import { useAppUI } from '../core/useAppUI';
 import { useAppEvents } from '../core/useAppEvents';
 import { usePictureInPicture } from '../core/usePictureInPicture';
 import { useDataManagement } from '../useDataManagement';
@@ -13,26 +13,43 @@ import { getTranslator, applyThemeToDocument, logService } from '../../utils/app
 // Import new modularized hooks
 import { useAppInitialization } from './logic/useAppInitialization';
 import { useAppTitle } from './logic/useAppTitle';
-import { useAppSidePanel } from './logic/useAppSidePanel';
 import { useAppHandlers } from './logic/useAppHandlers';
 
 export const useAppLogic = () => {
-  const { appSettings, setAppSettings, currentTheme, language } = useAppSettings();
+  // Read from Zustand store instead of local hook
+  const appSettings = useSettingsStore(s => s.appSettings);
+  const setAppSettings = useSettingsStore(s => s.setAppSettings);
+  const language = useSettingsStore(s => s.language);
+  const currentTheme = useCurrentTheme();
+
+  // Read UI state from Zustand store
+  const isSettingsModalOpen = useUIStore(s => s.isSettingsModalOpen);
+  const isPreloadedMessagesModalOpen = useUIStore(s => s.isPreloadedMessagesModalOpen);
+  const setIsHistorySidebarOpen = useUIStore(s => s.setIsHistorySidebarOpen);
+  const isLogViewerOpen = useUIStore(s => s.isLogViewerOpen);
+  const setIsLogViewerOpen = useUIStore(s => s.setIsLogViewerOpen);
+  const setIsSettingsModalOpen = useUIStore(s => s.setIsSettingsModalOpen);
+  const setIsPreloadedMessagesModalOpen = useUIStore(s => s.setIsPreloadedMessagesModalOpen);
+  const isHistorySidebarOpen = useUIStore(s => s.isHistorySidebarOpen);
+  const handleTouchStart = useUIStore(s => s.handleTouchStart);
+  const handleTouchEnd = useUIStore(s => s.handleTouchEnd);
+  const sidePanelContent = useUIStore(s => s.sidePanelContent);
+  const openSidePanel = useUIStore(s => s.openSidePanel);
+  const closeSidePanel = useUIStore(s => s.closeSidePanel);
+
   const t = useMemo(() => getTranslator(language), [language]);
 
   // 1. Initialization
   useAppInitialization(appSettings);
 
   const chatState = useChat(appSettings, setAppSettings, language);
-  
-  const uiState = useAppUI();
-  const { setIsHistorySidebarOpen } = uiState;
-  
-  // 2. Side Panel Logic
-  const { sidePanelContent, handleOpenSidePanel, handleCloseSidePanel } = useAppSidePanel(setIsHistorySidebarOpen);
+
+  // 2. Side Panel Logic — now reads from store directly
+  const handleOpenSidePanel = openSidePanel;
+  const handleCloseSidePanel = closeSidePanel;
 
   // 3. PiP Logic
-  const pipState = usePictureInPicture(uiState.setIsHistorySidebarOpen);
+  const pipState = usePictureInPicture(setIsHistorySidebarOpen);
 
   // Sync styles to PiP window when theme changes
   useEffect(() => {
@@ -48,9 +65,9 @@ export const useAppLogic = () => {
     handleClearCurrentChat: chatState.handleClearCurrentChat,
     currentChatSettings: chatState.currentChatSettings,
     handleSelectModelInHeader: chatState.handleSelectModelInHeader,
-    isSettingsModalOpen: uiState.isSettingsModalOpen,
-    isPreloadedMessagesModalOpen: uiState.isPreloadedMessagesModalOpen,
-    setIsLogViewerOpen: uiState.setIsLogViewerOpen,
+    isSettingsModalOpen,
+    isPreloadedMessagesModalOpen,
+    setIsLogViewerOpen,
     onTogglePip: pipState.togglePip,
     isPipSupported: pipState.isPipSupported,
     pipWindow: pipState.pipWindow,
@@ -128,7 +145,15 @@ export const useAppLogic = () => {
 
   return {
     appSettings, setAppSettings, currentTheme, language, t,
-    chatState, uiState, pipState, eventsState, dataManagement,
+    chatState,
+    // UI state (from store)
+    isSettingsModalOpen, setIsSettingsModalOpen,
+    isPreloadedMessagesModalOpen, setIsPreloadedMessagesModalOpen,
+    isHistorySidebarOpen, setIsHistorySidebarOpen,
+    isLogViewerOpen, setIsLogViewerOpen,
+    handleTouchStart, handleTouchEnd,
+    // PiP
+    pipState, eventsState, dataManagement,
     sidePanelContent, handleOpenSidePanel, handleCloseSidePanel,
     isExportModalOpen, setIsExportModalOpen, exportStatus, handleExportChat,
     activeChat, sessionTitle,

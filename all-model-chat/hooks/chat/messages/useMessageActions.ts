@@ -124,6 +124,9 @@ export const useMessageActions = ({
         // Cleanup blob URLs for the deleted message
         if (messageToDelete) {
             cleanupFilePreviewUrls(messageToDelete.files);
+            if (messageToDelete.audioSrc && messageToDelete.audioSrc.startsWith('blob:')) {
+                URL.revokeObjectURL(messageToDelete.audioSrc);
+            }
         }
 
         updateAndPersistSessions(prev => prev.map(s => 
@@ -144,6 +147,9 @@ export const useMessageActions = ({
         // Cleanup artifacts (images/audio) from the model message being discarded to prevent memory leaks
         const modelMessage = messages[modelMessageIndex];
         if (modelMessage.files) cleanupFilePreviewUrls(modelMessage.files);
+        if (modelMessage.audioSrc && modelMessage.audioSrc.startsWith('blob:')) {
+            URL.revokeObjectURL(modelMessage.audioSrc);
+        }
 
         const userMessageToResend = messages[modelMessageIndex - 1];
         if (userMessageToResend.role !== 'user') return;

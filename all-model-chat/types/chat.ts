@@ -2,7 +2,6 @@
 import { ChatSettings, MediaResolution } from './settings';
 import { ThemeColors } from './theme';
 import { AppSettings, ModelOption } from './settings';
-import { translations } from '../utils/appUtils';
 
 export interface VideoMetadata {
   startOffset?: string;
@@ -111,6 +110,7 @@ export interface SavedChatSession {
   settings: ChatSettings;
   isPinned?: boolean;
   groupId?: string | null;
+  systemInstruction?: string;
 }
 
 export interface PreloadedMessage {
@@ -237,7 +237,7 @@ export interface ChatInputProps {
   onTranscribeAudio: (file: File) => Promise<string | null>;
   isProcessingFile: boolean; 
   fileError: string | null;
-  t: (key: keyof typeof translations) => string;
+  t: (key: string) => string;
   isImagenModel?: boolean;
   isImageEditModel?: boolean;
   aspectRatio?: string;

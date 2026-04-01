@@ -1,7 +1,7 @@
 
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { VirtuosoHandle } from 'react-virtuoso';
-import { ChatMessage } from '../../../types';
+import { ChatMessage } from '../../../../types';
 
 interface UseMessageListScrollProps {
     messages: ChatMessage[];
@@ -12,7 +12,10 @@ interface UseMessageListScrollProps {
 export const useMessageListScroll = ({ messages, setScrollContainerRef, activeSessionId }: UseMessageListScrollProps) => {
     const virtuosoRef = useRef<VirtuosoHandle>(null);
     const [atBottom, setAtBottom] = useState(true);
-    const [scrollerRef, setInternalScrollerRef] = useState<HTMLElement | null>(null);
+    const [scrollerRef, setInternalScrollerRefRaw] = useState<HTMLElement | null>(null);
+    const setInternalScrollerRef = useCallback((ref: HTMLElement | Window | null) => {
+        setInternalScrollerRefRaw(ref instanceof Window ? null : ref);
+    }, []);
     const visibleRangeRef = useRef({ startIndex: 0, endIndex: 0 });
     const [showScrollUp, setShowScrollUp] = useState(false);
     

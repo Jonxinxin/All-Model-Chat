@@ -112,7 +112,7 @@ export const useHtmlPreviewModal = ({
             if (titleMatch && titleMatch[1]) {
                 title = titleMatch[1].trim();
             }
-        } catch (e) { }
+        } catch (e) { /* ignore */ }
         return title;
     }, [htmlContent]);
 

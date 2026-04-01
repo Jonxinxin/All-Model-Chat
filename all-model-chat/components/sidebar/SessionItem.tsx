@@ -30,7 +30,7 @@ interface SessionItemProps {
   t: (key: keyof typeof translations, fallback?: string) => string;
 }
 
-export const SessionItem: React.FC<SessionItemProps> = (props) => {
+export const SessionItem = React.memo((props: SessionItemProps) => {
   const {
     session, activeSessionId, editingItem, activeMenu, loadingSessionIds,
     generatingTitleSessionIds, newlyTitledSessionId, editInputRef, menuRef,
@@ -99,4 +99,4 @@ export const SessionItem: React.FC<SessionItemProps> = (props) => {
       )}
     </li>
   );
-};
+});

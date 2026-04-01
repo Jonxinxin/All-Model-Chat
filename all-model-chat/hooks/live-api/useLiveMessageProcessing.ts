@@ -1,6 +1,6 @@
 
 import { useCallback, useRef } from 'react';
-import { LiveServerMessage, LiveSession } from '@google/genai';
+import { LiveServerMessage, Session as LiveSession } from '@google/genai';
 import { useLiveTools } from './useLiveTools';
 import { logService } from '../../utils/appUtils';
 import { ThoughtSupportingPart } from '../../types';

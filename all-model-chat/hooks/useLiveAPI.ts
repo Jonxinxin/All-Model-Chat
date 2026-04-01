@@ -1,6 +1,6 @@
 
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { LiveSession } from '@google/genai';
+import { Session as LiveSession } from '@google/genai';
 import { AppSettings, ChatSettings } from '../types';
 import { useLiveAudio } from './live-api/useLiveAudio';
 import { useLiveVideo } from './live-api/useLiveVideo';

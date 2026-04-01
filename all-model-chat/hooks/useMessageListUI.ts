@@ -24,10 +24,18 @@ export const useMessageListUI = ({ messages, onUpdateMessageFile }: UseMessageLi
         setPreviewFile(null);
     }, []);
 
-    // Flatten all files from messages for navigation context
+    // Flatten all files from messages for navigation context.
+    // Derive a stable key from message IDs + file counts so the flatMap only
+    // re-runs when the structure actually changes (new message, files added/removed),
+    // NOT on every streaming chunk (which mutates message.content but not files).
+    const filesKey = useMemo(() =>
+        messages.map(m => `${m.id}:${(m.files?.length ?? 0)}`).join('|'),
+        [messages]
+    );
     const allFiles = useMemo(() => {
         return messages.flatMap(m => m.files || []);
-    }, [messages]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [filesKey]);
 
     // Use unified navigation hook
     const { 

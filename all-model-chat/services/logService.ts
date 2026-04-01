@@ -254,8 +254,12 @@ class LogServiceImpl {
 
   public recordApiKeyUsage(apiKey: string) {
     if (!apiKey) return;
-    const currentCount = this.apiKeyUsage.get(apiKey) || 0;
-    this.apiKeyUsage.set(apiKey, currentCount + 1);
+    // Store only a masked version of the API key, never the raw key
+    const maskedKey = apiKey.length > 8
+      ? apiKey.substring(0, 4) + '...' + apiKey.substring(apiKey.length - 4)
+      : '****';
+    const currentCount = this.apiKeyUsage.get(maskedKey) || 0;
+    this.apiKeyUsage.set(maskedKey, currentCount + 1);
     this.saveApiKeyUsage();
     this.notifyApiKeyListeners();
   }

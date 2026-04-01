@@ -31,8 +31,13 @@ export const useChatSessionActions = ({
             updateAndPersistSessions(prev =>
                 prev.map(s => {
                     if (s.id === activeSessionId) {
-                        // Cleanup files in the cleared session
-                        s.messages.forEach(msg => cleanupFilePreviewUrls(msg.files));
+                        // Cleanup blob URLs in the cleared session
+                        s.messages.forEach(msg => {
+                            cleanupFilePreviewUrls(msg.files);
+                            if (msg.audioSrc && msg.audioSrc.startsWith('blob:')) {
+                                URL.revokeObjectURL(msg.audioSrc);
+                            }
+                        });
                         
                         return {
                             ...s,

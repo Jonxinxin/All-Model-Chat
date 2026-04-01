@@ -45,9 +45,17 @@ class StreamingStore {
   }
 
   clear(id: string) {
+    // Notify listeners BEFORE deleting data so they can read final state
+    const set = this.listeners.get(id);
+    if (set) {
+      set.forEach(l => {
+        try { l(); } catch { /* ignore errors during cleanup notification */ }
+      });
+      this.listeners.delete(id);
+    }
+    // Now delete data
     this.content.delete(id);
     this.thoughts.delete(id);
-    // Don't delete listeners immediately as component unmount might happen slightly later
   }
 }
 

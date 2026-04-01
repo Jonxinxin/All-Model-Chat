@@ -6,41 +6,46 @@ import { useAppProps } from './hooks/app/useAppProps';
 import { WindowProvider } from './contexts/WindowContext';
 import { MainContent } from './components/layout/MainContent';
 import { PiPPlaceholder } from './components/layout/PiPPlaceholder';
+import { useUIStore } from './stores/uiStore';
 
 const App: React.FC = () => {
   const logic = useAppLogic();
-  const { 
-    currentTheme, 
-    pipState, 
-    chatState, 
-    sidePanelContent, 
-    handleCloseSidePanel, 
-    uiState, 
+  const {
+    currentTheme,
+    pipState,
+    sidePanelContent,
+    handleCloseSidePanel,
   } = logic;
+
+  // Read UI state directly from store (no longer from logic.uiState)
+  const handleTouchStart = useUIStore(s => s.handleTouchStart);
+  const handleTouchEnd = useUIStore(s => s.handleTouchEnd);
+  const isHistorySidebarOpen = useUIStore(s => s.isHistorySidebarOpen);
+  const setIsHistorySidebarOpen = useUIStore(s => s.setIsHistorySidebarOpen);
 
   const { sidebarProps, chatAreaProps, appModalsProps } = useAppProps(logic);
 
   return (
-    <div 
+    <div
       className={`relative flex h-full bg-[var(--theme-bg-secondary)] text-[var(--theme-text-primary)] theme-${currentTheme.id} overflow-hidden`}
-      onTouchStart={uiState.handleTouchStart}
-      onTouchEnd={uiState.handleTouchEnd}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
     >
       {pipState.isPipActive && pipState.pipContainer && pipState.pipWindow ? (
           <>
               {createPortal(
                   <WindowProvider window={pipState.pipWindow} document={pipState.pipWindow.document}>
-                    <div 
+                    <div
                         className={`theme-${currentTheme.id} h-full w-full flex relative bg-[var(--theme-bg-secondary)] text-[var(--theme-text-primary)]`}
-                        onTouchStart={uiState.handleTouchStart}
-                        onTouchEnd={uiState.handleTouchEnd}
+                        onTouchStart={handleTouchStart}
+                        onTouchEnd={handleTouchEnd}
                     >
                         <MainContent
                             sidebarProps={sidebarProps}
                             chatAreaProps={chatAreaProps}
                             appModalsProps={appModalsProps}
-                            isHistorySidebarOpen={uiState.isHistorySidebarOpen}
-                            setIsHistorySidebarOpen={uiState.setIsHistorySidebarOpen}
+                            isHistorySidebarOpen={isHistorySidebarOpen}
+                            setIsHistorySidebarOpen={setIsHistorySidebarOpen}
                             sidePanelContent={sidePanelContent}
                             onCloseSidePanel={handleCloseSidePanel}
                             themeId={currentTheme.id}
@@ -57,8 +62,8 @@ const App: React.FC = () => {
                 sidebarProps={sidebarProps}
                 chatAreaProps={chatAreaProps}
                 appModalsProps={appModalsProps}
-                isHistorySidebarOpen={uiState.isHistorySidebarOpen}
-                setIsHistorySidebarOpen={uiState.setIsHistorySidebarOpen}
+                isHistorySidebarOpen={isHistorySidebarOpen}
+                setIsHistorySidebarOpen={setIsHistorySidebarOpen}
                 sidePanelContent={sidePanelContent}
                 onCloseSidePanel={handleCloseSidePanel}
                 themeId={currentTheme.id}

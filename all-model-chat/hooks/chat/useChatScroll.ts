@@ -19,6 +19,17 @@ export const useChatScroll = ({ messages, userScrolledUp }: ChatScrollProps) => 
         // If the user interacts via wheel or touch, they are manually controlling the view
         isAutoScrolling.current = false;
     }, []);
+
+    // Scroll to bottom with auto-scroll tracking
+    const scrollToBottom = useCallback((behavior: ScrollBehavior = 'auto') => {
+        const container = scrollContainerRef.current;
+        if (container) {
+            isAutoScrolling.current = true;
+            container.scrollTo({ top: container.scrollHeight, behavior });
+            // Reset after a short delay to allow scroll events to fire
+            setTimeout(() => { isAutoScrolling.current = false; }, 100);
+        }
+    }, []);
     
     // Callback ref to handle node mounting/unmounting, restore scroll, and attach listeners
     const setScrollContainerRef = useCallback((node: HTMLDivElement | null) => {
@@ -65,8 +76,9 @@ export const useChatScroll = ({ messages, userScrolledUp }: ChatScrollProps) => 
     }, [userScrolledUp]);
     
     return {
-        scrollContainerRef, 
-        setScrollContainerRef, 
+        scrollContainerRef,
+        setScrollContainerRef,
         handleScroll,
+        scrollToBottom,
     };
 };

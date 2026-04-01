@@ -1,6 +1,7 @@
 
 import { useMemo } from 'react';
 import { useAppLogic } from '../useAppLogic';
+import { useUIStore } from '../../../stores/uiStore';
 import { DEFAULT_CHAT_SETTINGS } from '../../../constants/appConstants';
 import { ChatSettings } from '../../../types';
 
@@ -8,7 +9,6 @@ export const useAppModalsProps = (logic: ReturnType<typeof useAppLogic>) => {
   const {
     appSettings,
     chatState,
-    uiState,
     eventsState,
     dataManagement,
     t,
@@ -19,22 +19,26 @@ export const useAppModalsProps = (logic: ReturnType<typeof useAppLogic>) => {
     exportStatus,
   } = logic;
 
+  // UI state from Zustand store
+  const isSettingsModalOpen = useUIStore(s => s.isSettingsModalOpen);
+  const setIsSettingsModalOpen = useUIStore(s => s.setIsSettingsModalOpen);
+  const isPreloadedMessagesModalOpen = useUIStore(s => s.isPreloadedMessagesModalOpen);
+  const setIsPreloadedMessagesModalOpen = useUIStore(s => s.setIsPreloadedMessagesModalOpen);
+  const isLogViewerOpen = useUIStore(s => s.isLogViewerOpen);
+  const setIsLogViewerOpen = useUIStore(s => s.setIsLogViewerOpen);
+
   // Merge active chat settings into app settings for the modal so controls reflect current session
   const settingsForModal = useMemo(() => {
     if (chatState.activeSessionId && chatState.currentChatSettings) {
-        // Only overlay session settings that are actually part of the ChatSettings schema.
-        // This prevents global-only settings (like isStreamingEnabled, themeId) from being shadowed 
-        // by stale values that might exist in the session object due to initial cloning.
         const cleanSessionOverrides: any = {};
-        
-        // Use DEFAULT_CHAT_SETTINGS keys as an allowlist for what constitutes a "Chat Setting"
+
         (Object.keys(DEFAULT_CHAT_SETTINGS) as Array<keyof ChatSettings>).forEach(key => {
              if (Object.prototype.hasOwnProperty.call(chatState.currentChatSettings, key)) {
                  cleanSessionOverrides[key] = (chatState.currentChatSettings as any)[key];
              }
         });
 
-        return { 
+        return {
             ...appSettings,
             ...cleanSessionOverrides
         };
@@ -43,8 +47,8 @@ export const useAppModalsProps = (logic: ReturnType<typeof useAppLogic>) => {
   }, [appSettings, chatState.currentChatSettings, chatState.activeSessionId]);
 
   return useMemo(() => ({
-    isSettingsModalOpen: uiState.isSettingsModalOpen,
-    setIsSettingsModalOpen: uiState.setIsSettingsModalOpen,
+    isSettingsModalOpen,
+    setIsSettingsModalOpen,
     appSettings: settingsForModal,
     availableModels: chatState.apiModels,
     handleSaveSettings,
@@ -59,8 +63,8 @@ export const useAppModalsProps = (logic: ReturnType<typeof useAppLogic>) => {
     handleExportHistory: dataManagement.handleExportHistory,
     handleImportAllScenarios: dataManagement.handleImportAllScenarios,
     handleExportAllScenarios: dataManagement.handleExportAllScenarios,
-    isPreloadedMessagesModalOpen: uiState.isPreloadedMessagesModalOpen,
-    setIsPreloadedMessagesModalOpen: uiState.setIsPreloadedMessagesModalOpen,
+    isPreloadedMessagesModalOpen,
+    setIsPreloadedMessagesModalOpen,
     savedScenarios: chatState.savedScenarios,
     handleSaveAllScenarios: chatState.handleSaveAllScenarios,
     handleLoadPreloadedScenario: chatState.handleLoadPreloadedScenario,
@@ -68,14 +72,14 @@ export const useAppModalsProps = (logic: ReturnType<typeof useAppLogic>) => {
     setIsExportModalOpen,
     handleExportChat,
     exportStatus,
-    isLogViewerOpen: uiState.isLogViewerOpen,
-    setIsLogViewerOpen: uiState.setIsLogViewerOpen,
+    isLogViewerOpen,
+    setIsLogViewerOpen,
     currentChatSettings: chatState.currentChatSettings,
     t,
     setAvailableModels: chatState.setApiModels,
   }), [
-    uiState.isSettingsModalOpen,
-    uiState.setIsSettingsModalOpen,
+    isSettingsModalOpen,
+    setIsSettingsModalOpen,
     settingsForModal,
     chatState.apiModels,
     chatState.clearCacheAndReload,
@@ -90,14 +94,14 @@ export const useAppModalsProps = (logic: ReturnType<typeof useAppLogic>) => {
     eventsState.installPromptEvent,
     eventsState.isStandalone,
     dataManagement,
-    uiState.isPreloadedMessagesModalOpen,
-    uiState.setIsPreloadedMessagesModalOpen,
+    isPreloadedMessagesModalOpen,
+    setIsPreloadedMessagesModalOpen,
     isExportModalOpen,
     setIsExportModalOpen,
     handleExportChat,
     exportStatus,
-    uiState.isLogViewerOpen,
-    uiState.setIsLogViewerOpen,
+    isLogViewerOpen,
+    setIsLogViewerOpen,
     t,
   ]);
 };

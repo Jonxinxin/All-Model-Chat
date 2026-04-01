@@ -24,7 +24,9 @@ export const useDataExport = ({
     const handleExportSettings = useCallback(() => {
         logService.info(`Exporting settings.`);
         try {
-            const dataToExport = { type: 'AllModelChat-Settings', version: 1, settings: appSettings };
+            // Strip sensitive fields before export
+            const { apiKey, apiProxyUrl, lockedApiKey, ...safeSettings } = appSettings;
+            const dataToExport = { type: 'AllModelChat-Settings', version: 1, settings: safeSettings };
             const jsonString = JSON.stringify(dataToExport, null, 2);
             const blob = new Blob([jsonString], { type: 'application/json' });
             const date = new Date().toISOString().slice(0, 10);

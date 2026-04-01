@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 /**
  * A hook that provides a "typing effect" for streaming text.
@@ -18,6 +18,63 @@ export const useSmoothStreaming = (text: string | undefined | null, isStreaming:
     // Throttle reference to limit React state updates (UI rendering)
     const lastRenderTimeRef = useRef<number>(0);
 
+    const animate = useCallback((time: DOMHighResTimeStamp) => {
+        // Extra safety: If hidden, stop animating
+        if (document.hidden) {
+            animationFrameRef.current = null;
+            return;
+        }
+
+        const currentLen = displayedTextRef.current.length;
+        const targetLen = targetTextRef.current.length;
+
+        if (currentLen < targetLen) {
+            const lag = targetLen - currentLen;
+            
+            // Adaptive Typing Speed
+            let charsToAdd = 1;
+            if (lag > 200) charsToAdd = 15;
+            else if (lag > 100) charsToAdd = 8;
+            else if (lag > 50) charsToAdd = 5;
+            else if (lag > 20) charsToAdd = 3;
+            else if (lag > 5) charsToAdd = 2;
+
+            const nextText = targetTextRef.current.slice(0, currentLen + charsToAdd);
+            
+            // Always update the internal ref to keep tracking progress
+            displayedTextRef.current = nextText;
+            
+            // THROTTLE LOGIC: Limit React re-renders to ~16fps (approx every 60ms).
+            // Markdown AST parsing is heavy; doing it at 60fps causes severe UI jank.
+            // We force a render if we reached the very end of the current target string.
+            const isFinishedCatchingUp = nextText.length >= targetLen;
+            
+            if (isFinishedCatchingUp || time - lastRenderTimeRef.current > 60) {
+                setDisplayedText(nextText);
+                lastRenderTimeRef.current = time;
+            }
+            
+            animationFrameRef.current = requestAnimationFrame(animate);
+        } else if (currentLen > targetLen) {
+            // Target shrunk — snap to it and stop
+            displayedTextRef.current = targetTextRef.current;
+            setDisplayedText(targetTextRef.current);
+            lastRenderTimeRef.current = time;
+            animationFrameRef.current = null;
+        } else {
+            // currentLen === targetLen: caught up. Stop the loop.
+            // Will be restarted by the sync effect when new data arrives.
+            animationFrameRef.current = null;
+        }
+    }, []);
+
+    // Helper: start the animation loop if not already running
+    const ensureAnimating = useCallback(() => {
+        if (animationFrameRef.current === null) {
+            animationFrameRef.current = requestAnimationFrame(animate);
+        }
+    }, [animate]);
+
     // Sync target text ref whenever input changes
     useEffect(() => {
         targetTextRef.current = safeText;
@@ -27,6 +84,7 @@ export const useSmoothStreaming = (text: string | undefined | null, isStreaming:
         if (document.hidden && isStreaming) {
             displayedTextRef.current = safeText;
             setDisplayedText(safeText);
+            return;
         }
         
         // If we stopped streaming, snap to full text immediately to ensure consistency
@@ -39,71 +97,21 @@ export const useSmoothStreaming = (text: string | undefined | null, isStreaming:
                 cancelAnimationFrame(animationFrameRef.current);
                 animationFrameRef.current = null;
             }
+        } else if (displayedTextRef.current.length < safeText.length) {
+            // New data arrived and animation loop may be stopped — restart it
+            ensureAnimating();
         }
-    }, [safeText, isStreaming]);
+    }, [safeText, isStreaming, ensureAnimating]);
 
-    // Animation Loop
+    // Cleanup on unmount
     useEffect(() => {
-        if (!isStreaming) return;
-
-        const animate = (time: DOMHighResTimeStamp) => {
-            // Extra safety: If hidden, stop animating (resumed by effect above)
-            if (document.hidden) {
-                 animationFrameRef.current = requestAnimationFrame(animate);
-                 return;
-            }
-
-            const currentLen = displayedTextRef.current.length;
-            const targetLen = targetTextRef.current.length;
-
-            if (currentLen < targetLen) {
-                const lag = targetLen - currentLen;
-                
-                // Adaptive Typing Speed
-                let charsToAdd = 1;
-                if (lag > 200) charsToAdd = 15;
-                else if (lag > 100) charsToAdd = 8;
-                else if (lag > 50) charsToAdd = 5;
-                else if (lag > 20) charsToAdd = 3;
-                else if (lag > 5) charsToAdd = 2;
-
-                const nextText = targetTextRef.current.slice(0, currentLen + charsToAdd);
-                
-                // Always update the internal ref to keep tracking progress
-                displayedTextRef.current = nextText;
-                
-                // THROTTLE LOGIC: Limit React re-renders to ~16fps (approx every 60ms).
-                // Markdown AST parsing is heavy; doing it at 60fps causes severe UI jank.
-                // We force a render if we reached the very end of the current target string.
-                const isFinishedCatchingUp = nextText.length >= targetLen;
-                
-                if (isFinishedCatchingUp || time - lastRenderTimeRef.current > 60) {
-                    setDisplayedText(nextText);
-                    lastRenderTimeRef.current = time;
-                }
-                
-                animationFrameRef.current = requestAnimationFrame(animate);
-            } else if (currentLen > targetLen) {
-                displayedTextRef.current = targetTextRef.current;
-                setDisplayedText(targetTextRef.current);
-                lastRenderTimeRef.current = time;
-                animationFrameRef.current = requestAnimationFrame(animate);
-            } else {
-                animationFrameRef.current = requestAnimationFrame(animate);
-            }
-        };
-
-        if (!animationFrameRef.current) {
-            animationFrameRef.current = requestAnimationFrame(animate);
-        }
-
         return () => {
             if (animationFrameRef.current) {
                 cancelAnimationFrame(animationFrameRef.current);
                 animationFrameRef.current = null;
             }
         };
-    }, [isStreaming]);
+    }, []);
 
     return isStreaming ? displayedText : safeText;
 };

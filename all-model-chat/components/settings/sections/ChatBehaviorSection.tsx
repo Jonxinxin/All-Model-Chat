@@ -104,7 +104,7 @@ export const ChatBehaviorSection: React.FC<ChatBehaviorSectionProps> = (props) =
                   >
                       <option value="gemini-3-flash-preview">Gemini 3 Flash</option>
                       <option value="gemini-3.1-flash-lite-preview">Gemini 3.1 Flash Lite</option>
-                      <option value="gemini-3-pro-preview">Gemini 3 Pro</option>
+                      <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro</option>
                   </Select>
             </div>
         </div>

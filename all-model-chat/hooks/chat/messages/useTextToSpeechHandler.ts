@@ -1,5 +1,5 @@
 
-import { useCallback } from 'react';
+import { useCallback, useRef, useEffect } from 'react';
 import { AppSettings, ChatSettings as IndividualChatSettings, SavedChatSession } from '../../../types';
 import { getKeyForRequest, logService, pcmBase64ToWavUrl } from '../../../utils/appUtils';
 import { geminiServiceInstance } from '../../../services/geminiService';
@@ -23,8 +23,22 @@ export const useTextToSpeechHandler = ({
     updateAndPersistSessions
 }: TextToSpeechHandlerProps) => {
 
+    // Track the active TTS AbortController so we can cancel on unmount or new request
+    const activeTtsAbortRef = useRef<AbortController | null>(null);
+
+    // Cancel any in-flight TTS request when the hook unmounts
+    useEffect(() => {
+        return () => {
+            activeTtsAbortRef.current?.abort();
+            activeTtsAbortRef.current = null;
+        };
+    }, []);
+
     const handleTextToSpeech = useCallback(async (messageId: string, text: string) => {
         if (ttsMessageId) return; 
+
+        // Cancel any previous in-flight TTS request
+        activeTtsAbortRef.current?.abort();
 
         // Use skipIncrement to avoid rotating keys for TTS, as users might replay audio.
         const keyResult = getKeyForRequest(appSettings, currentChatSettings, { skipIncrement: true });
@@ -39,6 +53,7 @@ export const useTextToSpeechHandler = ({
         const modelId = DEFAULT_TTS_MODEL_ID;
         const voice = appSettings.ttsVoice;
         const abortController = new AbortController();
+        activeTtsAbortRef.current = abortController;
 
         try {
             const base64Pcm = await geminiServiceInstance.generateSpeech(key, modelId, text, voice, abortController.signal);
@@ -47,7 +62,16 @@ export const useTextToSpeechHandler = ({
             updateAndPersistSessions(prev => prev.map(s => {
                 if(s.messages.some(m => m.id === messageId)) {
                     // Autoplay is true because user explicitly requested playback via button
-                    return {...s, messages: s.messages.map(m => m.id === messageId ? {...m, audioSrc: wavUrl, audioAutoplay: true} : m)};
+                    return {...s, messages: s.messages.map(m => {
+                        if (m.id === messageId) {
+                            // Revoke old blob URL to prevent memory leak on re-request
+                            if (m.audioSrc && m.audioSrc.startsWith('blob:')) {
+                                URL.revokeObjectURL(m.audioSrc);
+                            }
+                            return {...m, audioSrc: wavUrl, audioAutoplay: true};
+                        }
+                        return m;
+                    })};
                 }
                 return s;
             }));
@@ -56,6 +80,9 @@ export const useTextToSpeechHandler = ({
             logService.error("TTS generation failed:", { messageId, error });
         } finally {
             setTtsMessageId(null);
+            if (activeTtsAbortRef.current === abortController) {
+                activeTtsAbortRef.current = null;
+            }
         }
     }, [appSettings, currentChatSettings, ttsMessageId, setTtsMessageId, updateAndPersistSessions]);
 
@@ -76,7 +103,9 @@ export const useTextToSpeechHandler = ({
             const base64Pcm = await geminiServiceInstance.generateSpeech(key, modelId, text, voice, abortController.signal);
             return pcmBase64ToWavUrl(base64Pcm);
         } catch (error) {
-            logService.error("Quick TTS generation failed:", { error });
+            if ((error as Error)?.name !== 'AbortError') {
+                logService.error("Quick TTS generation failed:", { error });
+            }
             return null;
         }
     }, [appSettings, currentChatSettings]);
