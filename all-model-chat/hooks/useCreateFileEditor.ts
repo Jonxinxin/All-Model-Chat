@@ -166,12 +166,12 @@ export const useCreateFileEditor = ({
         if (!container) return null;
 
         try {
-            // @ts-expect-error
+            // @ts-expect-error type compatibility
             if (window.html2pdf) {
                 // Wait for a frame to ensure the DOM is fully rendered before capture
                 await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
-                // @ts-expect-error
+                // @ts-expect-error type compatibility
                 const blob: Blob = await window.html2pdf().set(getPdfOpt('temp')).from(container).output('blob');
                 if (blob && blob.size > 0) {
                     return blob;
@@ -242,9 +242,9 @@ export const useCreateFileEditor = ({
           // Wait for a frame to ensure the DOM is fully rendered before capture
           await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
-          // @ts-expect-error
+          // @ts-expect-error type compatibility
           if (window.html2pdf) {
-            // @ts-expect-error
+            // @ts-expect-error type compatibility
             await window.html2pdf().set(getPdfOpt(finalName)).from(container).save();
           } else {
             alert("PDF generator not loaded. Please check your network connection and reload the page.");

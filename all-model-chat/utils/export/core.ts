@@ -27,6 +27,7 @@ export const sanitizeFilename = (name: string): string => {
     return "export";
   }
   // Remove illegal characters for filenames and control characters
+  // eslint-disable-next-line no-control-regex
   let saneName = name.trim().replace(/[<>:"/\\|?*\x00-\x1f]/g, '_');
   // Windows doesn't like filenames ending with a period or space.
   saneName = saneName.replace(/[. ]+$/, '');

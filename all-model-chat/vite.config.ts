@@ -48,6 +48,10 @@ export default defineConfig(({ mode }) => {
           output: {
             manualChunks(id) {
               if (id.includes('node_modules')) {
+                // Icon library (lucide-react used across UI)
+                if (id.includes('lucide-react')) return 'vendor-lucide';
+                // Virtual list (react-virtuoso)
+                if (id.includes('react-virtuoso')) return 'vendor-virtuoso';
                 // Mermaid — huge library, lazy loaded by MermaidBlock
                 if (id.includes('mermaid') || id.includes('dagre') || id.includes('cytoscape') || id.includes('elkjs') || id.includes('web-worker')) return 'vendor-mermaid';
                 // Markdown rendering pipeline + highlight
@@ -55,7 +59,7 @@ export default defineConfig(({ mode }) => {
                 // KaTeX math rendering
                 if (id.includes('katex')) return 'vendor-katex';
                 // Utility libraries
-                if (id.includes('jszip') || id.includes('dompurify') || id.includes('turndown')) return 'vendor-utils';
+                if (id.includes('jszip') || id.includes('dompurify') || id.includes('turndown') || id.includes('zustand')) return 'vendor-utils';
                 // html2canvas (already dynamically imported in exportUtils)
                 if (id.includes('html2canvas')) return 'vendor-html2canvas';
                 // Google GenAI SDK

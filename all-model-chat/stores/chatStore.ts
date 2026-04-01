@@ -177,7 +177,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
 
     // Sync to sessionStorage and URL
     if (id) {
-      try { sessionStorage.setItem(ACTIVE_CHAT_SESSION_ID_KEY, id); } catch {}
+      try { sessionStorage.setItem(ACTIVE_CHAT_SESSION_ID_KEY, id); } catch { /* ignore */ }
       const targetPath = `/chat/${id}`;
       try {
         if (window.location.pathname !== targetPath) {
@@ -189,7 +189,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
         }
       } catch (e) { console.warn('Unable to update URL history:', e); }
     } else {
-      try { sessionStorage.removeItem(ACTIVE_CHAT_SESSION_ID_KEY); } catch {}
+      try { sessionStorage.removeItem(ACTIVE_CHAT_SESSION_ID_KEY); } catch { /* ignore */ }
       try {
         if (window.location.pathname !== '/' && !window.location.pathname.startsWith('/chat/')) {
           window.history.pushState({}, '', '/');

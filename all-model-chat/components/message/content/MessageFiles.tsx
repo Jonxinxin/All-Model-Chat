@@ -24,8 +24,6 @@ export const MessageFiles: React.FC<MessageFilesProps> = ({
     isGemini3,
     hasContentOrAudio 
 }) => {
-    if (!files || files.length === 0) return null;
-
     // Check if the message contains a tool execution result block
     const hasToolResult = content?.includes('class="tool-result"');
 
@@ -33,6 +31,7 @@ export const MessageFiles: React.FC<MessageFilesProps> = ({
     const { imageFiles, documentFiles } = useMemo(() => {
         const imgs: UploadedFile[] = [];
         const docs: UploadedFile[] = [];
+        if (!files || files.length === 0) return { imageFiles: imgs, documentFiles: docs };
         files.forEach(f => {
             // Prevent duplicate display of auto-generated execution files at the top
             // if they will be rendered inside the ToolResultBlock at the bottom.

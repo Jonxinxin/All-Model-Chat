@@ -140,7 +140,7 @@ export const sendStatelessMessageStreamApi = async (
                     finalGroundingMetadata = metadataFromChunk;
                 }
                 
-                // @ts-expect-error
+                // @ts-expect-error type compatibility
                 const urlMetadata = candidate.urlContextMetadata || candidate.url_context_metadata;
                 if (urlMetadata) {
                     finalUrlContextMetadata = urlMetadata;

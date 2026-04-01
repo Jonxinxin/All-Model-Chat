@@ -5,7 +5,7 @@ import { exportSvgAsImage } from '../../../utils/exportUtils';
 import { MESSAGE_BLOCK_BUTTON_CLASS } from '../../../constants/appConstants';
 import { DiagramWrapper } from './parts/DiagramWrapper';
 
-declare var Viz: any;
+declare let Viz: any;
 
 const graphvizCache = new Map<string, string>();
 
@@ -149,8 +149,6 @@ export const GraphvizBlock: React.FC<GraphvizBlockProps> = ({ code, onImageClick
 
   useEffect(() => {
     let isMounted = true;
-    let timeoutId: ReturnType<typeof setTimeout>;
-
     const performRender = async () => {
         if (!isMounted) return;
         if (!vizInstanceRef.current) {
@@ -163,7 +161,7 @@ export const GraphvizBlock: React.FC<GraphvizBlockProps> = ({ code, onImageClick
         await renderGraph();
     };
 
-    timeoutId = setTimeout(performRender, 500);
+    const timeoutId = setTimeout(performRender, 500);
 
     let pollInterval: number;
     if (typeof Viz === 'undefined') {

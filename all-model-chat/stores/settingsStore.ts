@@ -59,7 +59,7 @@ export const useSettingsStore = create<SettingsState & SettingsActions>((set, ge
     try {
       const stored = localStorage.getItem(CUSTOM_MODELS_KEY);
       if (stored) return JSON.parse(stored);
-    } catch {}
+    } catch { /* ignore */ }
     return getDefaultModelOptions();
   })(),
   isModelsLoading: false,

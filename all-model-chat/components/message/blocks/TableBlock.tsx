@@ -59,7 +59,6 @@ export const TableBlock: React.FC<TableBlockProps> = ({ children, className, t, 
         
         try {
             // Dynamically import xlsx to avoid heavy bundle size if not used
-            // @ts-ignore - xlsx is provided via importmap
             const XLSX = await import('xlsx');
             
             if (XLSX && XLSX.utils && XLSX.writeFile) {
