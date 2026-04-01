@@ -1,12 +1,12 @@
-
-import React from 'react';
-import { SettingsModal } from '../settings/SettingsModal';
-import { LogViewer } from '../log-viewer/LogViewer';
-import { PreloadedMessagesModal } from '../scenarios/PreloadedMessagesModal';
-import { ExportChatModal } from './ExportChatModal';
+import React, { Suspense, lazy } from 'react';
 import { AVAILABLE_THEMES } from '../../constants/themeConstants';
 import { AppSettings, ModelOption, ChatSettings, SavedScenario } from '../../types';
 import { translations } from '../../utils/appUtils';
+
+const SettingsModal = lazy(() => import('../settings/SettingsModal').then(m => ({ default: m.SettingsModal })));
+const LogViewer = lazy(() => import('../log-viewer/LogViewer').then(m => ({ default: m.LogViewer })));
+const PreloadedMessagesModal = lazy(() => import('../scenarios/PreloadedMessagesModal').then(m => ({ default: m.PreloadedMessagesModal })));
+const ExportChatModal = lazy(() => import('./ExportChatModal').then(m => ({ default: m.ExportChatModal })));
 
 export interface AppModalsProps {
   isSettingsModalOpen: boolean;
@@ -63,7 +63,7 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
     } = props;
     
     return (
-        <>
+        <Suspense fallback={null}>
           {isLogViewerOpen && (
             <LogViewer
                 isOpen={isLogViewerOpen}
@@ -114,6 +114,6 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
                 t={t}
               />
           )}
-        </>
+        </Suspense>
     );
 }
