@@ -1,14 +1,14 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, Suspense, lazy } from 'react';
 import { Virtuoso } from 'react-virtuoso';
 import { ChatMessage, AppSettings, SideViewContent, VideoMetadata } from '../../types';
 import { Message } from '../message/Message';
 import { translations } from '../../utils/appUtils';
-import { HtmlPreviewModal } from '../modals/HtmlPreviewModal';
-import { FilePreviewModal } from '../modals/FilePreviewModal';
+const HtmlPreviewModal = lazy(() => import('../modals/HtmlPreviewModal').then(m => ({ default: m.HtmlPreviewModal })));
+const FilePreviewModal = lazy(() => import('../modals/FilePreviewModal').then(m => ({ default: m.FilePreviewModal })));
+const FileConfigurationModal = lazy(() => import('../modals/FileConfigurationModal').then(m => ({ default: m.FileConfigurationModal })));
 import { WelcomeScreen } from './message-list/WelcomeScreen';
 import { ScrollNavigation } from './message-list/ScrollNavigation';
-import { FileConfigurationModal } from '../modals/FileConfigurationModal';
 import { MediaResolution } from '../../types/settings';
 import { isGemini3Model } from '../../utils/appUtils';
 import { TextSelectionToolbar } from './message-list/TextSelectionToolbar';
@@ -178,6 +178,7 @@ export const MessageList: React.FC<MessageListProps> = ({
       </div>
     
       {/* Modals */}
+      <Suspense fallback={null}>
       <FilePreviewModal 
           file={previewFile} 
           onClose={closeFilePreviewModal}
@@ -205,6 +206,7 @@ export const MessageList: React.FC<MessageListProps> = ({
           t={t}
           isGemini3={isGemini3}
       />
+      </Suspense>
     </>
   );
 };

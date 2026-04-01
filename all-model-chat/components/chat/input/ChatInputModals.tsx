@@ -1,13 +1,11 @@
-
-
-
-import React from 'react';
-import { AudioRecorder } from '../../modals/AudioRecorder';
-import { CreateTextFileEditor } from '../../modals/CreateTextFileEditor';
-import { HelpModal } from '../../modals/HelpModal';
-import { TextEditorModal } from '../../modals/TextEditorModal';
+import React, { Suspense, lazy } from 'react';
 import { translations } from '../../../utils/appUtils';
 import { CommandInfo, UploadedFile } from '../../../types';
+
+const AudioRecorder = lazy(() => import('../../modals/AudioRecorder').then(m => ({ default: m.AudioRecorder })));
+const CreateTextFileEditor = lazy(() => import('../../modals/CreateTextFileEditor').then(m => ({ default: m.CreateTextFileEditor })));
+const HelpModal = lazy(() => import('../../modals/HelpModal').then(m => ({ default: m.HelpModal })));
+const TextEditorModal = lazy(() => import('../../modals/TextEditorModal').then(m => ({ default: m.TextEditorModal })));
 
 export interface ChatInputModalsProps {
   showRecorder: boolean;
@@ -68,7 +66,7 @@ export const ChatInputModals: React.FC<ChatInputModalsProps> = ({
   }
 
   return (
-    <>
+    <Suspense fallback={null}>
       {showRecorder && (
           <AudioRecorder 
             onRecord={onAudioRecord} 
@@ -102,6 +100,6 @@ export const ChatInputModals: React.FC<ChatInputModalsProps> = ({
             t={t as (key: string) => string}
           />
       )}
-    </>
+    </Suspense>
   );
 };
