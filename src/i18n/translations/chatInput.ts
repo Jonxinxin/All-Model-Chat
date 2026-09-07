@@ -1300,15 +1300,6 @@ export const chatInputTranslations = {
     es: 'Configurar ubicación de Maps',
     ko: '지도 위치 설정',
   },
-  mapsLocationNotSet: {
-    en: 'Global / Not set',
-    zh: '全局 / 未指定',
-    ja: 'グローバル / 未設定',
-    de: 'Global / Nicht festgelegt',
-    fr: 'Global / Non défini',
-    es: 'Global / No definido',
-    ko: '전역 / 미지정',
-  },
   deepSearchLabel: {
     en: 'Deep Search',
     zh: '深度搜索',
@@ -1418,15 +1409,6 @@ export const chatInputTranslations = {
     fr: "Insérer dans l'invite",
     es: 'Insertar en el prompt',
     ko: '프롬프트에 삽입',
-  },
-  urlContextInserted: {
-    en: 'Inserted {count} URL(s) into composer',
-    zh: '已将 {count} 条链接插入输入框',
-    ja: '{count}件のURLを入力欄に挿入しました',
-    de: '{count} URL(s) in Eingabefeld eingefügt',
-    fr: '{count} URL insérée(s) dans le champ de saisie',
-    es: 'Se insertaron {count} URL(s) en el cuadro de texto',
-    ko: '{count}개의 URL을 입력창에 삽입했습니다',
   },
   urlContextValidCount: {
     en: '{count} valid URL(s)',
@@ -2313,15 +2295,6 @@ export const chatInputTranslations = {
     fr: 'Traitement de {filename}...',
     es: 'Procesando {filename}...',
     ko: '{filename} 처리 중...',
-  },
-  fileProcessingDocx: {
-    en: 'Extracting text from {filename}...',
-    zh: '正在从 {filename} 提取文本…',
-    ja: '{filename}からテキストを抽出中…',
-    de: 'Text aus {filename} wird extrahiert...',
-    fr: 'Extraction du texte de {filename}...',
-    es: 'Extrayendo texto de {filename}...',
-    ko: '{filename}에서 텍스트 추출 중...',
   },
   fileProcessingAudio: {
     en: 'Compressing {filename}...',
@@ -4062,15 +4035,6 @@ export const chatInputTranslations = {
     fr: 'Aucun PDF dans cette conversation',
     es: 'Aún no hay PDF en este chat',
     ko: '이 채팅에 PDF가 없습니다',
-  },
-  pdfNavLocatePage: {
-    en: 'Page {page}',
-    zh: '第 {page} 页',
-    ja: '{page}ページ',
-    de: 'Seite {page}',
-    fr: 'Page {page}',
-    es: 'Página {page}',
-    ko: '{page}페이지',
   },
   pdfNavLocateButton: {
     en: 'Locate in PDF',

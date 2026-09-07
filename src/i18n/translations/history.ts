@@ -155,15 +155,6 @@ export const historyTranslations = {
     fr: 'Épinglé',
     de: 'Angeheftet',
   },
-  historyShowMoreChats: {
-    en: 'Show {count} more chats',
-    zh: '再显示 {count} 个聊天',
-    ja: 'あと{count}件のチャットを表示',
-    ko: '채팅 {count}개 더 보기',
-    es: 'Mostrar {count} chats más',
-    fr: 'Afficher {count} discussions supplémentaires',
-    de: '{count} weitere Chats anzeigen',
-  },
   historyToday: { en: 'Today', zh: '今天', ja: '今日', ko: '오늘', es: 'Hoy', fr: "Aujourd'hui", de: 'Heute' },
   historyYesterday: { en: 'Yesterday', zh: '昨天', ja: '昨日', ko: '어제', es: 'Ayer', fr: 'Hier', de: 'Gestern' },
   history7Days: {

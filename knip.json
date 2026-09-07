@@ -11,9 +11,7 @@
     "src/components/shared/ContextMenu.tsx": ["exports"],
     "src/components/shared/Dialog.tsx": ["exports"],
     "src/components/shared/DropdownMenu.tsx": ["exports"],
-    "src/components/shared/file-preview/FloatingToolbar.tsx": ["exports"],
     "src/utils/export/**": ["exports"],
-    "src/utils/media/audioWaveform.ts": ["exports"],
     "src/stores/syncedPersist.ts": ["types"]
   }
 }

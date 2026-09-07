@@ -33,7 +33,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
           {asChild && React.isValidElement(children) ? (
             children
           ) : (
-            <span className="tooltip-container ml-1.5 inline-flex items-center cursor-help">{children}</span>
+            <span className="ml-1.5 inline-flex items-center cursor-help">{children}</span>
           )}
         </TooltipPrimitive.Trigger>
         <TooltipPrimitive.Portal>

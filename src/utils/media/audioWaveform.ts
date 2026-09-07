@@ -82,16 +82,3 @@ export const decodeAudioWaveform = async (blob: Blob, count = 32): Promise<numbe
     }
   }
 };
-
-/**
- * Convenience helper to fetch and decode an audio URL (e.g. dataUrl or objectUrl) into waveform peaks.
- */
-export const fetchAndDecodeWaveform = async (url: string, count = 32): Promise<number[] | null> => {
-  try {
-    const res = await fetch(url);
-    const blob = await res.blob();
-    return await decodeAudioWaveform(blob, count);
-  } catch {
-    return null;
-  }
-};

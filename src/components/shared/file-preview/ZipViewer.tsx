@@ -5,6 +5,7 @@ import { GoogleSpinner } from '@/components/icons/GoogleSpinner';
 import { AlertCircle, Archive, Download, Folder, Search, Sparkles, X } from 'lucide-react';
 import { triggerDownload } from '@/utils/export/core';
 import { getFileDisplayMeta } from '@/utils/file/fileDisplayStyles';
+import { formatFileSize } from '@/utils/file/fileSize';
 import { sanitizeZipEntryPath } from '@/utils/import-context/zipSafety';
 import { useI18n } from '@/contexts/I18nContext';
 
@@ -21,14 +22,6 @@ interface ZipEntryInfo {
   size?: number;
   entry: JSZip.JSZipObject;
 }
-
-const formatBytes = (bytes: number): string => {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
-};
 
 const getFileIcon = (fileName: string, isDir: boolean) => {
   if (isDir) return <Folder size={16} className="text-amber-400 shrink-0" />;
@@ -224,7 +217,7 @@ export const ZipViewer: React.FC<ZipViewerProps> = ({ file, onConvertToContext }
             <Archive size={18} className="text-[var(--theme-text-accent)]" />
             <span className="text-sm font-semibold truncate max-w-xs">{file.name}</span>
             <span className="text-xs text-[var(--theme-text-tertiary)] font-mono ml-2">
-              {stats.fileCount} 个文件 · {stats.dirCount} 个文件夹 · {formatBytes(stats.totalBytes)}
+              {stats.fileCount} 个文件 · {stats.dirCount} 个文件夹 · {formatFileSize(stats.totalBytes) || '0 B'}
             </span>
           </div>
 
@@ -314,7 +307,7 @@ export const ZipViewer: React.FC<ZipViewerProps> = ({ file, onConvertToContext }
                   </div>
 
                   <div className="flex items-center gap-4 shrink-0 text-[var(--theme-text-tertiary)] font-mono text-[11px]">
-                    {item.size !== undefined && <span>{formatBytes(item.size)}</span>}
+                    {item.size !== undefined && <span>{formatFileSize(item.size) || '0 B'}</span>}
                     <span>{item.date.toLocaleDateString()}</span>
                     {!item.isDir && (
                       <button

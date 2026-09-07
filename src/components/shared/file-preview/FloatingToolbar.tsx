@@ -43,8 +43,3 @@ export const ToolbarButton = React.forwardRef<HTMLButtonElement, ToolbarButtonPr
 ToolbarButton.displayName = 'ToolbarButton';
 
 export const ToolbarDivider: React.FC = () => <div className="w-px h-5 bg-white/10 mx-1"></div>;
-
-export const ToolbarLabel: React.FC<{ children: React.ReactNode; className?: string }> = ({
-  children,
-  className = '',
-}) => <div className={`px-2 font-mono text-xs font-medium text-white/90 select-none ${className}`}>{children}</div>;
