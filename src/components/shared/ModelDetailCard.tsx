@@ -1,16 +1,5 @@
 import React from 'react';
-import {
-  Brain,
-  Eye,
-  Wrench,
-  Globe,
-  Code2,
-  AudioLines,
-  Image as ImageIcon,
-  Layers,
-  Sparkles,
-  Cpu,
-} from 'lucide-react';
+import { Brain, Eye, Wrench, Globe, Code2, AudioLines, Image as ImageIcon, Layers, Sparkles, Cpu } from 'lucide-react';
 import type { ModelOption } from '@/types';
 import { useI18n } from '@/contexts/I18nContext';
 import { getModelSpecification, type ModelCapabilityTag } from '@/utils/model/modelSpecifications';
@@ -31,10 +20,7 @@ const CATEGORY_ICONS: Record<ModelCapabilityTag['category'], React.ElementType> 
   image: ImageIcon,
 };
 
-const CATEGORY_STYLES: Record<
-  ModelCapabilityTag['category'],
-  { badge: string; icon: string }
-> = {
+const CATEGORY_STYLES: Record<ModelCapabilityTag['category'], { badge: string; icon: string }> = {
   reasoning: {
     badge: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20',
     icon: 'text-purple-500',
@@ -65,11 +51,7 @@ const CATEGORY_STYLES: Record<
   },
 };
 
-export const ModelDetailCard: React.FC<ModelDetailCardProps> = ({
-  model,
-  renderModelIcon,
-  className = '',
-}) => {
+export const ModelDetailCard: React.FC<ModelDetailCardProps> = ({ model, renderModelIcon, className = '' }) => {
   const { t } = useI18n();
   const spec = getModelSpecification(model);
 
@@ -104,9 +86,7 @@ export const ModelDetailCard: React.FC<ModelDetailCardProps> = ({
       </div>
 
       {spec.description && (
-        <p className="text-xs leading-relaxed text-[var(--theme-text-secondary)] line-clamp-2">
-          {spec.description}
-        </p>
+        <p className="text-xs leading-relaxed text-[var(--theme-text-secondary)] line-clamp-2">{spec.description}</p>
       )}
 
       <div className="grid grid-cols-2 gap-2 pt-1 border-t border-[var(--theme-border-secondary)]/40">
@@ -137,9 +117,7 @@ export const ModelDetailCard: React.FC<ModelDetailCardProps> = ({
             <Brain size={12} className="flex-shrink-0" />
             <span>{t('modelCardThinking')}</span>
           </div>
-          <span className="font-mono font-medium text-purple-700 dark:text-purple-300">
-            {spec.thinkingBudgetRange}
-          </span>
+          <span className="font-mono font-medium text-purple-700 dark:text-purple-300">{spec.thinkingBudgetRange}</span>
         </div>
       )}
 

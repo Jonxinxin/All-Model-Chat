@@ -10,15 +10,7 @@ describe('Slider', () => {
   it('renders with accessibility attributes and initial value', () => {
     act(() => {
       renderer.root.render(
-        <Slider
-          id="test-slider"
-          value={0.7}
-          min={0}
-          max={2}
-          step={0.05}
-          onChange={vi.fn()}
-          ariaLabel="Temperature"
-        />,
+        <Slider id="test-slider" value={0.7} min={0} max={2} step={0.05} onChange={vi.fn()} ariaLabel="Temperature" />,
       );
     });
 
@@ -40,16 +32,7 @@ describe('Slider', () => {
     const onChange = vi.fn();
 
     act(() => {
-      renderer.root.render(
-        <Slider
-          id="test-slider"
-          value={0.7}
-          min={0}
-          max={2}
-          step={0.05}
-          onChange={onChange}
-        />,
-      );
+      renderer.root.render(<Slider id="test-slider" value={0.7} min={0} max={2} step={0.05} onChange={onChange} />);
     });
 
     const hiddenInput = renderer.container.querySelector<HTMLInputElement>('#test-slider');
@@ -64,15 +47,7 @@ describe('Slider', () => {
     const onChange = vi.fn();
 
     act(() => {
-      renderer.root.render(
-        <Slider
-          value={1}
-          min={0}
-          max={10}
-          step={1}
-          onChange={onChange}
-        />,
-      );
+      renderer.root.render(<Slider value={1} min={0} max={10} step={1} onChange={onChange} />);
     });
 
     const thumb = renderer.container.querySelector('[role="slider"]');
@@ -94,14 +69,7 @@ describe('Slider', () => {
 
     act(() => {
       renderer.root.render(
-        <Slider
-          id="disabled-slider"
-          value={5}
-          min={0}
-          max={10}
-          disabled={true}
-          onChange={onChange}
-        />,
+        <Slider id="disabled-slider" value={5} min={0} max={10} disabled={true} onChange={onChange} />,
       );
     });
 

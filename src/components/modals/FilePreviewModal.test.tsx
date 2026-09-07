@@ -73,9 +73,7 @@ vi.mock('@/components/shared/file-preview/TextFileViewer', () => ({
 }));
 
 vi.mock('@/components/shared/file-preview/DocxViewer', () => ({
-  DocxViewer: ({ file }: { file: { name: string } }) => (
-    <div data-testid="docx-viewer">{file.name}</div>
-  ),
+  DocxViewer: ({ file }: { file: { name: string } }) => <div data-testid="docx-viewer">{file.name}</div>,
 }));
 
 vi.mock('@/utils/file/fileClipboard', () => ({

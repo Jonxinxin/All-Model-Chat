@@ -28,10 +28,7 @@ export interface FormatTimestampOptions {
 }
 
 /** Format seconds as "mm:ss" / "m:ss" (below an hour) or "h:mm:ss". */
-export const formatTimestamp = (
-  totalSeconds: number | null | undefined,
-  options?: FormatTimestampOptions,
-): string => {
+export const formatTimestamp = (totalSeconds: number | null | undefined, options?: FormatTimestampOptions): string => {
   if (totalSeconds === null || totalSeconds === undefined || !Number.isFinite(totalSeconds) || totalSeconds < 0) {
     return options?.padMinutes === false ? '0:00' : '00:00';
   }

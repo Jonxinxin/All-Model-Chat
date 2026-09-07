@@ -43,7 +43,7 @@ describe('SessionItemMenu and SessionItemContextMenu', () => {
           onExport={vi.fn()}
           onDelete={onDelete}
         />
-      </DropdownMenu>
+      </DropdownMenu>,
     );
 
     const btn = screen.getByText('Options');
@@ -90,7 +90,7 @@ describe('SessionItemMenu and SessionItemContextMenu', () => {
           onExport={vi.fn()}
           onDelete={vi.fn()}
         />
-      </ContextMenu>
+      </ContextMenu>,
     );
 
     fireEvent.contextMenu(screen.getByTestId('session-row'));

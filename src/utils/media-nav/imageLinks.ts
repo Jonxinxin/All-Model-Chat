@@ -68,4 +68,3 @@ const buildImageSeekMarkdownLink = (attrs: Record<string, string>, inner: string
  */
 export const linkifyImageLocates = (text: string): string =>
   linkifyLocateTags(text, 'image-locate', IMAGE_LOCATE_PATTERNS, buildImageSeekMarkdownLink);
-

@@ -82,6 +82,3 @@ describe('CodeEditor component', () => {
     expect(renderer.container.querySelector('.cm-editor')).not.toBeNull();
   });
 });
-
-
-

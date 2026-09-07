@@ -26,7 +26,8 @@ describe('locateTagTransform', () => {
   });
 
   it('converts trailing locate blocks into bottom rows', () => {
-    const input = 'Summary text.\n\n<custom-locate id="1">one</custom-locate>\n<custom-locate id="2">two</custom-locate>';
+    const input =
+      'Summary text.\n\n<custom-locate id="1">one</custom-locate>\n<custom-locate id="2">two</custom-locate>';
     const result = linkifyLocateTags(input, 'custom-locate', customPatterns, dummyBuilder);
     expect(result).toContain('Summary text.\n\n[one](#custom?id=1) [two](#custom?id=2)');
   });

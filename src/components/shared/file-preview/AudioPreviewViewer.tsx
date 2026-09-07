@@ -1,15 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import {
-  Play,
-  Pause,
-  RotateCcw,
-  RotateCw,
-  Volume2,
-  VolumeX,
-  Repeat,
-  Download,
-  FileAudio,
-} from 'lucide-react';
+import { Play, Pause, RotateCcw, RotateCw, Volume2, VolumeX, Repeat, Download, FileAudio } from 'lucide-react';
 import type { UploadedFile } from '@/types';
 import { useI18n } from '@/contexts/I18nContext';
 import { formatFileSize } from '@/utils/file/fileSize';
@@ -36,8 +26,7 @@ export const AudioPreviewViewer: React.FC<AudioPreviewViewerProps> = ({ file }) 
 
   const [waveformBars, setWaveformBars] = useState<number[]>(() => {
     return (
-      readAudioWaveformCache(file.id) ??
-      generateDeterministicWaveform(`${file.id}:${file.name}`, WAVEFORM_BAR_COUNT)
+      readAudioWaveformCache(file.id) ?? generateDeterministicWaveform(`${file.id}:${file.name}`, WAVEFORM_BAR_COUNT)
     );
   });
 
@@ -47,19 +36,11 @@ export const AudioPreviewViewer: React.FC<AudioPreviewViewerProps> = ({ file }) 
   const [isDraggingSeek, setIsDraggingSeek] = useState(false);
   const [hoverProgress, setHoverProgress] = useState<number | null>(null);
 
-  const {
-    isPlaying,
-    duration,
-    currentTime,
-    playbackRate,
-    togglePlay,
-    seekTo,
-    toggleSpeed,
-    audioProps,
-  } = useAudioPlayback({
-    src: file.dataUrl,
-    audioRef,
-  });
+  const { isPlaying, duration, currentTime, playbackRate, togglePlay, seekTo, toggleSpeed, audioProps } =
+    useAudioPlayback({
+      src: file.dataUrl,
+      audioRef,
+    });
 
   // Decode audio peaks from file dataUrl or rawFile
   useEffect(() => {
@@ -189,12 +170,7 @@ export const AudioPreviewViewer: React.FC<AudioPreviewViewerProps> = ({ file }) 
         className="relative w-full max-w-xl max-w-[calc(100vw-2rem)] rounded-2xl bg-[var(--theme-bg-primary)] border border-[var(--theme-border-secondary)] shadow-2xl overflow-hidden p-5 sm:p-6 flex flex-col gap-5"
         data-testid="audio-preview-shell"
       >
-        <audio
-          ref={audioRef}
-          src={file.dataUrl}
-          className="max-w-full hidden"
-          {...audioProps}
-        />
+        <audio ref={audioRef} src={file.dataUrl} className="max-w-full hidden" {...audioProps} />
 
         <div className="flex items-center gap-3.5 min-w-0">
           <div className="w-10 h-10 rounded-xl bg-neutral-100 dark:bg-neutral-800/80 border border-neutral-200/80 dark:border-neutral-700/60 flex items-center justify-center text-neutral-600 dark:text-neutral-300 shadow-xs shrink-0">
@@ -210,9 +186,7 @@ export const AudioPreviewViewer: React.FC<AudioPreviewViewerProps> = ({ file }) 
             </h3>
 
             <div className="flex items-center gap-2 text-[11px] text-[var(--theme-text-tertiary)] font-mono mt-0.5">
-              <span className="font-semibold uppercase text-neutral-700 dark:text-neutral-300">
-                {fileExt}
-              </span>
+              <span className="font-semibold uppercase text-neutral-700 dark:text-neutral-300">{fileExt}</span>
               {file.size > 0 && (
                 <>
                   <span>·</span>
@@ -248,10 +222,7 @@ export const AudioPreviewViewer: React.FC<AudioPreviewViewerProps> = ({ file }) 
               const isHovered = hoverProgress !== null && barRatio <= hoverProgress;
 
               return (
-                <div
-                  key={i}
-                  className="flex-1 h-full flex items-center justify-center relative z-10"
-                >
+                <div key={i} className="flex-1 h-full flex items-center justify-center relative z-10">
                   <span
                     className={`w-full max-w-[3.5px] rounded-full transition-all duration-150 ${
                       isPlayed

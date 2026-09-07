@@ -113,9 +113,9 @@ export const useChatInputSubmission = ({
       onUpdateMessageContent(messageId, content, files);
       setEditingMessageId(null);
       setSelectedFiles([]);
-      const savedDraft = activeSessionId ? useChatDraftStore.getState().drafts[activeSessionId]?.inputText ?? '' : '';
+      const savedDraft = activeSessionId ? (useChatDraftStore.getState().drafts[activeSessionId]?.inputText ?? '') : '';
       setInputText(savedDraft);
-      setQuotes(activeSessionId ? useChatDraftStore.getState().drafts[activeSessionId]?.quotes ?? [] : []);
+      setQuotes(activeSessionId ? (useChatDraftStore.getState().drafts[activeSessionId]?.quotes ?? []) : []);
       onMessageSent();
     },
     [

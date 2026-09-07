@@ -18,13 +18,12 @@ describe('ContextMenu', () => {
         </ContextMenuTrigger>
         <ContextMenuContent>
           <ContextMenuItem>
-            Context Item 1
-            <ContextMenuShortcut>⌘C</ContextMenuShortcut>
+            Context Item 1<ContextMenuShortcut>⌘C</ContextMenuShortcut>
           </ContextMenuItem>
           <ContextMenuSeparator />
           <ContextMenuItem variant="danger">Danger Item</ContextMenuItem>
         </ContextMenuContent>
-      </ContextMenu>
+      </ContextMenu>,
     );
 
     const target = screen.getByTestId('context-target');

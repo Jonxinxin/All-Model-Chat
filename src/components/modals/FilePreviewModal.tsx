@@ -18,7 +18,13 @@ import { cleanupFilePreviewUrl, fileToBlobUrl } from '@/utils/file/filePreviewUr
 import { extractDocxText, isDocxFile } from '@/utils/docxPreview';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { isShortcutPressed } from '@/utils/keyboardShortcuts';
-import { getFileKindFlags, isArchiveFile, isMarkdownFile, isSpreadsheetFile, isTextFile } from '@/utils/file/fileTypeClassification';
+import {
+  getFileKindFlags,
+  isArchiveFile,
+  isMarkdownFile,
+  isSpreadsheetFile,
+  isTextFile,
+} from '@/utils/file/fileTypeClassification';
 import { toYoutubeEmbedUrl } from '@/utils/file/youtubeUrl';
 import { lazyNamedComponent } from '@/utils/lazyNamedComponent';
 import { interpolate } from '@/i18n/interpolate';
@@ -156,9 +162,19 @@ const FilePreviewModalContent: React.FC<FilePreviewModalContentProps> = ({
 
   const { isImage, isPdf, isVideo, isYoutube, isAudio } = getFileKindFlags(file);
   const isDocx = !isImage && !isPdf && !isVideo && !isYoutube && !isAudio && isDocxCandidate;
-  const isSpreadsheet = !isImage && !isPdf && !isVideo && !isYoutube && !isAudio && (isSpreadsheetFile?.(file) ?? false);
+  const isSpreadsheet =
+    !isImage && !isPdf && !isVideo && !isYoutube && !isAudio && (isSpreadsheetFile?.(file) ?? false);
   const isArchive = !isImage && !isPdf && !isVideo && !isYoutube && !isAudio && (isArchiveFile?.(file) ?? false);
-  const isText = !isImage && !isDocx && !isSpreadsheet && !isArchive && !isPdf && !isVideo && !isYoutube && !isAudio && isTextFile(file);
+  const isText =
+    !isImage &&
+    !isDocx &&
+    !isSpreadsheet &&
+    !isArchive &&
+    !isPdf &&
+    !isVideo &&
+    !isYoutube &&
+    !isAudio &&
+    isTextFile(file);
   const isMarkdown = isText && isMarkdownFile(file);
   const youtubeEmbedUrl = isYoutube ? toYoutubeEmbedUrl(file.fileUri || file.name) : null;
 
@@ -336,11 +352,7 @@ const FilePreviewModalContent: React.FC<FilePreviewModalContentProps> = ({
                   setTextContentLoaded(true);
                 }
               }}
-              content={
-                isEditing && textContentLoaded
-                  ? editedContent
-                  : undefined
-              }
+              content={isEditing && textContentLoaded ? editedContent : undefined}
             />
           ) : isPdf ? (
             <Suspense

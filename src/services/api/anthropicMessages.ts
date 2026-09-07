@@ -41,9 +41,8 @@ const partToAnthropicContentItems = (part: Part): AnthropicContentBlock[] => {
 };
 
 const partsToAnthropicContent = (parts: Part[]): string | AnthropicContentBlock[] =>
-  collapseOnlyTextContent(
-    parts.flatMap(partToAnthropicContentItems),
-    (item) => (item.type === 'text' ? item.text : null),
+  collapseOnlyTextContent(parts.flatMap(partToAnthropicContentItems), (item) =>
+    item.type === 'text' ? item.text : null,
   );
 
 const buildAnthropicMessages = (

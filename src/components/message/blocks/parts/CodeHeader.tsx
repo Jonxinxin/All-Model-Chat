@@ -1,6 +1,17 @@
 import React from 'react';
 import { useI18n } from '@/contexts/I18nContext';
-import { Check, Copy, Maximize2, ChevronDown, ChevronUp, Download, Sidebar, Play, Loader2, WrapText } from 'lucide-react';
+import {
+  Check,
+  Copy,
+  Maximize2,
+  ChevronDown,
+  ChevronUp,
+  Download,
+  Sidebar,
+  Play,
+  Loader2,
+  WrapText,
+} from 'lucide-react';
 import { MESSAGE_BLOCK_BUTTON_CLASS } from '@/constants/buttonClasses';
 import { LanguageIcon } from '@/components/message/code/LanguageIcon';
 import { interpolate } from '@/i18n/interpolate';
@@ -54,9 +65,7 @@ export const CodeHeader: React.FC<CodeHeaderProps> = ({
   return (
     <div
       className={`sticky top-0 z-10 flex h-8 select-none items-center justify-between gap-2 rounded-t-lg border-b border-[var(--theme-border-secondary)]/50 bg-[var(--theme-bg-code-block-header)] px-2.5 py-0 transition-all ${
-        isOverflowing
-          ? 'cursor-pointer hover:bg-[var(--theme-bg-tertiary)]/50 group/header'
-          : ''
+        isOverflowing ? 'cursor-pointer hover:bg-[var(--theme-bg-tertiary)]/50 group/header' : ''
       }`}
       onClick={isOverflowing ? onToggleExpand : undefined}
       title={isOverflowing ? (isExpanded ? t('codeCollapseBlock') : t('codeShowMore')) : undefined}
@@ -77,7 +86,10 @@ export const CodeHeader: React.FC<CodeHeaderProps> = ({
       <div className="flex min-w-0 items-center gap-2 pl-0.5 font-mono text-xs font-medium text-[var(--theme-text-secondary)]">
         <LanguageIcon language={language} />
         {filename && (
-          <span className="text-[11px] font-normal text-[var(--theme-text-tertiary)] truncate max-w-[200px]" title={filename}>
+          <span
+            className="text-[11px] font-normal text-[var(--theme-text-tertiary)] truncate max-w-[200px]"
+            title={filename}
+          >
             {filename}
           </span>
         )}
@@ -175,4 +187,3 @@ export const CodeHeader: React.FC<CodeHeaderProps> = ({
     </div>
   );
 };
-

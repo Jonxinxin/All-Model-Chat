@@ -6,8 +6,7 @@ export const AlertDialog = AlertDialogPrimitive.Root;
 export const AlertDialogTrigger = AlertDialogPrimitive.Trigger;
 export const AlertDialogPortal = AlertDialogPrimitive.Portal;
 
-export type AlertDialogOverlayProps =
-  React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Overlay>;
+export type AlertDialogOverlayProps = React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Overlay>;
 
 export const AlertDialogOverlay = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Overlay>,
@@ -21,8 +20,7 @@ export const AlertDialogOverlay = React.forwardRef<
 ));
 AlertDialogOverlay.displayName = AlertDialogPrimitive.Overlay.displayName;
 
-export type AlertDialogContentProps =
-  React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Content>;
+export type AlertDialogContentProps = React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Content>;
 
 export const AlertDialogContent = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Content>,
@@ -43,18 +41,12 @@ export const AlertDialogContent = React.forwardRef<
 ));
 AlertDialogContent.displayName = AlertDialogPrimitive.Content.displayName;
 
-export const AlertDialogHeader = ({
-  className = '',
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
+export const AlertDialogHeader = ({ className = '', ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div className={`flex flex-col space-y-2 text-left mb-4 ${className}`} {...props} />
 );
 AlertDialogHeader.displayName = 'AlertDialogHeader';
 
-export const AlertDialogFooter = ({
-  className = '',
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
+export const AlertDialogFooter = ({ className = '', ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={`flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2.5 gap-2 sm:gap-0 mt-6 ${className}`}
     {...props}

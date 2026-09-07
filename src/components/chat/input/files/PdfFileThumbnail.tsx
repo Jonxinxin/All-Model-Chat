@@ -33,10 +33,14 @@ export const PdfFileThumbnail: React.FC<PdfFileThumbnailProps> = ({ file, fallba
   }
 
   const objectFitClass = className?.match(/\bobject-(contain|cover|fill|none|scale-down)\b/)?.[0] ?? 'object-cover';
-  const cleanedClassName = className ? className.replace(/\bobject-(contain|cover|fill|none|scale-down)\b/g, '').trim() : '';
+  const cleanedClassName = className
+    ? className.replace(/\bobject-(contain|cover|fill|none|scale-down)\b/g, '').trim()
+    : '';
 
   if (cachedImageUrl) {
-    return <img src={cachedImageUrl} alt={file.name} className={`h-full w-full ${objectFitClass} ${cleanedClassName}`} />;
+    return (
+      <img src={cachedImageUrl} alt={file.name} className={`h-full w-full ${objectFitClass} ${cleanedClassName}`} />
+    );
   }
 
   const handleRenderSuccess = () => {

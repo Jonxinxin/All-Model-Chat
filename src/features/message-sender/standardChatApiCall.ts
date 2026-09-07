@@ -546,7 +546,11 @@ export const performStandardChatApiCall = async ({
           });
 
           const sessionWasInvalidated = invalidatedSession !== currentSession;
-          if (historyRefResult.ok && (historyRefResult.changed || sessionWasInvalidated) && !newAbortController.signal.aborted) {
+          if (
+            historyRefResult.ok &&
+            (historyRefResult.changed || sessionWasInvalidated) &&
+            !newAbortController.signal.aborted
+          ) {
             updateAndPersistSessions((prev) =>
               updateSessionById(prev, finalSessionId, (s) => ({
                 ...s,
@@ -590,7 +594,9 @@ export const performStandardChatApiCall = async ({
                       fileUri: uploaded.uri,
                       fileApiName: uploaded.name,
                       rawFile: uploadable,
-                      fileApiExpirationTime: toFileApiExpirationTime((uploaded as { expirationTime?: unknown }).expirationTime),
+                      fileApiExpirationTime: toFileApiExpirationTime(
+                        (uploaded as { expirationTime?: unknown }).expirationTime,
+                      ),
                       fileApiKeyFingerprint: getApiKeyFingerprint(freshKey),
                     };
                     reuploadedFilesMap.set(file.fileUri || file.id, { ...file, ...patch });
@@ -640,8 +646,8 @@ export const performStandardChatApiCall = async ({
                       f.fileUri === fileUri ||
                       Boolean(
                         targetIdentifier &&
-                          ((f.fileApiName && f.fileApiName.includes(targetIdentifier)) ||
-                            (f.fileUri && f.fileUri.includes(targetIdentifier))),
+                        ((f.fileApiName && f.fileApiName.includes(targetIdentifier)) ||
+                          (f.fileUri && f.fileUri.includes(targetIdentifier))),
                       ),
                   )?.name || (targetIdentifier ? `File ${targetIdentifier}` : 'file');
                 return { text: formatHistoryFileApiUnavailablePartText(fileName) };

@@ -33,9 +33,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
           {asChild && React.isValidElement(children) ? (
             children
           ) : (
-            <span className="tooltip-container ml-1.5 inline-flex items-center cursor-help">
-              {children}
-            </span>
+            <span className="tooltip-container ml-1.5 inline-flex items-center cursor-help">{children}</span>
           )}
         </TooltipPrimitive.Trigger>
         <TooltipPrimitive.Portal>
@@ -46,11 +44,14 @@ export const Tooltip: React.FC<TooltipProps> = ({
             className={`z-[9999] max-w-xs rounded-lg border border-[var(--theme-border-secondary)] bg-[var(--theme-bg-tertiary)] px-2.5 py-1.5 text-xs font-medium text-[var(--theme-text-primary)] shadow-lg backdrop-blur-md transition-opacity duration-150 leading-snug pointer-events-none select-none ${className}`}
           >
             {text}
-            <TooltipPrimitive.Arrow className="fill-[var(--theme-bg-tertiary)] stroke-[var(--theme-border-secondary)] stroke-1" width={8} height={4} />
+            <TooltipPrimitive.Arrow
+              className="fill-[var(--theme-bg-tertiary)] stroke-[var(--theme-border-secondary)] stroke-1"
+              width={8}
+              height={4}
+            />
           </TooltipPrimitive.Content>
         </TooltipPrimitive.Portal>
       </TooltipPrimitive.Root>
     </TooltipPrimitive.Provider>
   );
 };
-

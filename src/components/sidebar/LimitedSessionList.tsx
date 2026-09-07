@@ -81,9 +81,7 @@ export const LimitedSessionList: React.FC<LimitedSessionListProps> = ({
           customScrollParent={scrollParent}
           data={sessions}
           computeItemKey={(_index, session) => session.id}
-          itemContent={(_index, session) => (
-            <SessionItem key={session.id} session={session} {...sessionItemProps} />
-          )}
+          itemContent={(_index, session) => <SessionItem key={session.id} session={session} {...sessionItemProps} />}
           components={virtuosoComponents}
           initialItemCount={Math.min(sessions.length, 50)}
           increaseViewportBy={{ top: 200, bottom: 200 }}
@@ -98,4 +96,3 @@ export const LimitedSessionList: React.FC<LimitedSessionListProps> = ({
     </div>
   );
 };
-

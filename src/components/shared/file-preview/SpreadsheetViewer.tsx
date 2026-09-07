@@ -121,7 +121,9 @@ export const SpreadsheetViewer: React.FC<SpreadsheetViewerProps> = ({ file }) =>
       // Check if both values can be interpreted numerically (including percentages and currency)
       const parseNum = (v: unknown): number => {
         if (typeof v === 'number') return v;
-        const cleaned = String(v).replace(/[%$¥,]/g, '').trim();
+        const cleaned = String(v)
+          .replace(/[%$¥,]/g, '')
+          .trim();
         const parsed = Number(cleaned);
         return isNaN(parsed) ? NaN : parsed;
       };
@@ -143,7 +145,7 @@ export const SpreadsheetViewer: React.FC<SpreadsheetViewerProps> = ({ file }) =>
     if (!searchQuery.trim()) return sortedBodyRows;
     const query = searchQuery.toLowerCase();
     return sortedBodyRows.filter((row) =>
-      row.some((cell) => cell !== null && cell !== undefined && String(cell).toLowerCase().includes(query))
+      row.some((cell) => cell !== null && cell !== undefined && String(cell).toLowerCase().includes(query)),
     );
   }, [sortedBodyRows, searchQuery]);
 

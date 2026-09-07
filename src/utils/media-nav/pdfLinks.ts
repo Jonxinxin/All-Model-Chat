@@ -50,4 +50,3 @@ const buildPdfSeekMarkdownLink = (attrs: Record<string, string>, inner: string):
  */
 export const linkifyPdfLocates = (text: string): string =>
   linkifyLocateTags(text, 'pdf-locate', PDF_LOCATE_PATTERNS, buildPdfSeekMarkdownLink);
-

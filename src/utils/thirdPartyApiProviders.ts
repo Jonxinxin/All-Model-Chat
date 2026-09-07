@@ -613,28 +613,19 @@ export const removeThirdPartyConnection = (
   connections: thirdPartyApi.connections.filter((connection) => connection.id !== connectionId),
 });
 
-export const isDeepSeekOfficialEndpoint = (
-  templateId?: string | null,
-  baseUrl?: string | null,
-): boolean => {
+export const isDeepSeekOfficialEndpoint = (templateId?: string | null, baseUrl?: string | null): boolean => {
   if (templateId === 'deepseek') return true;
   if (!baseUrl) return false;
   return baseUrl.toLowerCase().includes('api.deepseek.com');
 };
 
-export const isDashScopeOfficialEndpoint = (
-  templateId?: string | null,
-  baseUrl?: string | null,
-): boolean => {
+export const isDashScopeOfficialEndpoint = (templateId?: string | null, baseUrl?: string | null): boolean => {
   if (templateId === 'dashscope') return true;
   if (!baseUrl) return false;
   return baseUrl.toLowerCase().includes('dashscope.aliyuncs.com');
 };
 
-export const isLocalEngineEndpoint = (
-  templateId?: string | null,
-  baseUrl?: string | null,
-): boolean => {
+export const isLocalEngineEndpoint = (templateId?: string | null, baseUrl?: string | null): boolean => {
   if (templateId === 'ollama' || templateId === 'lmstudio') return true;
   if (!baseUrl) return false;
   const lower = baseUrl.toLowerCase();
@@ -645,4 +636,3 @@ export const isLocalEngineEndpoint = (
     lower.includes('127.0.0.1:1234')
   );
 };
-

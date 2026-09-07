@@ -56,9 +56,7 @@ export function usePdfHotkeys({
 
       const currentContainer = containerRef.current;
       const isContainerFocused =
-        isHovered ||
-        currentContainer === activeEl ||
-        (currentContainer ? currentContainer.contains(activeEl) : false);
+        isHovered || currentContainer === activeEl || (currentContainer ? currentContainer.contains(activeEl) : false);
 
       if (!isContainerFocused) return;
 

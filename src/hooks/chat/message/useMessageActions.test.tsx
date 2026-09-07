@@ -374,7 +374,16 @@ describe('useMessageActions', () => {
         id: 'user-original',
         role: 'user',
         content: 'prompt with error',
-        files: [{ id: 'f1', name: 'test.pdf', type: 'application/pdf', uploadState: 'failed', error: 'Upload failed', size: 10 }],
+        files: [
+          {
+            id: 'f1',
+            name: 'test.pdf',
+            type: 'application/pdf',
+            uploadState: 'failed',
+            error: 'Upload failed',
+            size: 10,
+          },
+        ],
         timestamp: new Date('2026-05-01T00:00:00.000Z'),
       },
       {
@@ -396,9 +405,7 @@ describe('useMessageActions', () => {
       activeMessages: messages,
     });
 
-    const { result, unmount } = renderHook(() =>
-      useMessageActions(createStoreWiredOptions({ handleSendMessage })),
-    );
+    const { result, unmount } = renderHook(() => useMessageActions(createStoreWiredOptions({ handleSendMessage })));
 
     await act(async () => {
       await result.current.handleRetryMessage('error-target');
@@ -461,9 +468,7 @@ describe('useMessageActions', () => {
         activeMessages: messages,
       });
 
-      const { result, unmount } = renderHook(() =>
-        useMessageActions(createStoreWiredOptions({ handleSendMessage })),
-      );
+      const { result, unmount } = renderHook(() => useMessageActions(createStoreWiredOptions({ handleSendMessage })));
 
       await act(async () => {
         await result.current.handleRetryMessage('error-msg');

@@ -77,10 +77,7 @@ export const requestBrowserLocation = (
 /**
  * Format coordinates or location name for badge display.
  */
-export const formatLocationDisplay = (
-  location: GeoLocationCoordinates | undefined,
-  fallbackText = '',
-): string => {
+export const formatLocationDisplay = (location: GeoLocationCoordinates | undefined, fallbackText = ''): string => {
   if (!location || !isValidCoordinates(location)) {
     return fallbackText;
   }

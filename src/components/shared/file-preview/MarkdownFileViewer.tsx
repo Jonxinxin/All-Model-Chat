@@ -10,10 +10,7 @@ import { interpolate } from '@/i18n/interpolate';
 import { isEditableElement } from '@/utils/chat-input/focus';
 import { useTextFileContent } from './useTextFileContent';
 import { LazyMarkdownRenderer } from '@/components/message/LazyMarkdownRenderer';
-import {
-  MARKDOWN_VIEW_MODE_STORAGE_PREFIX,
-  MARKDOWN_TOC_STORAGE_PREFIX,
-} from '@/constants/storageKeys';
+import { MARKDOWN_VIEW_MODE_STORAGE_PREFIX, MARKDOWN_TOC_STORAGE_PREFIX } from '@/constants/storageKeys';
 import { readPersistentStorageItem, writePersistentStorageItem } from '@/stores/persistentStorage';
 
 const TOGGLE_BUTTON_BASE_CLASS =
@@ -176,14 +173,14 @@ export const MarkdownFileViewer: React.FC<MarkdownFileViewerProps> = ({
   const documentStats = useMemo(() => getMarkdownDocumentStats(displayContent), [displayContent]);
 
   const hasRepetitiveHeadings = useMemo(() => {
-    return tocItems.some((item) => item.level >= 4 || (item.level >= 3 && (item.text === '详情' || item.text === '详细信息')));
+    return tocItems.some(
+      (item) => item.level >= 4 || (item.level >= 3 && (item.text === '详情' || item.text === '详细信息')),
+    );
   }, [tocItems]);
 
   const filteredTocItems = useMemo(() => {
     if (tocFilterMode === 'all' || !hasRepetitiveHeadings) return tocItems;
-    return tocItems.filter(
-      (item) => item.level <= 3 && item.text !== '详情' && item.text !== '详细信息',
-    );
+    return tocItems.filter((item) => item.level <= 3 && item.text !== '详情' && item.text !== '详细信息');
   }, [tocItems, tocFilterMode, hasRepetitiveHeadings]);
 
   const [activeHeadingIndex, setActiveHeadingIndex] = useState<number>(0);

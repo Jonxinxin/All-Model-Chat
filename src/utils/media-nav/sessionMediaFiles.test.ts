@@ -150,4 +150,3 @@ describe('resolveNamedFile', () => {
     expect(resolveNamedFile(files, 'non-existent-doc.pdf')?.id).toBe('f1');
   });
 });
-

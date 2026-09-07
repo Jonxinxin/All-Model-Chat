@@ -5,7 +5,11 @@ import { screen } from '@testing-library/react';
 import { dbService } from '@/services/db/dbService';
 import { LibraryItemThumbnail } from './LibraryItemThumbnail';
 import type { LibraryItem } from '@/types';
-import { clearPdfThumbnailCache, writePdfThumbnailCache, getPdfThumbnailCacheKey } from '@/components/chat/input/files/pdfThumbnailCache';
+import {
+  clearPdfThumbnailCache,
+  writePdfThumbnailCache,
+  getPdfThumbnailCacheKey,
+} from '@/components/chat/input/files/pdfThumbnailCache';
 import fs from 'fs';
 import path from 'path';
 

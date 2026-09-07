@@ -189,9 +189,7 @@ export interface UrlContextItem {
   url_retrieval_status?: string;
 }
 
-export type SetSelectedFiles = (
-  files: UploadedFile[] | ((prevFiles: UploadedFile[]) => UploadedFile[]),
-) => void;
+export type SetSelectedFiles = (files: UploadedFile[] | ((prevFiles: UploadedFile[]) => UploadedFile[])) => void;
 
 export type CommandedInputSetter = (
   command: InputCommand | null | ((prev: InputCommand | null) => InputCommand | null),

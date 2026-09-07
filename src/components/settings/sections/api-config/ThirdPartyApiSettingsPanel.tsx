@@ -13,10 +13,7 @@ import {
 } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { Toggle } from '@/components/shared/Toggle';
-import {
-  SETTINGS_OUTLINE_BUTTON_CLASS,
-  SETTINGS_PRIMARY_ACTION_BUTTON_CLASS,
-} from '@/constants/buttonClasses';
+import { SETTINGS_OUTLINE_BUTTON_CLASS, SETTINGS_PRIMARY_ACTION_BUTTON_CLASS } from '@/constants/buttonClasses';
 import {
   THIRD_PARTY_TEMPLATE_IDS,
   type AppSettings,
@@ -65,10 +62,7 @@ export const ThirdPartyApiSettingsPanel: React.FC<ThirdPartyApiSettingsPanelProp
   onUpdateSettings,
 }) => {
   const { t } = useI18n();
-  const connections = useMemo(
-    () => settings.thirdPartyApi?.connections ?? [],
-    [settings.thirdPartyApi?.connections],
-  );
+  const connections = useMemo(() => settings.thirdPartyApi?.connections ?? [], [settings.thirdPartyApi?.connections]);
   const [selectedConnectionId, setSelectedConnectionId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -198,9 +192,7 @@ export const ThirdPartyApiSettingsPanel: React.FC<ThirdPartyApiSettingsPanelProp
         }),
       );
 
-      const successCount = results.filter(
-        (r) => r.status === 'fulfilled' && r.value.status === 'success',
-      ).length;
+      const successCount = results.filter((r) => r.status === 'fulfilled' && r.value.status === 'success').length;
       const failCount = targetConnections.length - successCount;
 
       if (failCount === 0) {
@@ -484,7 +476,9 @@ export const ThirdPartyApiSettingsPanel: React.FC<ThirdPartyApiSettingsPanelProp
                                     : `${t('apiConfigTestFailed')}${health.errorMessage ? `: ${health.errorMessage}` : ''}`
                                 }
                               >
-                                <span className={`w-1.5 h-1.5 rounded-full ${getLatencyBadgeStyles(health.grade).dot}`} />
+                                <span
+                                  className={`w-1.5 h-1.5 rounded-full ${getLatencyBadgeStyles(health.grade).dot}`}
+                                />
                                 <span>
                                   {health.status === 'success'
                                     ? formatLatency(health.latencyMs)
@@ -515,7 +509,9 @@ export const ThirdPartyApiSettingsPanel: React.FC<ThirdPartyApiSettingsPanelProp
                             <ChevronRight
                               size={14}
                               className={`transition-colors ${
-                                isSelected ? 'text-[var(--theme-border-focus)]' : 'text-[var(--theme-text-secondary)]/40'
+                                isSelected
+                                  ? 'text-[var(--theme-border-focus)]'
+                                  : 'text-[var(--theme-text-secondary)]/40'
                               }`}
                             />
                           </div>
@@ -568,7 +564,9 @@ export const ThirdPartyApiSettingsPanel: React.FC<ThirdPartyApiSettingsPanelProp
                                 ? t('thirdPartyProtocolOpenAIResponses')
                                 : t('thirdPartyProtocolOpenAI')}
                           </span>
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded ${connectionStatus(selectedConnection).className}`}>
+                          <span
+                            className={`text-[10px] px-1.5 py-0.5 rounded ${connectionStatus(selectedConnection).className}`}
+                          >
                             {connectionStatus(selectedConnection).label}
                           </span>
                         </div>

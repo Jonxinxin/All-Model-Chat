@@ -281,14 +281,22 @@ export const SidePanel: React.FC<SidePanelProps> = ({ content, onClose, themeId 
                 e.preventDefault();
                 setWidth((w) => {
                   const next = Math.min(w + 20, Math.round(window.innerWidth * 0.9));
-                  try { localStorage.setItem(SIDEPANEL_STORAGE_KEY, String(next)); } catch {}
+                  try {
+                    localStorage.setItem(SIDEPANEL_STORAGE_KEY, String(next));
+                  } catch {
+                    // Ignore
+                  }
                   return next;
                 });
               } else if (e.key === 'ArrowRight') {
                 e.preventDefault();
                 setWidth((w) => {
                   const next = Math.max(w - 20, MIN_SIDEPANEL_WIDTH);
-                  try { localStorage.setItem(SIDEPANEL_STORAGE_KEY, String(next)); } catch {}
+                  try {
+                    localStorage.setItem(SIDEPANEL_STORAGE_KEY, String(next));
+                  } catch {
+                    // Ignore
+                  }
                   return next;
                 });
               } else if (e.key === 'Home') {

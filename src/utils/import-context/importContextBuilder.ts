@@ -212,7 +212,9 @@ async function processZipFile(
     totalExtractedBytes += blob.size;
 
     if (totalExtractedBytes > maxTotalBytes) {
-      throw new Error(`ZIP extraction exceeded uncompressed size limit of ${Math.round(maxTotalBytes / 1024 / 1024)}MB.`);
+      throw new Error(
+        `ZIP extraction exceeded uncompressed size limit of ${Math.round(maxTotalBytes / 1024 / 1024)}MB.`,
+      );
     }
 
     const fileName = safePath.split('/').pop() || safePath;

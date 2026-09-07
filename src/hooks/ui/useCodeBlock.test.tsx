@@ -380,11 +380,7 @@ describe('useCodeBlock', () => {
   it('extracts fenceFilename correctly from language className', () => {
     act(() => {
       renderer.root.render(
-        <TestCodeBlock
-          text={'print("hello")'}
-          measurements={measurements}
-          className="language-python:server.py"
-        />,
+        <TestCodeBlock text={'print("hello")'} measurements={measurements} className="language-python:server.py" />,
       );
     });
 
@@ -440,11 +436,7 @@ describe('useCodeBlock', () => {
   it('correctly calculates and exposes lineCount', () => {
     act(() => {
       renderer.root.render(
-        <TestCodeBlock
-          text={'line 1\nline 2\nline 3\nline 4'}
-          measurements={measurements}
-          className="language-ts"
-        />,
+        <TestCodeBlock text={'line 1\nline 2\nline 3\nline 4'} measurements={measurements} className="language-ts" />,
       );
     });
 
@@ -457,11 +449,7 @@ describe('useCodeBlock', () => {
 
     act(() => {
       renderer.root.render(
-        <TestCodeBlock
-          text={'line 1\nline 2\nline 3'}
-          measurements={measurements}
-          className="language-ts"
-        />,
+        <TestCodeBlock text={'line 1\nline 2\nline 3'} measurements={measurements} className="language-ts" />,
       );
     });
 
@@ -488,12 +476,7 @@ describe('useCodeBlock', () => {
 
     act(() => {
       renderer.root.render(
-        <TestCodeBlock
-          text={'a'.repeat(500)}
-          measurements={measurements}
-          className="language-ts"
-          isLoading={true}
-        />,
+        <TestCodeBlock text={'a'.repeat(500)} measurements={measurements} className="language-ts" isLoading={true} />,
       );
     });
 
@@ -504,12 +487,7 @@ describe('useCodeBlock', () => {
     // Stream completes: isLoading becomes false
     act(() => {
       renderer.root.render(
-        <TestCodeBlock
-          text={'a'.repeat(500)}
-          measurements={measurements}
-          className="language-ts"
-          isLoading={false}
-        />,
+        <TestCodeBlock text={'a'.repeat(500)} measurements={measurements} className="language-ts" isLoading={false} />,
       );
     });
 

@@ -147,8 +147,7 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
     return session?.settings?.googleMapsLocation ?? state.pendingChatSettings?.googleMapsLocation;
   });
   const setCurrentChatSettings = useChatStore((state) => state.setCurrentChatSettings);
-  const effectiveLocation =
-    propGoogleMapsLocation !== undefined ? propGoogleMapsLocation : storeGoogleMapsLocation;
+  const effectiveLocation = propGoogleMapsLocation !== undefined ? propGoogleMapsLocation : storeGoogleMapsLocation;
 
   const handleUpdateLocation = (location: GeoLocationCoordinates | undefined) => {
     if (propOnUpdateGoogleMapsLocation) {
@@ -287,19 +286,9 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
                 removeAriaLabel={`Disable ${t(item.labelKey)}`}
                 icon={renderToolIcon(item.icon, 14)}
                 onConfigure={
-                  isMaps
-                    ? () => setIsLocationModalOpen(true)
-                    : isUrl
-                      ? () => setIsUrlModalOpen(true)
-                      : undefined
+                  isMaps ? () => setIsLocationModalOpen(true) : isUrl ? () => setIsUrlModalOpen(true) : undefined
                 }
-                configureAriaLabel={
-                  isMaps
-                    ? t('mapsLocationConfigure')
-                    : isUrl
-                      ? t('urlContextConfigure')
-                      : undefined
-                }
+                configureAriaLabel={isMaps ? t('mapsLocationConfigure') : isUrl ? t('urlContextConfigure') : undefined}
               />
             );
           })}

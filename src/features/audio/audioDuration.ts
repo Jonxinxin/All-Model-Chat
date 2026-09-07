@@ -6,5 +6,4 @@ import { probeMediaDuration } from '@/utils/media/mediaDuration';
  * missing metadata, non-browser environment) so callers can skip guards
  * instead of blocking the pipeline.
  */
-export const getAudioDurationSeconds = (file: File | Blob): Promise<number | null> =>
-  probeMediaDuration('audio', file);
+export const getAudioDurationSeconds = (file: File | Blob): Promise<number | null> => probeMediaDuration('audio', file);

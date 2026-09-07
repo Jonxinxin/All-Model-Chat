@@ -3,11 +3,7 @@ import { Activity, CheckCircle2, Info, Loader2, XCircle } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { Select } from '@/components/shared/Select';
 import { type ModelOption } from '@/types';
-import {
-  formatLatency,
-  getLatencyBadgeStyles,
-  type LatencyGrade,
-} from '@/utils/thirdPartyDiagnostics';
+import { formatLatency, getLatencyBadgeStyles, type LatencyGrade } from '@/utils/thirdPartyDiagnostics';
 
 interface ApiConnectionTesterProps {
   onTest: () => void;

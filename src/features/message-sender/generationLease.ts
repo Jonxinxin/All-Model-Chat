@@ -34,7 +34,12 @@ export const readGenerationLease = (sessionId: string): GenerationLease | null =
     return null;
   }
   const parsed = safeJsonParse<Partial<GenerationLease> | null>(raw, null);
-  if (!parsed || typeof parsed.tabId !== 'string' || typeof parsed.generationId !== 'string' || typeof parsed.ts !== 'number') {
+  if (
+    !parsed ||
+    typeof parsed.tabId !== 'string' ||
+    typeof parsed.generationId !== 'string' ||
+    typeof parsed.ts !== 'number'
+  ) {
     removePersistentStorageItem(key);
     return null;
   }

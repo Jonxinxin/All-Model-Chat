@@ -218,9 +218,7 @@ describe('ToolsMenu', () => {
 
     expect(document.body.textContent).toContain('Maps · Beijing');
 
-    const configButton = document.body.querySelector<HTMLButtonElement>(
-      'button[aria-label="Configure Maps location"]',
-    );
+    const configButton = document.body.querySelector<HTMLButtonElement>('button[aria-label="Configure Maps location"]');
     expect(configButton).not.toBeNull();
 
     act(() => {
@@ -230,9 +228,7 @@ describe('ToolsMenu', () => {
     expect(document.body.textContent).toContain('Maps Location Context');
     expect(document.body.textContent).toContain('Popular Cities');
 
-    const removeButton = document.body.querySelector<HTMLButtonElement>(
-      'button[aria-label="Disable Maps Grounding"]',
-    );
+    const removeButton = document.body.querySelector<HTMLButtonElement>('button[aria-label="Disable Maps Grounding"]');
     expect(removeButton).not.toBeNull();
     act(() => {
       removeButton?.click();
@@ -264,9 +260,7 @@ describe('ToolsMenu', () => {
 
     expect(document.body.textContent).toContain('URL');
 
-    const configButton = document.body.querySelector<HTMLButtonElement>(
-      'button[aria-label="Configure URL Context"]',
-    );
+    const configButton = document.body.querySelector<HTMLButtonElement>('button[aria-label="Configure URL Context"]');
     expect(configButton).not.toBeNull();
 
     act(() => {
@@ -276,9 +270,7 @@ describe('ToolsMenu', () => {
     expect(document.body.textContent).toContain('URL Context');
     expect(document.body.textContent).toContain('Capabilities & Limits');
 
-    const removeButton = document.body.querySelector<HTMLButtonElement>(
-      'button[aria-label="Disable URL Context"]',
-    );
+    const removeButton = document.body.querySelector<HTMLButtonElement>('button[aria-label="Disable URL Context"]');
     expect(removeButton).not.toBeNull();
     act(() => {
       removeButton?.click();

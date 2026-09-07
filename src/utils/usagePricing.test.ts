@@ -229,4 +229,3 @@ describe('estimateMessageCostUsd and formatCostUsd', () => {
     expect(formatCostUsd(null)).toBe('—');
   });
 });
-

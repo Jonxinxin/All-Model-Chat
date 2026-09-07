@@ -182,7 +182,14 @@ describe('ThirdPartyApiSettingsPanel', () => {
     const settings: AppSettings = {
       ...useSettingsStore.getState().appSettings,
       thirdPartyApi: {
-        connections: [createThirdPartyConnection({ id: 'openai', enabled: true, apiKey: 'sk', baseUrl: 'https://api.openai.com/v1' })],
+        connections: [
+          createThirdPartyConnection({
+            id: 'openai',
+            enabled: true,
+            apiKey: 'sk',
+            baseUrl: 'https://api.openai.com/v1',
+          }),
+        ],
       },
     };
 
@@ -271,4 +278,3 @@ describe('ThirdPartyApiSettingsPanel', () => {
     expect(renderer.container.textContent).toContain('Select a connection from the list');
   });
 });
-

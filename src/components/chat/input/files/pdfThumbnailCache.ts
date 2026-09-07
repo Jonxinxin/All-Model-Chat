@@ -1,8 +1,7 @@
 import type { UploadedFile, LibraryItem } from '@/types';
 
 export type PdfThumbnailTargetFile =
-  | UploadedFile
-  | (Pick<LibraryItem, 'name'> & Partial<Pick<LibraryItem, 'size' | 'type' | 'dataUrl' | 'fileApiName'>>);
+  UploadedFile | (Pick<LibraryItem, 'name'> & Partial<Pick<LibraryItem, 'size' | 'type' | 'dataUrl' | 'fileApiName'>>);
 
 export const getPdfThumbnailCacheKey = (file: PdfThumbnailTargetFile, width?: number) => {
   const baseKey = file.dataUrl ?? file.fileApiName ?? `${file.name}:${file.size ?? 0}:${file.type ?? ''}`;

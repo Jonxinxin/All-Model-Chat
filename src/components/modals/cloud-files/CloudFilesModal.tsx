@@ -208,10 +208,7 @@ export const CloudFilesModal: React.FC<CloudFilesModalProps> = ({
   }, []);
 
   const allFilteredSelected = useMemo(() => {
-    return (
-      filteredFiles.length > 0 &&
-      filteredFiles.every((f) => (f.name ? selectedFileNames.has(f.name) : false))
-    );
+    return filteredFiles.length > 0 && filteredFiles.every((f) => (f.name ? selectedFileNames.has(f.name) : false));
   }, [filteredFiles, selectedFileNames]);
 
   const handleSelectAllToggle = useCallback(() => {
@@ -354,12 +351,7 @@ export const CloudFilesModal: React.FC<CloudFilesModalProps> = ({
               >
                 <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
               </button>
-              <button
-                type="button"
-                onClick={onClose}
-                className={MODAL_CLOSE_BUTTON_CLASS}
-                aria-label={t('close')}
-              >
+              <button type="button" onClick={onClose} className={MODAL_CLOSE_BUTTON_CLASS} aria-label={t('close')}>
                 <X size={18} />
               </button>
             </div>
@@ -532,19 +524,11 @@ export const CloudFilesModal: React.FC<CloudFilesModalProps> = ({
                     : 'bg-rose-500/10 text-rose-500'
                 }`}
               >
-                {isPermissionOrProxyError ? (
-                  <CloudOff size={24} />
-                ) : (
-                  <AlertCircle size={24} />
-                )}
+                {isPermissionOrProxyError ? <CloudOff size={24} /> : <AlertCircle size={24} />}
               </div>
 
               <h3 className="text-sm font-semibold text-[var(--theme-text-primary)] mb-2">
-                {isNoKeyWarning
-                  ? fetchError
-                  : isPermissionOrProxyError
-                    ? t('cloudFilesPermissionDenied')
-                    : fetchError}
+                {isNoKeyWarning ? fetchError : isPermissionOrProxyError ? t('cloudFilesPermissionDenied') : fetchError}
               </h3>
 
               {isPermissionOrProxyError && (
@@ -641,9 +625,7 @@ export const CloudFilesModal: React.FC<CloudFilesModalProps> = ({
                         onClick={() => fileName && toggleSelectFile(fileName)}
                         onDoubleClick={() => handleRowDoubleClick(file)}
                         className={`group cursor-pointer transition-colors ${
-                          isSelected
-                            ? 'bg-blue-500/10 hover:bg-blue-500/15'
-                            : 'hover:bg-[var(--theme-bg-secondary)]/50'
+                          isSelected ? 'bg-blue-500/10 hover:bg-blue-500/15' : 'hover:bg-[var(--theme-bg-secondary)]/50'
                         }`}
                       >
                         <td
@@ -766,9 +748,7 @@ export const CloudFilesModal: React.FC<CloudFilesModalProps> = ({
                 className="inline-flex items-center gap-1 text-xs text-rose-500 hover:text-rose-600 font-medium cursor-pointer"
               >
                 <Trash2 size={13} />
-                <span>
-                  {interpolate(t('cloudFilesBatchDelete'), { count: selectedFileNames.size.toString() })}
-                </span>
+                <span>{interpolate(t('cloudFilesBatchDelete'), { count: selectedFileNames.size.toString() })}</span>
               </button>
             )}
           </div>
@@ -787,9 +767,7 @@ export const CloudFilesModal: React.FC<CloudFilesModalProps> = ({
               disabled={selectedFileNames.size === 0}
               className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-colors shadow-xs cursor-pointer"
             >
-              <span>
-                {interpolate(t('cloudFilesInsertSelected'), { count: selectedFileNames.size.toString() })}
-              </span>
+              <span>{interpolate(t('cloudFilesInsertSelected'), { count: selectedFileNames.size.toString() })}</span>
             </button>
           </div>
         </div>

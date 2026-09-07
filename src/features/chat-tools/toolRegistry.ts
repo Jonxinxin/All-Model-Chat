@@ -4,15 +4,7 @@ import type { ModelCapabilities } from '@/utils/model/modelCapabilities';
 type ChatToolSurface = 'tools-menu' | 'slash-command';
 
 export type ChatToolIconKey =
-  | 'telescope'
-  | 'globe'
-  | 'map'
-  | 'terminal'
-  | 'python'
-  | 'pyodide'
-  | 'link'
-  | 'calculator'
-  | 'brain';
+  'telescope' | 'globe' | 'map' | 'terminal' | 'python' | 'pyodide' | 'link' | 'calculator' | 'brain';
 
 export interface ChatToolDefinition {
   id: ChatToolId;

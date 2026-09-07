@@ -31,22 +31,13 @@ describe('chatMessageContent', () => {
         { type: 'text', text: '' },
         { type: 'text', text: 'line 2' },
       ];
-      const result = collapseOnlyTextContent(
-        items,
-        (item) => (item.type === 'text' ? item.text : null),
-      );
+      const result = collapseOnlyTextContent(items, (item) => (item.type === 'text' ? item.text : null));
       expect(result).toBe('line 1\nline 2');
     });
 
     it('returns original items array when non-text blocks are present', () => {
-      const items: TestItem[] = [
-        { type: 'text', text: 'look at this' },
-        { type: 'image' },
-      ];
-      const result = collapseOnlyTextContent(
-        items,
-        (item) => (item.type === 'text' ? item.text : null),
-      );
+      const items: TestItem[] = [{ type: 'text', text: 'look at this' }, { type: 'image' }];
+      const result = collapseOnlyTextContent(items, (item) => (item.type === 'text' ? item.text : null));
       expect(result).toBe(items);
     });
   });

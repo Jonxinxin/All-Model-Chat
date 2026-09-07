@@ -133,12 +133,7 @@ export const LibraryPickerModal: React.FC<LibraryPickerModalProps> = ({
 
   const categories: {
     key: LibraryCategoryFilter;
-    labelKey:
-      | 'libraryTabAll'
-      | 'libraryTabImages'
-      | 'libraryTabDocuments'
-      | 'libraryTabAudio'
-      | 'libraryTabVideo';
+    labelKey: 'libraryTabAll' | 'libraryTabImages' | 'libraryTabDocuments' | 'libraryTabAudio' | 'libraryTabVideo';
   }[] = [
     { key: 'all', labelKey: 'libraryTabAll' },
     { key: 'image', labelKey: 'libraryTabImages' },
@@ -147,10 +142,7 @@ export const LibraryPickerModal: React.FC<LibraryPickerModalProps> = ({
     { key: 'video', labelKey: 'libraryTabVideo' },
   ];
 
-  const hasAdvancedFilters =
-    sourceFilter !== 'all' ||
-    fileTypeFilter !== 'all' ||
-    sortOption !== 'date_desc';
+  const hasAdvancedFilters = sourceFilter !== 'all' || fileTypeFilter !== 'all' || sortOption !== 'date_desc';
 
   const handleResetFilters = useCallback(() => {
     setSourceFilter('all');
@@ -171,56 +163,53 @@ export const LibraryPickerModal: React.FC<LibraryPickerModalProps> = ({
   );
 
   // Upload handlers
-  const handleUploadFiles = useCallback(
-    async (files: File[]) => {
-      if (!files.length) return;
-      setIsUploading(true);
-      try {
-        const newItems: LibraryItem[] = await Promise.all(
-          files.map(async (file) => {
-            const id = `lib-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-            let textContent: string | undefined;
+  const handleUploadFiles = useCallback(async (files: File[]) => {
+    if (!files.length) return;
+    setIsUploading(true);
+    try {
+      const newItems: LibraryItem[] = await Promise.all(
+        files.map(async (file) => {
+          const id = `lib-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+          let textContent: string | undefined;
 
-            if (file.type.startsWith('text/') || file.name.endsWith('.md') || file.name.endsWith('.txt')) {
-              try {
-                textContent = await file.text();
-              } catch {
-                // ignore
-              }
+          if (file.type.startsWith('text/') || file.name.endsWith('.md') || file.name.endsWith('.txt')) {
+            try {
+              textContent = await file.text();
+            } catch {
+              // ignore
             }
+          }
 
-            return {
-              id,
-              name: file.name,
-              type: file.type || 'application/octet-stream',
-              size: file.size,
-              timestamp: Date.now(),
-              rawFile: file,
-              textContent,
-              source: 'uploaded' as const,
-              isStandalone: true,
-            };
-          }),
-        );
+          return {
+            id,
+            name: file.name,
+            type: file.type || 'application/octet-stream',
+            size: file.size,
+            timestamp: Date.now(),
+            rawFile: file,
+            textContent,
+            source: 'uploaded' as const,
+            isStandalone: true,
+          };
+        }),
+      );
 
-        await dbService.addStandaloneLibraryFiles(newItems);
-        const updated = await dbService.getStandaloneLibraryFiles();
-        setStandaloneFiles(updated);
+      await dbService.addStandaloneLibraryFiles(newItems);
+      const updated = await dbService.getStandaloneLibraryFiles();
+      setStandaloneFiles(updated);
 
-        // Auto-select uploaded files
-        setSelectedIds((prev) => {
-          const next = new Set(prev);
-          newItems.forEach((item) => next.add(item.id));
-          return next;
-        });
-      } catch (uploadError) {
-        logService.error('Failed to upload files to library in picker', uploadError);
-      } finally {
-        setIsUploading(false);
-      }
-    },
-    [],
-  );
+      // Auto-select uploaded files
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        newItems.forEach((item) => next.add(item.id));
+        return next;
+      });
+    } catch (uploadError) {
+      logService.error('Failed to upload files to library in picker', uploadError);
+    } finally {
+      setIsUploading(false);
+    }
+  }, []);
 
   const handleFileInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -401,9 +390,7 @@ export const LibraryPickerModal: React.FC<LibraryPickerModalProps> = ({
             <div className="p-3.5 rounded-full bg-[var(--theme-bg-primary)] text-[var(--theme-accent)] shadow-xl mb-2">
               <Upload size={28} strokeWidth={2} />
             </div>
-            <span className="text-sm font-semibold text-[var(--theme-text-primary)]">
-              {t('libraryDropOverlay')}
-            </span>
+            <span className="text-sm font-semibold text-[var(--theme-text-primary)]">{t('libraryDropOverlay')}</span>
           </div>
         )}
 
@@ -423,13 +410,7 @@ export const LibraryPickerModal: React.FC<LibraryPickerModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              className="hidden"
-              onChange={handleFileInputChange}
-            />
+            <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileInputChange} />
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
@@ -613,14 +594,16 @@ export const LibraryPickerModal: React.FC<LibraryPickerModalProps> = ({
                     <ArrowUpDown size={12} />
                     <span>{t('librarySort')}</span>
                   </div>
-                  {([
-                    { key: 'date_desc', labelKey: 'librarySortDateDesc' },
-                    { key: 'date_asc', labelKey: 'librarySortDateAsc' },
-                    { key: 'size_desc', labelKey: 'librarySortSizeDesc' },
-                    { key: 'size_asc', labelKey: 'librarySortSizeAsc' },
-                    { key: 'name_asc', labelKey: 'librarySortNameAsc' },
-                    { key: 'name_desc', labelKey: 'librarySortNameDesc' },
-                  ] as { key: LibrarySortOption; labelKey: string }[]).map((sort) => (
+                  {(
+                    [
+                      { key: 'date_desc', labelKey: 'librarySortDateDesc' },
+                      { key: 'date_asc', labelKey: 'librarySortDateAsc' },
+                      { key: 'size_desc', labelKey: 'librarySortSizeDesc' },
+                      { key: 'size_asc', labelKey: 'librarySortSizeAsc' },
+                      { key: 'name_asc', labelKey: 'librarySortNameAsc' },
+                      { key: 'name_desc', labelKey: 'librarySortNameDesc' },
+                    ] as { key: LibrarySortOption; labelKey: string }[]
+                  ).map((sort) => (
                     <button
                       key={sort.key}
                       type="button"

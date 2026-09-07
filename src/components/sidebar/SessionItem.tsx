@@ -192,7 +192,9 @@ export const SessionItem: React.FC<SessionItemProps> = (props) => {
           onDragLeave={onSessionDropIndicatorClear}
           onDrop={handleItemDrop}
           className={`group relative rounded-lg my-0.5 transition-all duration-150 ease-out ${
-            session.id === activeSessionId || isRightClickAnimating || isContextMenuOpen ? 'bg-[var(--theme-bg-accent)]/10' : ''
+            session.id === activeSessionId || isRightClickAnimating || isContextMenuOpen
+              ? 'bg-[var(--theme-bg-accent)]/10'
+              : ''
           } ${newlyTitledSessionIds.has(session.id) ? 'title-update-animate' : ''} ${isActive || isContextMenuOpen ? 'z-20' : ''} ${isBlockedByGroupDrag ? 'opacity-50 pointer-events-none' : ''}`}
         >
           {showBefore && (

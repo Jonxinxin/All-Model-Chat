@@ -61,9 +61,7 @@ export const AttachmentMenu: React.FC = () => {
           { labelKey: 'attachMenuImportFolder', icon: <FolderOpen size={menuIconSize} />, action: 'folder' },
           { labelKey: 'attachMenuScreenshot', icon: <IconScreenshot size={menuIconSize} />, action: 'screenshot' },
         ] as const)
-      : ([
-          { labelKey: 'attachMenuImportZip', icon: <FileArchive size={menuIconSize} />, action: 'zip' },
-        ] as const)),
+      : ([{ labelKey: 'attachMenuImportZip', icon: <FileArchive size={menuIconSize} />, action: 'zip' }] as const)),
     { labelKey: 'attachMenuRecordAudio', icon: <IconMicrophone size={menuIconSize} />, action: 'recorder' },
     ...(isMobile
       ? ([

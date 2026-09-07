@@ -496,12 +496,11 @@ describe('useStreamResume', () => {
       });
     });
 
-    expect(mockBuildGenerationConfig).toHaveBeenCalledWith(
-      expect.objectContaining({ isLocalPythonEnabled: false }),
-    );
+    expect(mockBuildGenerationConfig).toHaveBeenCalledWith(expect.objectContaining({ isLocalPythonEnabled: false }));
   });
 
-  it('clears the pending record after a successful resume', async () => {    recordJob();
+  it('clears the pending record after a successful resume', async () => {
+    recordJob();
     const { result } = renderResume();
     mockSendStatelessMessageStreamApi.mockResolvedValue(undefined);
 

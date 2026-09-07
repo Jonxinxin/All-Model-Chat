@@ -1,6 +1,12 @@
 import { logService } from '@/services/logService';
 import { useCallback } from 'react';
-import { type AppSettings, type ChatSettings, type UploadedFile, type MediaResolution, type SetSelectedFiles } from '@/types';
+import {
+  type AppSettings,
+  type ChatSettings,
+  type UploadedFile,
+  type MediaResolution,
+  type SetSelectedFiles,
+} from '@/types';
 import { buildContentParts } from '@/utils/chat/builder';
 import { useI18n } from '@/contexts/I18nContext';
 import { formatApiKeyErrorMessage, getGeminiKeyForRequest } from '@/utils/apiKeySelection';

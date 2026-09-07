@@ -339,7 +339,8 @@ describe('invalidateSessionFilesApiReferences', () => {
             {
               fileData: {
                 mimeType: 'application/pdf',
-                fileUri: 'https://generativelanguage.googleapis.com/v1beta/files/fa786fe25ed31df578c059085db86bf4218a6561',
+                fileUri:
+                  'https://generativelanguage.googleapis.com/v1beta/files/fa786fe25ed31df578c059085db86bf4218a6561',
               },
             },
           ],
@@ -359,4 +360,3 @@ describe('invalidateSessionFilesApiReferences', () => {
     });
   });
 });
-

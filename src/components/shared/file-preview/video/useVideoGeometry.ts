@@ -7,11 +7,7 @@ interface UseVideoGeometryProps {
   onFullscreenChange?: (isFullscreen: boolean) => void;
 }
 
-export function useVideoGeometry({
-  containerRef,
-  videoRef,
-  onFullscreenChange,
-}: UseVideoGeometryProps) {
+export function useVideoGeometry({ containerRef, videoRef, onFullscreenChange }: UseVideoGeometryProps) {
   const [displayRect, setDisplayRect] = useState<VideoDisplayRect | null>(null);
 
   const updateDisplayRect = useCallback(() => {

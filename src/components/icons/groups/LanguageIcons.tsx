@@ -24,7 +24,6 @@ export const IconHtml5: React.FC<IconProps> = ({ size = defaultSize, className }
   </svg>
 );
 
-
 export const IconPyodide: React.FC<IconProps> = ({ size = defaultSize, className, color }) => (
   <svg
     width={size}
@@ -46,4 +45,3 @@ export const IconPyodide: React.FC<IconProps> = ({ size = defaultSize, className
     </g>
   </svg>
 );
-

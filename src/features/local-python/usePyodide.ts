@@ -113,7 +113,7 @@ export const usePyodide = (codeKey?: string) => {
       } catch (executionError) {
         const errorOutput =
           typeof executionError === 'object' && executionError !== null && 'output' in executionError
-            ? (executionError as { output?: string }).output ?? null
+            ? ((executionError as { output?: string }).output ?? null)
             : null;
         const errorState: PyodideState = {
           isRunning: false,

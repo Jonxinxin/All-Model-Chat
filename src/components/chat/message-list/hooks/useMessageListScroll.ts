@@ -451,7 +451,9 @@ export const useMessageListScroll = ({
 
     if (lastRestoredSessionIdRef.current !== activeSessionId) {
       if (messages.length > 0) {
-        const savedSnapshot = parseStoredScrollSnapshot(readPersistentStorageItem(getScrollStorageKey(activeSessionId)));
+        const savedSnapshot = parseStoredScrollSnapshot(
+          readPersistentStorageItem(getScrollStorageKey(activeSessionId)),
+        );
         const sessionIdForRestore = activeSessionId;
         clearRestoreTimeout();
 

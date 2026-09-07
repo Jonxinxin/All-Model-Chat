@@ -71,7 +71,9 @@ export const ThirdPartyConnectionEditor: React.FC<ThirdPartyConnectionEditorProp
   onHealthResult,
 }) => {
   const { t } = useI18n();
-  const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>(() => healthResult?.status ?? 'idle');
+  const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>(
+    () => healthResult?.status ?? 'idle',
+  );
   const [testMessage, setTestMessage] = useState<string | null>(() => healthResult?.errorMessage ?? null);
   const [testLatencyMs, setTestLatencyMs] = useState<number | null>(() => healthResult?.latencyMs ?? null);
   const [testGrade, setTestGrade] = useState<LatencyGrade | null>(() => healthResult?.grade ?? null);
@@ -260,15 +262,9 @@ export const ThirdPartyConnectionEditor: React.FC<ThirdPartyConnectionEditorProp
         setApiKey={(value) => updateField('apiKey', value)}
         label={t('thirdPartyApiKey')}
         placeholder={
-          connection.authOptional
-            ? t('thirdPartyApiKeyOptionalPlaceholder')
-            : t('apiConfigOpenaiKeyPlaceholder')
+          connection.authOptional ? t('thirdPartyApiKeyOptionalPlaceholder') : t('apiConfigOpenaiKeyPlaceholder')
         }
-        helpText={
-          connection.authOptional
-            ? t('thirdPartyApiKeyOptionalHelp')
-            : t('thirdPartyApiKeyHelp')
-        }
+        helpText={connection.authOptional ? t('thirdPartyApiKeyOptionalHelp') : t('thirdPartyApiKeyHelp')}
       />
 
       <div className="space-y-2">
@@ -462,7 +458,9 @@ export const ThirdPartyConnectionEditor: React.FC<ThirdPartyConnectionEditorProp
         latencyMs={testLatencyMs}
         latencyGrade={testGrade}
         diagnosticTip={diagnosticTip}
-        isTestDisabled={testStatus === 'testing' || (!connection.authOptional && !connection.apiKey) || !connection.baseUrl}
+        isTestDisabled={
+          testStatus === 'testing' || (!connection.authOptional && !connection.apiKey) || !connection.baseUrl
+        }
         availableModels={connection.models}
         testModelId={connection.modelId}
         onModelChange={(modelId) => updateField('modelId', modelId)}

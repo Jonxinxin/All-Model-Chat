@@ -95,7 +95,8 @@ export const rehydrateDraftFile = (file: UploadedFile, sessionId: string): Uploa
   }
 
   if (rawCandidate) {
-    const { rawFile: _, ...rest } = file;
+    const rest = { ...file };
+    delete rest.rawFile;
     return { ...rest, isProcessing: false };
   }
 

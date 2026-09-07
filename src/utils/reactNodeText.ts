@@ -15,9 +15,7 @@ export const extractTextFromNode = (node: ReactNode): string => {
   return '';
 };
 
-export const findCodeElement = (
-  children: ReactNode,
-): ReactElement<CodeElementProps> | undefined => {
+export const findCodeElement = (children: ReactNode): ReactElement<CodeElementProps> | undefined => {
   return Children.toArray(children).find(
     (child): child is ReactElement<CodeElementProps> =>
       isValidElement<CodeElementProps>(child) &&

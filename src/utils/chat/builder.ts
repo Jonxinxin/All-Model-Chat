@@ -194,7 +194,10 @@ const buildFilePart = async (
         try {
           const { generateZipContext } = await import('@/utils/import-context/loaders');
           if (fileSource) {
-            const fileObj = fileSource instanceof File ? fileSource : new File([fileSource], file.name, { type: file.type || 'application/zip' });
+            const fileObj =
+              fileSource instanceof File
+                ? fileSource
+                : new File([fileSource], file.name, { type: file.type || 'application/zip' });
             const contextFile = await generateZipContext(fileObj);
             const text = await fileToString(contextFile);
             enrichedFile.textContent = text;

@@ -80,7 +80,9 @@ export const GroupItemMenu: React.FC<GroupItemMenuProps> = ({
             onClick={onClear}
             disabled={!hasSessions}
             className={`${MENU_ITEM_BUTTON_CLASS} rounded-lg ${
-              hasSessions ? MENU_ITEM_DEFAULT_STATE_CLASS : 'text-[var(--theme-text-tertiary)] opacity-50 cursor-not-allowed'
+              hasSessions
+                ? MENU_ITEM_DEFAULT_STATE_CLASS
+                : 'text-[var(--theme-text-tertiary)] opacity-50 cursor-not-allowed'
             }`}
           >
             <Eraser size={14} className="text-[var(--theme-text-secondary)] shrink-0" />

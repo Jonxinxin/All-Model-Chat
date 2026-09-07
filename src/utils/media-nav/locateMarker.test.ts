@@ -82,7 +82,8 @@ describe('parseLocateMarkers (pdf)', () => {
   });
 
   it('supports single-quoted and unquoted attributes', () => {
-    const content = "<pdf-locate page='5' doc='handbook.pdf' box='100,200,300,400'>单引号</pdf-locate> <pdf-locate page=7>无引号</pdf-locate>";
+    const content =
+      "<pdf-locate page='5' doc='handbook.pdf' box='100,200,300,400'>单引号</pdf-locate> <pdf-locate page=7>无引号</pdf-locate>";
     const { pdfLocates, cleanContent } = parseLocateMarkers(content);
     expect(pdfLocates).toHaveLength(2);
     expect(pdfLocates[0]).toEqual({
@@ -103,7 +104,8 @@ describe('parseLocateMarkers (pdf)', () => {
   });
 
   it('supports self-closing tags', () => {
-    const content = '正文开始 <pdf-locate page="3" box="50,60,70,80" /> 补充说明 <image-locate point="500,500" arrow="top" label="Logo" /> 结尾';
+    const content =
+      '正文开始 <pdf-locate page="3" box="50,60,70,80" /> 补充说明 <image-locate point="500,500" arrow="top" label="Logo" /> 结尾';
     const { pdfLocates, imageLocates, cleanContent } = parseLocateMarkers(content);
     expect(pdfLocates).toEqual([
       {

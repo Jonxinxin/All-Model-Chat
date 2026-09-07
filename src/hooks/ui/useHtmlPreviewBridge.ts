@@ -137,5 +137,17 @@ export const useHtmlPreviewBridge = ({
     return () => {
       targetWindow.removeEventListener('message', handleMessage);
     };
-  }, [enabled, iframeRef, onCopy, onDiagnostic, onEscape, onFollowUp, onReady, onResize, privilege, selectionScale, targetWindow]);
+  }, [
+    enabled,
+    iframeRef,
+    onCopy,
+    onDiagnostic,
+    onEscape,
+    onFollowUp,
+    onReady,
+    onResize,
+    privilege,
+    selectionScale,
+    targetWindow,
+  ]);
 };

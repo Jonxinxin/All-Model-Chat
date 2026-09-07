@@ -273,7 +273,9 @@ describe('MessageActions', () => {
     act(() => {
       moreButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
-    expect(renderer.container.querySelector('[role="menuitem"][aria-label="Continue Generating"]')).not.toBeInTheDocument();
+    expect(
+      renderer.container.querySelector('[role="menuitem"][aria-label="Continue Generating"]'),
+    ).not.toBeInTheDocument();
 
     // 2. Image generation model
     act(() => {
@@ -301,6 +303,8 @@ describe('MessageActions', () => {
     act(() => {
       moreBtn2?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
-    expect(renderer.container.querySelector('[role="menuitem"][aria-label="Continue Generating"]')).not.toBeInTheDocument();
+    expect(
+      renderer.container.querySelector('[role="menuitem"][aria-label="Continue Generating"]'),
+    ).not.toBeInTheDocument();
   });
 });

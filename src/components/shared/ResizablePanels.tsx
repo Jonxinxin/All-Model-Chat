@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  Group,
-  Panel,
-  Separator,
-  type GroupProps,
-  type PanelProps,
-} from 'react-resizable-panels';
+import { Group, Panel, Separator, type GroupProps, type PanelProps } from 'react-resizable-panels';
 
 export interface ResizablePanelGroupProps extends GroupProps {
   className?: string;
@@ -43,11 +37,7 @@ export const ResizablePanelGroup: React.FC<ResizablePanelGroupProps> = ({
   );
 };
 
-export const ResizablePanel: React.FC<ResizablePanelProps> = ({
-  className = '',
-  children,
-  ...props
-}) => {
+export const ResizablePanel: React.FC<ResizablePanelProps> = ({ className = '', children, ...props }) => {
   return (
     <Panel className={`relative overflow-hidden ${className}`} {...props}>
       {children}

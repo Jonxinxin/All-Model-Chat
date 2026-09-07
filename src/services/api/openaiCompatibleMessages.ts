@@ -109,9 +109,8 @@ const partToOpenAIContentItems = (part: Part): Exclude<OpenAIMessageContent, str
 };
 
 const partsToOpenAIContent = (parts: Part[]): OpenAIMessageContent =>
-  collapseOnlyTextContent(
-    parts.flatMap(partToOpenAIContentItems),
-    (item) => (item.type === 'text' ? item.text : null),
+  collapseOnlyTextContent(parts.flatMap(partToOpenAIContentItems), (item) =>
+    item.type === 'text' ? item.text : null,
   ) as OpenAIMessageContent;
 
 const buildOpenAICompatibleMessages = (

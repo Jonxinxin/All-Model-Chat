@@ -1,14 +1,6 @@
 import { logService } from '@/services/logService';
 import React, { useState, useCallback, useEffect, useImperativeHandle, useRef } from 'react';
-import {
-  X,
-  Check,
-  Download,
-  ClipboardCopy,
-  Loader2,
-  Save,
-  Edit3,
-} from 'lucide-react';
+import { X, Check, Download, ClipboardCopy, Loader2, Save, Edit3 } from 'lucide-react';
 import { type UploadedFile } from '@/types';
 import { useI18n } from '@/contexts/I18nContext';
 import { toastError } from '@/stores/toastStore';
@@ -45,7 +37,8 @@ export const FilePreviewHeader = React.forwardRef<FilePreviewHeaderHandle, FileP
 
     const { isTextFallback: isText, isAudio, isVideo, isYoutube } = getFileKindFlags(file);
     const isMermaidDiagram = file.type === 'image/svg+xml';
-    const isCopyable = !isAudio && !isVideo && !isYoutube && (isText || file.type?.startsWith('image/') || isMermaidDiagram);
+    const isCopyable =
+      !isAudio && !isVideo && !isYoutube && (isText || file.type?.startsWith('image/') || isMermaidDiagram);
     const { Icon: FileIcon, colorClass, bgClass } = getFileDisplayMeta(file);
 
     const showCopyFeedback = useCallback(() => {
@@ -117,7 +110,9 @@ export const FilePreviewHeader = React.forwardRef<FilePreviewHeaderHandle, FileP
         className={`flex-shrink-0 w-full h-13 sm:h-14 bg-[#101113] border-b border-white/10 px-3 sm:px-5 flex items-center justify-between gap-3 z-40 select-none ${className}`}
       >
         <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 max-w-[calc(100%-160px)] sm:max-w-xl md:max-w-2xl">
-          <div className={`p-1.5 sm:p-2 rounded-lg ${bgClass} ${colorClass} transition-colors flex-shrink-0 flex items-center justify-center shadow-xs`}>
+          <div
+            className={`p-1.5 sm:p-2 rounded-lg ${bgClass} ${colorClass} transition-colors flex-shrink-0 flex items-center justify-center shadow-xs`}
+          >
             <FileIcon size={18} strokeWidth={1.75} />
           </div>
           <div className="min-w-0 flex flex-col justify-center">
@@ -179,11 +174,7 @@ export const FilePreviewHeader = React.forwardRef<FilePreviewHeaderHandle, FileP
                 </Tooltip>
               )}
               {isCopyable && (
-                <Tooltip
-                  text={isCopied ? t('copiedButtonTitle') : t('filePreviewCopyContent')}
-                  side="bottom"
-                  asChild
-                >
+                <Tooltip text={isCopied ? t('copiedButtonTitle') : t('filePreviewCopyContent')} side="bottom" asChild>
                   <ToolbarButton
                     onClick={handleCopy}
                     disabled={isCopied}

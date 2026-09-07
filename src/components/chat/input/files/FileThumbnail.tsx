@@ -114,7 +114,10 @@ const YoutubeThumbnail = memo(
     const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
 
     return (
-      <div data-thumbnail-kind="youtube" className="relative h-full w-full overflow-hidden bg-black flex items-center justify-center">
+      <div
+        data-thumbnail-kind="youtube"
+        className="relative h-full w-full overflow-hidden bg-black flex items-center justify-center"
+      >
         <img
           src={thumbnailUrl}
           alt={file.name}

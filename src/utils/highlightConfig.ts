@@ -89,7 +89,6 @@ export const HIGHLIGHT_ALIASES: Record<string, string[]> = {
   yaml: ['yml'],
 };
 
-
 export const HIGHLIGHT_PLAINTEXT = ['text', 'txt', 'plaintext'];
 
 let isRegistered = false;

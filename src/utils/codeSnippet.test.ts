@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  repairIncompleteSvg,
-  detectSnippetFilename,
-  getSnippetMimeType,
-  LANGUAGE_EXTENSION_MAP,
-} from './codeSnippet';
+import { repairIncompleteSvg, detectSnippetFilename, getSnippetMimeType, LANGUAGE_EXTENSION_MAP } from './codeSnippet';
 
 describe('repairIncompleteSvg', () => {
   it('returns empty string if given empty input', () => {
@@ -52,15 +47,21 @@ describe('detectSnippetFilename', () => {
   it('detects title from HTML/SVG <title> tags without double extensions', () => {
     expect(detectSnippetFilename('<svg><title>Garfield Cat</title></svg>', 'svg', 'svg')).toBe('Garfield Cat.svg');
     expect(detectSnippetFilename('<svg><title>Garfield Cat.svg</title></svg>', 'svg', 'svg')).toBe('Garfield Cat.svg');
-    expect(detectSnippetFilename('<html><head><title>Dashboard</title></head></html>', 'html', 'html')).toBe('Dashboard.html');
-    expect(detectSnippetFilename('<html><head><title>Dashboard.html</title></head></html>', 'html', 'html')).toBe('Dashboard.html');
+    expect(detectSnippetFilename('<html><head><title>Dashboard</title></head></html>', 'html', 'html')).toBe(
+      'Dashboard.html',
+    );
+    expect(detectSnippetFilename('<html><head><title>Dashboard.html</title></head></html>', 'html', 'html')).toBe(
+      'Dashboard.html',
+    );
   });
 
   it('detects SVG title from aria-label, id, or desc without double extensions', () => {
     expect(detectSnippetFilename('<svg aria-label="Logo Icon"></svg>', 'svg', 'svg')).toBe('Logo Icon.svg');
     expect(detectSnippetFilename('<svg aria-label="Logo Icon.svg"></svg>', 'svg', 'svg')).toBe('Logo Icon.svg');
     expect(detectSnippetFilename('<svg id="primary-chart"></svg>', 'svg', 'svg')).toBe('primary-chart.svg');
-    expect(detectSnippetFilename('<svg><desc>System Architecture.svg</desc></svg>', 'svg', 'svg')).toBe('System Architecture.svg');
+    expect(detectSnippetFilename('<svg><desc>System Architecture.svg</desc></svg>', 'svg', 'svg')).toBe(
+      'System Architecture.svg',
+    );
   });
 
   it('detects filename from comments in first 3 lines when extension is compatible', () => {

@@ -1,10 +1,6 @@
 import { type MutableRefObject, useCallback } from 'react';
 import { deferToNextTick } from '@/utils/deferToNextTick';
-import {
-  type AppSettings,
-  type ChatSettings as IndividualChatSettings,
-  type UploadedFile,
-} from '@/types';
+import { type AppSettings, type ChatSettings as IndividualChatSettings, type UploadedFile } from '@/types';
 import type { Part, UsageMetadata } from '@google/genai';
 import { useApiErrorHandler } from './useApiErrorHandler';
 import { logService } from '@/services/logService';

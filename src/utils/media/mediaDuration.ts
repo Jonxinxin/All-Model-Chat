@@ -14,11 +14,7 @@ export const probeMediaDuration = async (
   file: File | Blob,
   timeoutMs: number = DEFAULT_MEDIA_DURATION_PROBE_TIMEOUT_MS,
 ): Promise<number | null> => {
-  if (
-    typeof window === 'undefined' ||
-    typeof document === 'undefined' ||
-    typeof URL?.createObjectURL !== 'function'
-  ) {
+  if (typeof window === 'undefined' || typeof document === 'undefined' || typeof URL?.createObjectURL !== 'function') {
     return null;
   }
 

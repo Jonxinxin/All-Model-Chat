@@ -316,7 +316,8 @@ export const BaseMarkdownRenderer: React.FC<BaseMarkdownRendererProps> = React.m
                 .map((v) => Number.parseFloat(v.trim()))
                 .filter(Number.isFinite);
               if (pointParts.length === 2) {
-                const isZeroToOne = pointParts.every((v) => v >= 0 && v <= 1.0) && pointParts.some((v) => v > 0 && v < 1.0);
+                const isZeroToOne =
+                  pointParts.every((v) => v >= 0 && v <= 1.0) && pointParts.some((v) => v > 0 && v < 1.0);
                 const scale = isZeroToOne ? 1000 : 1;
                 point = [Math.round(pointParts[0] * scale), Math.round(pointParts[1] * scale)];
               }
@@ -374,7 +375,8 @@ export const BaseMarkdownRenderer: React.FC<BaseMarkdownRendererProps> = React.m
                 .map((v) => Number.parseFloat(v.trim()))
                 .filter(Number.isFinite);
               if (pointParts.length === 2) {
-                const isZeroToOne = pointParts.every((v) => v >= 0 && v <= 1.0) && pointParts.some((v) => v > 0 && v < 1.0);
+                const isZeroToOne =
+                  pointParts.every((v) => v >= 0 && v <= 1.0) && pointParts.some((v) => v > 0 && v < 1.0);
                 const scale = isZeroToOne ? 1000 : 1;
                 point = [Math.round(pointParts[0] * scale), Math.round(pointParts[1] * scale)];
               }

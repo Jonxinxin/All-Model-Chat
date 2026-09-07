@@ -85,4 +85,3 @@ export const toastError = (message: string): number | string =>
   useToastStore.getState().showToast(message, { type: 'error' });
 
 export { toast };
-

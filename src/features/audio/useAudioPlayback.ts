@@ -158,9 +158,7 @@ export const useAudioPlayback = (options: UseAudioPlaybackOptions = {}): UseAudi
   const handlePause = useCallback(() => setIsPlaying(false), []);
 
   const progressPercent =
-    duration > 0 && Number.isFinite(duration)
-      ? Math.min(100, Math.max(0, (currentTime / duration) * 100))
-      : 0;
+    duration > 0 && Number.isFinite(duration) ? Math.min(100, Math.max(0, (currentTime / duration) * 100)) : 0;
 
   return {
     audioRef,

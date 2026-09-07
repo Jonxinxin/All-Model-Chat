@@ -142,6 +142,3 @@ describe('VideoPlayer', () => {
     });
   });
 });
-
-
-

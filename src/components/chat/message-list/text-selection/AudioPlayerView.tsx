@@ -29,19 +29,12 @@ export const AudioPlayerView: React.FC<AudioPlayerViewProps> = ({
   const { t } = useI18n();
   const showPlayer = Boolean(audioUrl) && !isLoading;
 
-  const {
-    isPlaying,
-    duration,
-    currentTime,
-    progressPercent,
-    togglePlayback,
-    handleSeek,
-    audioProps,
-  } = useAudioPlayback({
-    src: audioUrl,
-    autoPlay: Boolean(audioUrl),
-    audioRef: audioRef as RefObject<HTMLAudioElement | null>,
-  });
+  const { isPlaying, duration, currentTime, progressPercent, togglePlayback, handleSeek, audioProps } =
+    useAudioPlayback({
+      src: audioUrl,
+      autoPlay: Boolean(audioUrl),
+      audioRef: audioRef as RefObject<HTMLAudioElement | null>,
+    });
 
   return (
     <div

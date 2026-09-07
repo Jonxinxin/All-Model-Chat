@@ -9,7 +9,7 @@ export const registerActiveViewGetter = (getter: ActiveViewGetter) => {
   activeViewGetter = getter;
 };
 
-export const isCurrentlyLibraryRoute = (): boolean => {
+const isCurrentlyLibraryRoute = (): boolean => {
   if (typeof window === 'undefined') {
     return false;
   }
@@ -34,12 +34,7 @@ export const syncLibraryRoute = (historyMode: SessionHistoryMode = 'auto') => {
   const targetPath = '/library';
   try {
     if (window.location.pathname !== targetPath) {
-      const method =
-        historyMode === 'push'
-          ? 'pushState'
-          : historyMode === 'replace'
-            ? 'replaceState'
-            : 'pushState';
+      const method = historyMode === 'push' ? 'pushState' : historyMode === 'replace' ? 'replaceState' : 'pushState';
       window.history[method]({ view: 'library' }, '', targetPath);
     }
   } catch {

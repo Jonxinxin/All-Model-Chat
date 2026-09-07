@@ -86,9 +86,7 @@ export const SessionItemMenu: React.FC<SessionItemMenuProps> = ({
           <DropdownMenuItem onSelect={() => onMoveSessionToGroup(session.id, null)}>
             <Folder size={13} className="text-[var(--theme-text-secondary)]" />
             <span className="truncate">{t('historyMoveToUngrouped')}</span>
-            {session.groupId == null && (
-              <Check className="ml-auto h-3.5 w-3.5 text-[var(--theme-text-link)]" />
-            )}
+            {session.groupId == null && <Check className="ml-auto h-3.5 w-3.5 text-[var(--theme-text-link)]" />}
           </DropdownMenuItem>
           {groups.map((group) => (
             <DropdownMenuItem
@@ -98,9 +96,7 @@ export const SessionItemMenu: React.FC<SessionItemMenuProps> = ({
             >
               <Folder size={13} className="shrink-0 text-[var(--theme-text-secondary)]" />
               <span className="truncate">{group.title}</span>
-              {session.groupId === group.id && (
-                <Check className="ml-auto h-3.5 w-3.5 text-[var(--theme-text-link)]" />
-              )}
+              {session.groupId === group.id && <Check className="ml-auto h-3.5 w-3.5 text-[var(--theme-text-link)]" />}
             </DropdownMenuItem>
           ))}
         </DropdownMenuSubContent>

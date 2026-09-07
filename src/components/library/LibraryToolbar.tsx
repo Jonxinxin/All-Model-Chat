@@ -20,11 +20,7 @@ import { useI18n } from '@/contexts/I18nContext';
 import { useLibraryStore } from '@/stores/libraryStore';
 import { useClickOutside } from '@/hooks/useClickOutside';
 import { interpolate } from '@/i18n/interpolate';
-import type {
-  LibraryCategoryFilter,
-  LibraryFileTypeFilter,
-  LibrarySortOption,
-} from '@/types';
+import type { LibraryCategoryFilter, LibraryFileTypeFilter, LibrarySortOption } from '@/types';
 
 interface LibraryToolbarProps {
   selectedCount: number;
@@ -59,12 +55,7 @@ export const LibraryToolbar: React.FC<LibraryToolbarProps> = ({
 
   const categories: {
     key: LibraryCategoryFilter;
-    labelKey:
-      | 'libraryTabAll'
-      | 'libraryTabImages'
-      | 'libraryTabDocuments'
-      | 'libraryTabAudio'
-      | 'libraryTabVideo';
+    labelKey: 'libraryTabAll' | 'libraryTabImages' | 'libraryTabDocuments' | 'libraryTabAudio' | 'libraryTabVideo';
   }[] = [
     { key: 'all', labelKey: 'libraryTabAll' },
     { key: 'image', labelKey: 'libraryTabImages' },
@@ -73,10 +64,7 @@ export const LibraryToolbar: React.FC<LibraryToolbarProps> = ({
     { key: 'video', labelKey: 'libraryTabVideo' },
   ];
 
-  const hasAdvancedFilters =
-    sourceFilter !== 'all' ||
-    fileTypeFilter !== 'all' ||
-    sortOption !== 'date_desc';
+  const hasAdvancedFilters = sourceFilter !== 'all' || fileTypeFilter !== 'all' || sortOption !== 'date_desc';
 
   const handleResetFilters = () => {
     setSourceFilter('all');
@@ -261,14 +249,16 @@ export const LibraryToolbar: React.FC<LibraryToolbarProps> = ({
                   <ArrowUpDown size={12} />
                   <span>{t('librarySort')}</span>
                 </div>
-                {([
-                  { key: 'date_desc', labelKey: 'librarySortDateDesc' },
-                  { key: 'date_asc', labelKey: 'librarySortDateAsc' },
-                  { key: 'size_desc', labelKey: 'librarySortSizeDesc' },
-                  { key: 'size_asc', labelKey: 'librarySortSizeAsc' },
-                  { key: 'name_asc', labelKey: 'librarySortNameAsc' },
-                  { key: 'name_desc', labelKey: 'librarySortNameDesc' },
-                ] as { key: LibrarySortOption; labelKey: string }[]).map((sort) => (
+                {(
+                  [
+                    { key: 'date_desc', labelKey: 'librarySortDateDesc' },
+                    { key: 'date_asc', labelKey: 'librarySortDateAsc' },
+                    { key: 'size_desc', labelKey: 'librarySortSizeDesc' },
+                    { key: 'size_asc', labelKey: 'librarySortSizeAsc' },
+                    { key: 'name_asc', labelKey: 'librarySortNameAsc' },
+                    { key: 'name_desc', labelKey: 'librarySortNameDesc' },
+                  ] as { key: LibrarySortOption; labelKey: string }[]
+                ).map((sort) => (
                   <button
                     key={sort.key}
                     onClick={() => {

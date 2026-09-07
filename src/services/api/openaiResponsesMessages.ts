@@ -84,9 +84,8 @@ const partToOpenAIResponsesContentItems = (part: Part): OpenAIResponsesContentPa
 };
 
 const partsToOpenAIResponsesContent = (parts: Part[]): string | OpenAIResponsesContentPart[] =>
-  collapseOnlyTextContent(
-    parts.flatMap(partToOpenAIResponsesContentItems),
-    (item) => (item.type === 'input_text' ? item.text : null),
+  collapseOnlyTextContent(parts.flatMap(partToOpenAIResponsesContentItems), (item) =>
+    item.type === 'input_text' ? item.text : null,
   );
 
 const buildOpenAIResponsesInput = (

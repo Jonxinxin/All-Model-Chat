@@ -8,7 +8,7 @@ export interface MarkdownTocItem {
 
 const HEADING_REGEX = /^(#{1,6})\s+(.+)$/;
 
-export const cleanHeadingText = (raw: string): string => {
+const cleanHeadingText = (raw: string): string => {
   return raw
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
     .replace(/(`+)(.*?)\1/g, '$2')

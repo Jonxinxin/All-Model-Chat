@@ -15,10 +15,7 @@ interface PdfSelectionBubbleProps {
   onQuote?: (text: string) => void;
 }
 
-export const PdfSelectionBubble: React.FC<PdfSelectionBubbleProps> = ({
-  containerRef,
-  onQuote,
-}) => {
+export const PdfSelectionBubble: React.FC<PdfSelectionBubbleProps> = ({ containerRef, onQuote }) => {
   const { t } = useI18n();
   const [selectionState, setSelectionState] = useState<PdfSelectionState | null>(null);
   const [isCopied, setIsCopied] = useState(false);
@@ -176,11 +173,7 @@ export const PdfSelectionBubble: React.FC<PdfSelectionBubbleProps> = ({
         title={isCopied ? t('copied') : t('copy')}
         aria-label={isCopied ? t('copied') : t('copy')}
       >
-        {isCopied ? (
-          <Check size={13} className="text-emerald-400" />
-        ) : (
-          <Copy size={13} className="text-white/70" />
-        )}
+        {isCopied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} className="text-white/70" />}
         <span>{isCopied ? t('copied') : t('copy')}</span>
       </button>
 

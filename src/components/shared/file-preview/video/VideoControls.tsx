@@ -1,5 +1,15 @@
 import React, { useRef } from 'react';
-import { Maximize, Minimize, Pause, Play, StepBack, StepForward, Volume2, VolumeX, PictureInPicture } from 'lucide-react';
+import {
+  Maximize,
+  Minimize,
+  Pause,
+  Play,
+  StepBack,
+  StepForward,
+  Volume2,
+  VolumeX,
+  PictureInPicture,
+} from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { formatTimestamp } from '@/utils/media-nav/timestamp';
 import { Tooltip } from '@/components/shared/Tooltip';
@@ -62,10 +72,7 @@ export const VideoControls: React.FC<VideoControlsProps> = ({
     >
       <div className="relative w-full flex items-center group/timeline py-1.5 cursor-pointer">
         <div className="absolute inset-x-0 h-1 group-hover/timeline:h-1.5 bg-white/25 rounded-full overflow-hidden transition-all pointer-events-none">
-          <div
-            className="h-full bg-white transition-[width] duration-75"
-            style={{ width: `${progressPercent}%` }}
-          />
+          <div className="h-full bg-white transition-[width] duration-75" style={{ width: `${progressPercent}%` }} />
         </div>
 
         {activeSegment && duration > 0 && (
@@ -108,7 +115,11 @@ export const VideoControls: React.FC<VideoControlsProps> = ({
               className="p-1.5 rounded-lg hover:bg-white/20 active:bg-white/30 text-white transition-all active:scale-95 cursor-pointer"
               aria-label={isPlaying ? t('videoPause') : t('videoPlay')}
             >
-              {isPlaying ? <Pause size={17} className="fill-current" /> : <Play size={17} className="fill-current ml-0.5" />}
+              {isPlaying ? (
+                <Pause size={17} className="fill-current" />
+              ) : (
+                <Play size={17} className="fill-current ml-0.5" />
+              )}
             </button>
           </Tooltip>
 

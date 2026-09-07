@@ -2,15 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import type { UploadedFile } from '@/types';
 import JSZip from 'jszip';
 import { GoogleSpinner } from '@/components/icons/GoogleSpinner';
-import {
-  AlertCircle,
-  Archive,
-  Download,
-  Folder,
-  Search,
-  Sparkles,
-  X,
-} from 'lucide-react';
+import { AlertCircle, Archive, Download, Folder, Search, Sparkles, X } from 'lucide-react';
 import { triggerDownload } from '@/utils/export/core';
 import { getFileDisplayMeta } from '@/utils/file/fileDisplayStyles';
 import { sanitizeZipEntryPath } from '@/utils/import-context/zipSafety';
@@ -199,9 +191,7 @@ export const ZipViewer: React.FC<ZipViewerProps> = ({ file, onConvertToContext }
       }
     } catch (conversionError) {
       setContextError(
-        conversionError instanceof Error && conversionError.message
-          ? conversionError.message
-          : t('zipProcessFailed'),
+        conversionError instanceof Error && conversionError.message ? conversionError.message : t('zipProcessFailed'),
       );
     } finally {
       setIsConvertingContext(false);
@@ -298,70 +288,74 @@ export const ZipViewer: React.FC<ZipViewerProps> = ({ file, onConvertToContext }
           </div>
         )}
 
-      <div className="flex-grow min-h-0 flex overflow-hidden relative">
-        <div className={`overflow-auto flex-1 ${previewItem ? 'hidden md:block md:w-1/2 border-r border-[var(--theme-border-secondary)]' : 'w-full'}`}>
-          <div className="divide-y divide-[var(--theme-border-secondary)]/30">
-            {filteredEntries.map((item) => (
-              <div
-                key={item.path}
-                className="flex items-center justify-between px-5 py-2.5 hover:bg-[var(--theme-bg-secondary)]/60 transition-colors group cursor-pointer text-xs"
-                onClick={() => !item.isDir && handleViewTextEntry(item)}
-              >
-                <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-3">
-                  {getFileIcon(item.name, item.isDir)}
-                  <span
-                    className={`truncate font-mono ${
-                      item.isDir ? 'font-semibold text-[var(--theme-text-primary)]' : 'text-[var(--theme-text-secondary)] group-hover:text-[var(--theme-text-primary)]'
-                    }`}
-                    title={item.path}
-                  >
-                    {item.path}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-4 shrink-0 text-[var(--theme-text-tertiary)] font-mono text-[11px]">
-                  {item.size !== undefined && <span>{formatBytes(item.size)}</span>}
-                  <span>{item.date.toLocaleDateString()}</span>
-                  {!item.isDir && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        void handleDownloadEntry(item);
-                      }}
-                      className="p-1 rounded hover:bg-[var(--theme-bg-tertiary)] hover:text-[var(--theme-text-primary)] transition-colors opacity-0 group-hover:opacity-100"
-                      title="下载此文件"
+        <div className="flex-grow min-h-0 flex overflow-hidden relative">
+          <div
+            className={`overflow-auto flex-1 ${previewItem ? 'hidden md:block md:w-1/2 border-r border-[var(--theme-border-secondary)]' : 'w-full'}`}
+          >
+            <div className="divide-y divide-[var(--theme-border-secondary)]/30">
+              {filteredEntries.map((item) => (
+                <div
+                  key={item.path}
+                  className="flex items-center justify-between px-5 py-2.5 hover:bg-[var(--theme-bg-secondary)]/60 transition-colors group cursor-pointer text-xs"
+                  onClick={() => !item.isDir && handleViewTextEntry(item)}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-3">
+                    {getFileIcon(item.name, item.isDir)}
+                    <span
+                      className={`truncate font-mono ${
+                        item.isDir
+                          ? 'font-semibold text-[var(--theme-text-primary)]'
+                          : 'text-[var(--theme-text-secondary)] group-hover:text-[var(--theme-text-primary)]'
+                      }`}
+                      title={item.path}
                     >
-                      <Download size={13} />
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+                      {item.path}
+                    </span>
+                  </div>
 
-        {previewItem && (
-          <div className="flex-1 min-w-0 h-full flex flex-col bg-[var(--theme-bg-secondary)]/30 overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-2 bg-[var(--theme-bg-secondary)] border-b border-[var(--theme-border-secondary)] text-xs">
-              <span className="font-mono font-semibold truncate text-[var(--theme-text-primary)]">
-                {previewItem.name}
-              </span>
-              <button
-                type="button"
-                onClick={() => setPreviewItem(null)}
-                className="px-2 py-0.5 rounded text-[var(--theme-text-tertiary)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)]"
-              >
-                关闭预览
-              </button>
+                  <div className="flex items-center gap-4 shrink-0 text-[var(--theme-text-tertiary)] font-mono text-[11px]">
+                    {item.size !== undefined && <span>{formatBytes(item.size)}</span>}
+                    <span>{item.date.toLocaleDateString()}</span>
+                    {!item.isDir && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void handleDownloadEntry(item);
+                        }}
+                        className="p-1 rounded hover:bg-[var(--theme-bg-tertiary)] hover:text-[var(--theme-text-primary)] transition-colors opacity-0 group-hover:opacity-100"
+                        title="下载此文件"
+                      >
+                        <Download size={13} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
-            <pre className="flex-grow min-h-0 overflow-auto p-4 text-xs font-mono text-[var(--theme-text-primary)] whitespace-pre-wrap select-text">
-              {previewItem.content}
-            </pre>
           </div>
-        )}
+
+          {previewItem && (
+            <div className="flex-1 min-w-0 h-full flex flex-col bg-[var(--theme-bg-secondary)]/30 overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-2 bg-[var(--theme-bg-secondary)] border-b border-[var(--theme-border-secondary)] text-xs">
+                <span className="font-mono font-semibold truncate text-[var(--theme-text-primary)]">
+                  {previewItem.name}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPreviewItem(null)}
+                  className="px-2 py-0.5 rounded text-[var(--theme-text-tertiary)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)]"
+                >
+                  关闭预览
+                </button>
+              </div>
+              <pre className="flex-grow min-h-0 overflow-auto p-4 text-xs font-mono text-[var(--theme-text-primary)] whitespace-pre-wrap select-text">
+                {previewItem.content}
+              </pre>
+            </div>
+          )}
+        </div>
       </div>
     </div>
-  </div>
   );
 };

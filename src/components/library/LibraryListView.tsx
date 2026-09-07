@@ -77,10 +77,7 @@ const LibraryListRow = React.memo<LibraryListRowProps>(
             <LibraryItemThumbnail item={item} size="sm" />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 min-w-0">
-                <span
-                  className="text-sm font-medium text-[var(--theme-text-primary)] truncate"
-                  title={item.name}
-                >
+                <span className="text-sm font-medium text-[var(--theme-text-primary)] truncate" title={item.name}>
                   {item.name}
                 </span>
                 {item.fileApiName && (

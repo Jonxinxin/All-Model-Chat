@@ -36,11 +36,7 @@ describe('apiProxyUrl', () => {
 
   describe('buildGeminiRequestPreviewUrl', () => {
     it('builds standard request preview url', () => {
-      const url = buildGeminiRequestPreviewUrl(
-        DEFAULT_GEMINI_API_BASE_URL,
-        'gemini-2.5-flash',
-        'generateContent',
-      );
+      const url = buildGeminiRequestPreviewUrl(DEFAULT_GEMINI_API_BASE_URL, 'gemini-2.5-flash', 'generateContent');
       expect(url).toBe('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent');
     });
   });

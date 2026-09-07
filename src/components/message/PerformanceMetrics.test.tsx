@@ -176,4 +176,3 @@ describe('PerformanceMetrics', () => {
     expect(renderer.container.querySelector('.group\\/tokens > div.absolute')).toBeNull();
   });
 });
-

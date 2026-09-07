@@ -286,4 +286,3 @@ describe('registerGcsFilesApi', () => {
     expect(result).toEqual(mockFiles);
   });
 });
-

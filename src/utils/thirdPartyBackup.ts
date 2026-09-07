@@ -22,7 +22,7 @@ export const createProvidersBackupPayload = (
   const includeKeys = options?.includeApiKeys ?? true;
   const processedConnections = connections.map((conn) => ({
     ...conn,
-    apiKey: includeKeys ? conn.apiKey : (conn.apiKey ? REDACTED_SECRET_SENTINEL : conn.apiKey),
+    apiKey: includeKeys ? conn.apiKey : conn.apiKey ? REDACTED_SECRET_SENTINEL : conn.apiKey,
   }));
 
   return {
@@ -71,9 +71,7 @@ export const parseProvidersBackupText = (rawText: string): ParseBackupResult => 
       record.settings !== null &&
       typeof (record.settings as Record<string, unknown>).thirdPartyApi === 'object' &&
       (record.settings as Record<string, unknown>).thirdPartyApi !== null &&
-      Array.isArray(
-        ((record.settings as Record<string, unknown>).thirdPartyApi as Record<string, unknown>).connections,
-      )
+      Array.isArray(((record.settings as Record<string, unknown>).thirdPartyApi as Record<string, unknown>).connections)
     ) {
       candidates = ((record.settings as Record<string, unknown>).thirdPartyApi as Record<string, unknown>)
         .connections as unknown[];

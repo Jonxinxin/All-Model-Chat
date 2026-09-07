@@ -60,21 +60,14 @@ export const ThirdPartyBackupDialog: React.FC<ThirdPartyBackupDialogProps> = ({
         <h3 className="text-base font-semibold text-[var(--theme-text-primary)]">
           {dialogMode === 'export' ? t('thirdPartyExportDialogTitle') : t('thirdPartyImportDialogTitle')}
         </h3>
-        <button
-          type="button"
-          onClick={onClose}
-          className={MODAL_CLOSE_BUTTON_CLASS}
-          aria-label={t('close')}
-        >
+        <button type="button" onClick={onClose} className={MODAL_CLOSE_BUTTON_CLASS} aria-label={t('close')}>
           <X size={16} strokeWidth={2} />
         </button>
       </div>
 
       {dialogMode === 'export' ? (
         <div className="space-y-3">
-          <p className="text-xs text-[var(--theme-text-secondary)]">
-            {t('thirdPartyExportDialogDesc')}
-          </p>
+          <p className="text-xs text-[var(--theme-text-secondary)]">{t('thirdPartyExportDialogDesc')}</p>
 
           <div className="space-y-2">
             <button
@@ -90,12 +83,8 @@ export const ThirdPartyBackupDialog: React.FC<ThirdPartyBackupDialogProps> = ({
                 <KeyRound size={18} />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-[var(--theme-text-primary)]">
-                  {t('thirdPartyExportFull')}
-                </div>
-                <div className="text-xs text-[var(--theme-text-secondary)] mt-0.5">
-                  {t('thirdPartyExportFullDesc')}
-                </div>
+                <div className="text-sm font-medium text-[var(--theme-text-primary)]">{t('thirdPartyExportFull')}</div>
+                <div className="text-xs text-[var(--theme-text-secondary)] mt-0.5">{t('thirdPartyExportFullDesc')}</div>
               </div>
             </button>
 

@@ -8,9 +8,7 @@ describe('UrlContextModal', () => {
 
   it('renders modal with tips and disabled insert button initially', () => {
     act(() => {
-      renderer.root.render(
-        <UrlContextModal isOpen={true} onClose={() => {}} />,
-      );
+      renderer.root.render(<UrlContextModal isOpen={true} onClose={() => {}} />);
     });
 
     expect(document.body.textContent).toContain('URL Context');
@@ -79,19 +77,14 @@ describe('UrlContextModal', () => {
 
   it('displays warning when exceeding 20 URLs limit', () => {
     act(() => {
-      renderer.root.render(
-        <UrlContextModal isOpen={true} onClose={() => {}} />,
-      );
+      renderer.root.render(<UrlContextModal isOpen={true} onClose={() => {}} />);
     });
 
     const textarea = document.body.querySelector('textarea') as HTMLTextAreaElement;
     const urls = Array.from({ length: 22 }, (_, i) => `https://site.org/page-${i}`).join('\n');
 
     act(() => {
-      const setter = Object.getOwnPropertyDescriptor(
-        window.HTMLTextAreaElement.prototype,
-        'value',
-      )?.set;
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
       setter?.call(textarea, urls);
       textarea.dispatchEvent(new Event('change', { bubbles: true }));
     });

@@ -31,7 +31,7 @@ describe('Command Component', () => {
             </CommandItem>
           </CommandGroup>
         </CommandList>
-      </Command>
+      </Command>,
     );
 
     expect(screen.getByPlaceholderText('Type a command...')).toBeInTheDocument();
@@ -51,7 +51,7 @@ describe('Command Component', () => {
         <CommandList>
           <CommandItem value="test">Test Item</CommandItem>
         </CommandList>
-      </CommandDialog>
+      </CommandDialog>,
     );
 
     expect(screen.getByPlaceholderText('Search everything...')).toBeInTheDocument();

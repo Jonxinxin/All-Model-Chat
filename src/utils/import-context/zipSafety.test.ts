@@ -1,10 +1,6 @@
 import JSZip from 'jszip';
 import { describe, expect, it } from 'vitest';
-import {
-  runWithConcurrency,
-  sanitizeZipEntryPath,
-  validateZipStructure,
-} from './zipSafety';
+import { runWithConcurrency, sanitizeZipEntryPath, validateZipStructure } from './zipSafety';
 
 describe('sanitizeZipEntryPath', () => {
   it('allows safe relative paths', () => {

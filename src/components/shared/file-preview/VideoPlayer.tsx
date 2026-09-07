@@ -350,7 +350,17 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
       getDuration: () => videoRef.current?.duration ?? duration,
       wakeControls,
     }),
-    [currentTime, duration, seekTo, stepFrame, toggleFullscreen, togglePictureInPicture, toggleMute, togglePlay, wakeControls],
+    [
+      currentTime,
+      duration,
+      seekTo,
+      stepFrame,
+      toggleFullscreen,
+      togglePictureInPicture,
+      toggleMute,
+      togglePlay,
+      wakeControls,
+    ],
   );
 
   const handleLoadedMetadata = (e: React.SyntheticEvent<HTMLVideoElement, Event>) => {

@@ -46,8 +46,7 @@ interface FileKindFlags {
   isTextFallback: boolean;
 }
 
-export const normalizeMimeType = (mimeType?: string): string =>
-  (mimeType || '').trim().toLowerCase().split(';')[0];
+export const normalizeMimeType = (mimeType?: string): string => (mimeType || '').trim().toLowerCase().split(';')[0];
 
 const normalizeFileName = (name?: string): string => (name || '').trim().toLowerCase();
 
@@ -125,31 +124,22 @@ export const isSpreadsheetFile = (file: FileKindInput): boolean => {
 export const isArchiveFile = (file: FileKindInput): boolean => {
   const ext = getFileExtension(file.name);
   const mime = normalizeMimeType(file.type);
-  return (
-    SUPPORTED_ARCHIVE_MIME_TYPES.includes(mime) ||
-    ['.zip', '.tar', '.gz', '.tgz', '.7z', '.rar'].includes(ext)
-  );
+  return SUPPORTED_ARCHIVE_MIME_TYPES.includes(mime) || ['.zip', '.tar', '.gz', '.tgz', '.7z', '.rar'].includes(ext);
 };
 
-export const isDocFile = (file: FileKindInput): boolean => {
+const isDocFile = (file: FileKindInput): boolean => {
   const ext = getFileExtension(file.name);
   const mime = normalizeMimeType(file.type);
-  return (
-    SUPPORTED_DOC_MIME_TYPES.includes(mime) ||
-    ['.doc', '.docx', '.rtf', '.odt', '.epub'].includes(ext)
-  );
+  return SUPPORTED_DOC_MIME_TYPES.includes(mime) || ['.doc', '.docx', '.rtf', '.odt', '.epub'].includes(ext);
 };
 
-export const isPresentationFile = (file: FileKindInput): boolean => {
+const isPresentationFile = (file: FileKindInput): boolean => {
   const ext = getFileExtension(file.name);
   const mime = normalizeMimeType(file.type);
-  return (
-    SUPPORTED_PRESENTATION_MIME_TYPES.includes(mime) ||
-    ['.ppt', '.pptx', '.key', '.odp'].includes(ext)
-  );
+  return SUPPORTED_PRESENTATION_MIME_TYPES.includes(mime) || ['.ppt', '.pptx', '.key', '.odp'].includes(ext);
 };
 
-export const CODE_EXTENSIONS = new Set([
+const CODE_EXTENSIONS = new Set([
   'js',
   'jsx',
   'ts',
@@ -183,7 +173,7 @@ export const CODE_EXTENSIONS = new Set([
   'svelte',
 ]);
 
-export const isCodeFile = (file: FileKindInput): boolean => {
+const isCodeFile = (file: FileKindInput): boolean => {
   const ext = getFileExtension(file.name).replace(/^\./, '').toLowerCase();
   if (ext && CODE_EXTENSIONS.has(ext)) return true;
   const mime = normalizeMimeType(file.type);

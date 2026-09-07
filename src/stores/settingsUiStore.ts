@@ -3,11 +3,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { readPersistentStorageItem } from './persistentStorage';
 import { createSyncedPersist } from './syncedPersist';
 
-import {
-  SETTINGS_TABS,
-  type SettingsTab,
-  type SettingsTabDescriptor,
-} from '@/constants/settingsTabs';
+import { SETTINGS_TABS, type SettingsTab, type SettingsTabDescriptor } from '@/constants/settingsTabs';
 export type { SettingsTab, SettingsTabDescriptor };
 export { SETTINGS_TABS };
 

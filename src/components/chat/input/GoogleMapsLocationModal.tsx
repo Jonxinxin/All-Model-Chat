@@ -187,9 +187,7 @@ export const GoogleMapsLocationModal: React.FC<GoogleMapsLocationModalProps> = (
             </label>
 
             <div>
-              <label className="text-xs text-[var(--theme-text-secondary)] mb-1 block">
-                {t('mapsLocationName')}
-              </label>
+              <label className="text-xs text-[var(--theme-text-secondary)] mb-1 block">{t('mapsLocationName')}</label>
               <input
                 type="text"
                 value={draftName}

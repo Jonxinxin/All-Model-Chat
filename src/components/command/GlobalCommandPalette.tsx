@@ -137,20 +137,14 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
             <CommandShortcut>{modKey}⇧O</CommandShortcut>
           </CommandItem>
 
-          <CommandItem
-            value="toggle sidebar 切换侧边栏"
-            onSelect={() => runCommand(() => toggleHistorySidebar())}
-          >
+          <CommandItem value="toggle sidebar 切换侧边栏" onSelect={() => runCommand(() => toggleHistorySidebar())}>
             <FolderKanban className="text-[var(--theme-text-secondary)]" />
             <span>展开/收起侧边栏</span>
             <CommandShortcut>{modKey}B</CommandShortcut>
           </CommandItem>
 
           {onOpenExportModal && (
-            <CommandItem
-              value="export chat 导出对话 markdown"
-              onSelect={() => runCommand(onOpenExportModal)}
-            >
+            <CommandItem value="export chat 导出对话 markdown" onSelect={() => runCommand(onOpenExportModal)}>
               <Download className="text-[var(--theme-text-secondary)]" />
               <span>导出当前对话</span>
               <CommandShortcut>{modKey}E</CommandShortcut>
@@ -158,10 +152,7 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
           )}
 
           {onClearCurrentChat && (
-            <CommandItem
-              value="clear current chat 清空上下文"
-              onSelect={() => runCommand(onClearCurrentChat)}
-            >
+            <CommandItem value="clear current chat 清空上下文" onSelect={() => runCommand(onClearCurrentChat)}>
               <Trash2 className="text-[var(--theme-icon-error)]" />
               <span>清空当前上下文</span>
               <CommandShortcut>/clear</CommandShortcut>
@@ -175,19 +166,13 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
           <>
             <CommandGroup heading="历史会话快速跳转">
               {recentSessions.map((s) => (
-                <CommandItem
-                  key={s.id}
-                  value={`session ${s.title} ${s.id}`}
-                  onSelect={() => handleSelectSession(s.id)}
-                >
+                <CommandItem key={s.id} value={`session ${s.title} ${s.id}`} onSelect={() => handleSelectSession(s.id)}>
                   <MessageSquare className="text-[var(--theme-text-secondary)] shrink-0" />
                   <span className="truncate flex-1">{s.title || '新会话'}</span>
                   {s.id === activeSessionId && (
                     <Check className="ml-auto h-3.5 w-3.5 text-[var(--theme-text-link)] shrink-0" />
                   )}
-                  {s.isPinned && (
-                    <Pin className="h-3 w-3 text-[var(--theme-text-link)] shrink-0 ml-1.5" />
-                  )}
+                  {s.isPinned && <Pin className="h-3 w-3 text-[var(--theme-text-link)] shrink-0 ml-1.5" />}
                 </CommandItem>
               ))}
             </CommandGroup>
@@ -210,9 +195,7 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
                 {isSelected ? (
                   <Check className="ml-auto h-3.5 w-3.5 text-[var(--theme-text-link)] shrink-0" />
                 ) : (
-                  <span className="ml-auto text-[10px] text-[var(--theme-text-tertiary)] font-mono">
-                    {model.badge}
-                  </span>
+                  <span className="ml-auto text-[10px] text-[var(--theme-text-tertiary)] font-mono">{model.badge}</span>
                 )}
               </CommandItem>
             );

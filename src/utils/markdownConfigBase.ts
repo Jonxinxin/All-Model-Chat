@@ -226,7 +226,6 @@ export const rehypeNormalizeCodeLanguages = () => {
   };
 };
 
-
 export const getBaseRehypePlugins = (
   allowHtml: boolean,
   options: { syntaxHighlighting?: boolean } = {},
@@ -363,7 +362,6 @@ export const getBaseRehypePlugins = (
       },
     ] as const);
   }
-
 
   return plugins;
 };

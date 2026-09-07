@@ -1,10 +1,5 @@
 import type { ModelOption } from '@/types';
-import {
-  isGemini3Model,
-  isGemmaModel,
-  isReasoningModel,
-  getModelCapabilities,
-} from './modelCapabilities';
+import { isGemini3Model, isGemmaModel, isReasoningModel, getModelCapabilities } from './modelCapabilities';
 import { THINKING_BUDGET_RANGES } from '@/constants/modelConfiguration';
 
 export interface ModelCapabilityTag {

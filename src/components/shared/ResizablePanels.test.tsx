@@ -2,11 +2,7 @@ import { act } from 'react';
 import { fireEvent } from '@testing-library/react';
 import { setupProviderTestRenderer as setupTestRenderer } from '@/test/render/providerRenderer';
 import { describe, expect, it, vi } from 'vitest';
-import {
-  ResizablePanelGroup,
-  ResizablePanel,
-  ResizableHandle,
-} from './ResizablePanels';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from './ResizablePanels';
 
 describe('ResizablePanels', () => {
   const renderer = setupTestRenderer({ providers: { language: 'en' } });

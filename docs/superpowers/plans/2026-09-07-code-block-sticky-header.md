@@ -19,10 +19,12 @@
 ### Task 1: 调整 CodeHeader 工具栏按钮为常驻可见并更新测试
 
 **Files:**
+
 - Modify: `src/components/message/blocks/parts/CodeHeader.tsx`
 - Modify: `src/components/message/blocks/parts/CodeHeader.test.tsx`
 
 **Interfaces:**
+
 - `CodeHeader`: 保留现有全部 `CodeHeaderProps` 接口与属性。
 - 改变项：`[data-code-header-toolbar]` 的 className 不再包含 `sm:opacity-0`。
 
@@ -62,6 +64,7 @@ Expected: FAIL，因为当前包含 `sm:opacity-0`。
 - [ ] **Step 3: 修改 `CodeHeader.tsx` 工具栏类名为常驻可见**
 
 在 `src/components/message/blocks/parts/CodeHeader.tsx` 中将：
+
 ```tsx
       <div
         data-code-header-toolbar
@@ -70,7 +73,9 @@ Expected: FAIL，因为当前包含 `sm:opacity-0`。
         onKeyDown={(e) => e.stopPropagation()}
       >
 ```
+
 修改为：
+
 ```tsx
       <div
         data-code-header-toolbar
@@ -97,10 +102,12 @@ git commit -m "feat(code-block): make code header toolbar always visible"
 ### Task 2: 移除 CodeBlock 根容器 overflow-hidden 并补充底部圆角
 
 **Files:**
+
 - Modify: `src/components/message/blocks/CodeBlock.tsx`
 - Modify: `src/components/message/blocks/CodeBlock.test.tsx`
 
 **Interfaces:**
+
 - `CodeBlock`: 根容器支持 `position: sticky` 子元素相对于外部聊天滚动视口吸顶。
 
 - [ ] **Step 1: 在 `CodeBlock.test.tsx` 中编写针对根容器不含 overflow-hidden 的断言**
@@ -136,15 +143,19 @@ Expected: FAIL，因为当前根容器包含 `overflow-hidden`。
 - [ ] **Step 3: 修改 `CodeBlock.tsx` 根容器并为底部元素补充 rounded-b-lg**
 
 1. 将最外层容器（line 342 附近）：
+
 ```tsx
 <div className="group relative my-3 rounded-lg border border-[var(--theme-border-primary)] bg-[var(--theme-bg-code-block)] shadow-sm overflow-hidden">
 ```
+
 修改为：
+
 ```tsx
 <div className="group relative my-3 rounded-lg border border-[var(--theme-border-primary)] bg-[var(--theme-bg-code-block)] shadow-sm">
 ```
 
 2. 为 `<pre>` 添加 `rounded-b-lg`，确保底部与滚动条贴合圆角边界：
+
 ```tsx
         <pre
           ref={preRef}
@@ -154,6 +165,7 @@ Expected: FAIL，因为当前根容器包含 `overflow-hidden`。
 ```
 
 3. 为折叠展开蒙层（`code-block-expand-overlay`）添加 `rounded-b-lg`：
+
 ```tsx
         {isOverflowing && !isExpanded && (
           <div
@@ -179,6 +191,7 @@ git commit -m "fix(code-block): allow header to stick during scroll by removing 
 ### Task 3: 运行全量相关回归测试
 
 **Files:**
+
 - Test: `src/components/message/blocks/CodeBlock.test.tsx`
 - Test: `src/components/message/blocks/parts/CodeHeader.test.tsx`
 - Test: `src/test/architecture/uiClarityRegressions.test.ts`

@@ -314,7 +314,7 @@ export const useSessionLoader = ({
         startNewChat(undefined, { history });
       }
     },
-    [startNewChat, userScrolledUpRef, applyLoadedSession, retainOutgoingSessionDraft],
+    [startNewChat, userScrolledUpRef, fileDraftsRef, applyLoadedSession, retainOutgoingSessionDraft],
   );
 
   const loadInitialData = useCallback(async () => {

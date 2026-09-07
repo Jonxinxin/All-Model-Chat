@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  generateDeterministicWaveform,
-  readAudioWaveformCache,
-  writeAudioWaveformCache,
-} from './audioWaveform';
+import { generateDeterministicWaveform, readAudioWaveformCache, writeAudioWaveformCache } from './audioWaveform';
 
 describe('audioWaveform', () => {
   it('generates deterministic waveform bars matching requested count', () => {

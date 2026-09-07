@@ -54,9 +54,7 @@ describe('ZipViewer', () => {
     });
 
     // Click on README.md to preview
-    const readmeEntry = Array.from(document.querySelectorAll('span')).find(
-      (el) => el.textContent === 'README.md',
-    );
+    const readmeEntry = Array.from(document.querySelectorAll('span')).find((el) => el.textContent === 'README.md');
     expect(readmeEntry).toBeDefined();
 
     await act(async () => {
@@ -119,9 +117,7 @@ describe('ZipViewer', () => {
     });
 
     const convertBtn = Array.from(document.querySelectorAll('button')).find(
-      (btn) =>
-        btn.textContent?.includes('解析为项目上下文') ||
-        btn.textContent?.includes('Convert to Project Context'),
+      (btn) => btn.textContent?.includes('解析为项目上下文') || btn.textContent?.includes('Convert to Project Context'),
     );
     expect(convertBtn).toBeDefined();
 

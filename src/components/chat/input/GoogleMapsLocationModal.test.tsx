@@ -45,12 +45,7 @@ describe('GoogleMapsLocationModal', () => {
   it('selects a preset city and updates coordinate inputs', () => {
     act(() => {
       renderer.root.render(
-        <GoogleMapsLocationModal
-          isOpen={true}
-          onClose={vi.fn()}
-          location={undefined}
-          onSave={vi.fn()}
-        />,
+        <GoogleMapsLocationModal isOpen={true} onClose={vi.fn()} location={undefined} onSave={vi.fn()} />,
       );
     });
 
@@ -78,12 +73,7 @@ describe('GoogleMapsLocationModal', () => {
 
     act(() => {
       renderer.root.render(
-        <GoogleMapsLocationModal
-          isOpen={true}
-          onClose={onClose}
-          location={undefined}
-          onSave={onSave}
-        />,
+        <GoogleMapsLocationModal isOpen={true} onClose={onClose} location={undefined} onSave={onSave} />,
       );
     });
 
@@ -104,8 +94,8 @@ describe('GoogleMapsLocationModal', () => {
       if (nameInput) setInputValue(nameInput, 'Shanghai');
     });
 
-    const saveButton = Array.from(document.body.querySelectorAll<HTMLButtonElement>('button')).find(
-      (btn) => btn.textContent?.includes('Save & Apply'),
+    const saveButton = Array.from(document.body.querySelectorAll<HTMLButtonElement>('button')).find((btn) =>
+      btn.textContent?.includes('Save & Apply'),
     );
     expect(saveButton).toBeDefined();
 
@@ -140,8 +130,8 @@ describe('GoogleMapsLocationModal', () => {
       );
     });
 
-    const clearButton = Array.from(document.body.querySelectorAll<HTMLButtonElement>('button')).find(
-      (btn) => btn.textContent?.includes('Clear Location'),
+    const clearButton = Array.from(document.body.querySelectorAll<HTMLButtonElement>('button')).find((btn) =>
+      btn.textContent?.includes('Clear Location'),
     );
     expect(clearButton).toBeDefined();
 
@@ -162,17 +152,12 @@ describe('GoogleMapsLocationModal', () => {
 
     act(() => {
       renderer.root.render(
-        <GoogleMapsLocationModal
-          isOpen={true}
-          onClose={vi.fn()}
-          location={undefined}
-          onSave={vi.fn()}
-        />,
+        <GoogleMapsLocationModal isOpen={true} onClose={vi.fn()} location={undefined} onSave={vi.fn()} />,
       );
     });
 
-    const currentLocButton = Array.from(document.body.querySelectorAll<HTMLButtonElement>('button')).find(
-      (btn) => btn.textContent?.includes('Use Current Location'),
+    const currentLocButton = Array.from(document.body.querySelectorAll<HTMLButtonElement>('button')).find((btn) =>
+      btn.textContent?.includes('Use Current Location'),
     );
     expect(currentLocButton).toBeDefined();
 

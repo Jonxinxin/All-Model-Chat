@@ -210,8 +210,7 @@ export const useChatInputClipboard = ({
       };
       const pastedText = event.clipboardData.getData('text/plain');
       const shouldAppHandleClipboardData =
-        shouldHandleChatInputClipboardData(event.clipboardData, clipboardOptions) ||
-        isYoutubeUrl(pastedText.trim());
+        shouldHandleChatInputClipboardData(event.clipboardData, clipboardOptions) || isYoutubeUrl(pastedText.trim());
       const shouldHandle = canHandlePaste && shouldAppHandleClipboardData;
 
       if (shouldHandle) {

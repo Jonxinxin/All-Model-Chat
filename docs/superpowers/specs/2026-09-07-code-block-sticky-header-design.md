@@ -9,6 +9,7 @@
 同时，桌面端原先在未 hover 时将操作按钮设为 `sm:opacity-0`，导致在吸顶或快速扫读时不易直观发现和直接点击操作。
 
 需求目标：
+
 1. **页面滚动时工具栏吸顶**：无论用户如何在长代码块中向下滚动，代码块头部工具栏始终保持吸附在聊天区域视口顶部；超出代码块底部时随父块自然滚出。
 2. **操作按钮常驻可见**：在桌面端/吸顶时保持操作按钮常驻可见（不再隐藏为 `opacity-0`），方便随时操作。
 
@@ -36,11 +37,13 @@
 
 - 在 `CodeHeader.tsx` 中，将 `[data-code-header-toolbar]` 的样式：
   ```tsx
-  className="flex flex-shrink-0 items-center gap-0.5 opacity-90 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition-opacity duration-200"
+  className =
+    'flex flex-shrink-0 items-center gap-0.5 opacity-90 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition-opacity duration-200';
   ```
   调整为：
   ```tsx
-  className="flex flex-shrink-0 items-center gap-0.5 opacity-90 hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200"
+  className =
+    'flex flex-shrink-0 items-center gap-0.5 opacity-90 hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200';
   ```
   不再在 `sm` 断点下将未 hover 状态隐藏为 `opacity-0`，确保用户随时可直接点击按钮。
 

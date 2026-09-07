@@ -22,12 +22,7 @@ export type CommandDialogProps = React.ComponentPropsWithoutRef<typeof DialogPri
   commandProps?: React.ComponentPropsWithoutRef<typeof CommandPrimitive>;
 };
 
-export const CommandDialog: React.FC<CommandDialogProps> = ({
-  children,
-  className = '',
-  commandProps,
-  ...props
-}) => {
+export const CommandDialog: React.FC<CommandDialogProps> = ({ children, className = '', commandProps, ...props }) => {
   return (
     <Dialog {...props}>
       <DialogContent
@@ -120,10 +115,7 @@ export const CommandItem = React.forwardRef<
 ));
 CommandItem.displayName = CommandPrimitive.Item.displayName;
 
-export const CommandShortcut = ({
-  className = '',
-  ...props
-}: React.HTMLAttributes<HTMLSpanElement>) => {
+export const CommandShortcut = ({ className = '', ...props }: React.HTMLAttributes<HTMLSpanElement>) => {
   return (
     <span
       className={`ml-auto text-[10px] font-mono tracking-widest text-[var(--theme-text-tertiary)] bg-[var(--theme-bg-secondary)] border border-[var(--theme-border-secondary)] px-1.5 py-0.5 rounded shadow-2xs ${className}`}

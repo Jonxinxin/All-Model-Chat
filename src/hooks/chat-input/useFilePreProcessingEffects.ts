@@ -181,8 +181,7 @@ export const useFilePreProcessingEffects = ({
           await onProcessFiles([contextFile]);
         } catch (zipError) {
           logService.error('Failed to process zip import.', zipError);
-          const errorMessage =
-            zipError instanceof Error && zipError.message ? zipError.message : t('zipProcessFailed');
+          const errorMessage = zipError instanceof Error && zipError.message ? zipError.message : t('zipProcessFailed');
           setAppFileError(errorMessage);
           setSelectedFiles((prev) => prev.filter((file) => file.id !== tempId));
         } finally {

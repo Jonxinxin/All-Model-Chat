@@ -70,7 +70,8 @@ const ChatInputToolbarComponent: React.FC = () => {
   // Only show size control when the user has a real choice.
   const showImageSize = isGeminiNative && !!supportedImageSizes && supportedImageSizes.length > 1 && !!imageSize;
   const showImageOutputMode = isGeminiNative && isImageGenerationModel && !!imageOutputMode;
-  const showQuadToggle = isGeminiNative && (isImageGenerationModel || isGemini3ImageModel) && generateQuadImages !== undefined;
+  const showQuadToggle =
+    isGeminiNative && (isImageGenerationModel || isGemini3ImageModel) && generateQuadImages !== undefined;
   const showImageCluster = showAspectRatio || showImageSize || showImageOutputMode || showQuadToggle;
 
   // Allow voice selection for TTS and Native Audio (Live) models, except Live Translate

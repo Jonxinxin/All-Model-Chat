@@ -1,10 +1,5 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
-import {
-  formatLocationDisplay,
-  isValidCoordinates,
-  PRESET_LOCATIONS,
-  requestBrowserLocation,
-} from './geolocation';
+import { formatLocationDisplay, isValidCoordinates, PRESET_LOCATIONS, requestBrowserLocation } from './geolocation';
 
 describe('geolocation utils', () => {
   afterEach(() => {

@@ -66,12 +66,8 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-bold text-[var(--theme-text-primary)] mb-2 leading-tight">
-              {title}
-            </h3>
-            <div className="text-sm text-[var(--theme-text-secondary)] leading-relaxed">
-              {message}
-            </div>
+            <h3 className="text-lg font-bold text-[var(--theme-text-primary)] mb-2 leading-tight">{title}</h3>
+            <div className="text-sm text-[var(--theme-text-secondary)] leading-relaxed">{message}</div>
           </div>
         </div>
 

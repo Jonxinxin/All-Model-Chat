@@ -19,13 +19,12 @@ describe('DropdownMenu', () => {
         </DropdownMenuTrigger>
         <DropdownMenuContent>
           <DropdownMenuItem onSelect={onSelect}>
-            Item 1
-            <DropdownMenuShortcut>⌘1</DropdownMenuShortcut>
+            Item 1<DropdownMenuShortcut>⌘1</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem variant="danger">Delete</DropdownMenuItem>
         </DropdownMenuContent>
-      </DropdownMenu>
+      </DropdownMenu>,
     );
 
     const trigger = screen.getByText('Open Menu');

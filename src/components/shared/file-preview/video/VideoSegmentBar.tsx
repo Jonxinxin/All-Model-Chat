@@ -10,12 +10,7 @@ interface VideoSegmentBarProps {
   onExit: () => void;
 }
 
-export const VideoSegmentBar: React.FC<VideoSegmentBarProps> = ({
-  segment,
-  isLoopEnabled,
-  onToggleLoop,
-  onExit,
-}) => {
+export const VideoSegmentBar: React.FC<VideoSegmentBarProps> = ({ segment, isLoopEnabled, onToggleLoop, onExit }) => {
   const { t } = useI18n();
 
   return (

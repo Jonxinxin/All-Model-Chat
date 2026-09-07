@@ -14,12 +14,7 @@ interface AudioPlayerProps {
 
 const PLAYBACK_SPEEDS = [1, 1.25, 1.5, 2];
 
-export const AudioPlayer: React.FC<AudioPlayerProps> = ({
-  src,
-  autoPlay = false,
-  className = '',
-  audioClassName,
-}) => {
+export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, autoPlay = false, className = '', audioClassName }) => {
   const { t } = useI18n();
   const playerRef = useRef<H5AudioPlayer>(null);
   const [playbackRate, setPlaybackRate] = useState(1);
@@ -65,16 +60,8 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         play: playLabel,
         pause: pauseLabel,
       }}
-      customProgressBarSection={[
-        RHAP_UI.CURRENT_TIME,
-        RHAP_UI.PROGRESS_BAR,
-        RHAP_UI.DURATION,
-      ]}
-      customControlsSection={[
-        RHAP_UI.MAIN_CONTROLS,
-        RHAP_UI.ADDITIONAL_CONTROLS,
-        RHAP_UI.VOLUME_CONTROLS,
-      ]}
+      customProgressBarSection={[RHAP_UI.CURRENT_TIME, RHAP_UI.PROGRESS_BAR, RHAP_UI.DURATION]}
+      customControlsSection={[RHAP_UI.MAIN_CONTROLS, RHAP_UI.ADDITIONAL_CONTROLS, RHAP_UI.VOLUME_CONTROLS]}
       customAdditionalControls={[
         <button
           key="speed"
@@ -100,4 +87,3 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     />
   );
 };
-

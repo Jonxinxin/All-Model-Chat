@@ -192,10 +192,7 @@ export interface TokenCostStats {
   toolUsePromptTokens?: number;
 }
 
-export const estimateMessageCostUsd = (
-  modelId: string,
-  tokens: TokenCostStats,
-): number | null => {
+export const estimateMessageCostUsd = (modelId: string, tokens: TokenCostStats): number | null => {
   const normalized = normalizeModelId(modelId);
   const promptTokens = tokens.promptTokens ?? 0;
   const completionTokens = tokens.completionTokens ?? 0;
@@ -270,4 +267,3 @@ export const formatCostUsd = (amount: number | null): string => {
 
   return formatter.format(amount);
 };
-

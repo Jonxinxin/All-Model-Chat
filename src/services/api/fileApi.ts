@@ -147,4 +147,3 @@ export const registerGcsFilesApi = async (apiKey: string, uris: string[]): Promi
     throw error;
   }
 };
-

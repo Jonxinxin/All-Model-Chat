@@ -192,9 +192,7 @@ const ChatInputActionsComponent: React.FC = () => {
       >
         {showVoiceInputButton &&
           !isLiveConnected &&
-          (!isGeminiNative || (!isNativeAudioModel && !isImageGenerationModel && !isTtsModel)) && (
-            <RecordControls />
-          )}
+          (!isGeminiNative || (!isNativeAudioModel && !isImageGenerationModel && !isTtsModel)) && <RecordControls />}
 
         {!showAuxiliaryActionsInMenu && auxiliaryActions.length > 0 && (
           <div className={`flex items-center ${COMPOSER_CLUSTER_GAP_CLASS}`}>

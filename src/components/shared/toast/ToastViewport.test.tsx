@@ -57,4 +57,3 @@ describe('ToastViewport', () => {
     expect(useToastStore.getState().toasts).toHaveLength(0);
   });
 });
-

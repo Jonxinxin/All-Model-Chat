@@ -67,8 +67,7 @@ export const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ message,
   const speedUnit = t('metricsSpeedUnit');
   const totalCompact = formatCompactTokens(view.totalTokens);
   const tokenLabel = `${totalCompact} ${tokensUnit}`;
-  const throughputLabel =
-    modelTps > 0 ? `${modelTps.toFixed(1)} ${speedUnit}` : undefined;
+  const throughputLabel = modelTps > 0 ? `${modelTps.toFixed(1)} ${speedUnit}` : undefined;
   const triggerLabel = throughputLabel ? `${tokenLabel} · ${throughputLabel}` : tokenLabel;
 
   const handleCopy = () => {
@@ -92,10 +91,7 @@ export const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ message,
       setIsDismissed(false);
       return;
     }
-    const movedDistance = Math.hypot(
-      event.clientX - pointerDownPosition.x,
-      event.clientY - pointerDownPosition.y,
-    );
+    const movedDistance = Math.hypot(event.clientX - pointerDownPosition.x, event.clientY - pointerDownPosition.y);
     if (movedDistance < 2) return;
     pointerDownPositionRef.current = undefined;
     setIsDismissed(false);

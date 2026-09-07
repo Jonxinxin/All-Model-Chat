@@ -5,7 +5,15 @@ import { dbService } from '@/services/db/dbService';
 import { logService } from '@/services/logService';
 import { readLastActiveSessionSnapshot } from '@/utils/chat/lastActiveSession';
 import type { SetActiveSessionOptions } from '@/stores/chatStore';
-import type { AppSettings, ChatGroup, ChatMessage, ChatSettings, SavedChatSession, SessionsUpdater, UploadedFile } from '@/types';
+import type {
+  AppSettings,
+  ChatGroup,
+  ChatMessage,
+  ChatSettings,
+  SavedChatSession,
+  SessionsUpdater,
+  UploadedFile,
+} from '@/types';
 import { rehydrateSessionFiles } from '@/utils/chat/session';
 import {
   createSettingsForNewChat,

@@ -15,4 +15,3 @@ export const shouldDeferMarkdownPreview = (content: string): boolean => {
     fenceCount >= LARGE_MARKDOWN_FENCE_THRESHOLD
   );
 };
-

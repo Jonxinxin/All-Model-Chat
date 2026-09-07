@@ -2,13 +2,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createChatMessage, createChatSettings, createSavedChatSession } from '@/test/data/factories';
 
-const { mockGetSession, mockGetAllSessionMetadata, mockGetAllGroups, mockRehydrateSessionFiles, mockGetDraftFiles } = vi.hoisted(() => ({
-  mockGetSession: vi.fn(),
-  mockGetAllSessionMetadata: vi.fn(),
-  mockGetAllGroups: vi.fn(),
-  mockGetDraftFiles: vi.fn<() => Promise<any>>(async () => []),
-  mockRehydrateSessionFiles: vi.fn((session: { messages?: unknown[]; [key: string]: unknown }) => session),
-}));
+const { mockGetSession, mockGetAllSessionMetadata, mockGetAllGroups, mockRehydrateSessionFiles, mockGetDraftFiles } =
+  vi.hoisted(() => ({
+    mockGetSession: vi.fn(),
+    mockGetAllSessionMetadata: vi.fn(),
+    mockGetAllGroups: vi.fn(),
+    mockGetDraftFiles: vi.fn<() => Promise<any>>(async () => []),
+    mockRehydrateSessionFiles: vi.fn((session: { messages?: unknown[]; [key: string]: unknown }) => session),
+  }));
 
 vi.mock('@/services/db/dbService', async () => {
   const { createDbServiceMockModule } = await import('@/test/doubles/moduleMocks');

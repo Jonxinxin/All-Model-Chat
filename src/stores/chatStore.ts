@@ -350,8 +350,8 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     logService.info('User cancelled message edit.');
     const { setCommandedInput, setSelectedFiles, setEditingMessageId, setEditMode, setAppFileError, activeSessionId } =
       get();
-    const savedDraft = activeSessionId ? useChatDraftStore.getState().drafts[activeSessionId]?.inputText ?? '' : '';
-    const savedFiles = activeSessionId ? get()._fileDrafts.current[activeSessionId] ?? [] : [];
+    const savedDraft = activeSessionId ? (useChatDraftStore.getState().drafts[activeSessionId]?.inputText ?? '') : '';
+    const savedFiles = activeSessionId ? (get()._fileDrafts.current[activeSessionId] ?? []) : [];
     setCommandedInput({ text: savedDraft, id: Date.now() });
     setSelectedFiles(savedFiles);
     setEditingMessageId(null);

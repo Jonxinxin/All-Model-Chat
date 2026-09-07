@@ -101,11 +101,7 @@ export const MessageActions: React.FC<MessageActionsProps> = ({
       getModelCapabilities(activeModelId).isTranscribeModel);
   const hasTextContent = Boolean(message.content && message.content.trim());
   const showContinueGenerationAction =
-    message.role === 'model' &&
-    !message.isLoading &&
-    !isSpecialMediaModel &&
-    hasTextContent &&
-    !message.audioSrc;
+    message.role === 'model' && !message.isLoading && !isSpecialMediaModel && hasTextContent && !message.audioSrc;
   const showForkAction = message.role === 'model' && !message.isLoading;
   const showEditModelAction = message.role === 'model' && !message.isLoading;
   const showOverflowActions = showContinueGenerationAction || showForkAction || showEditModelAction;

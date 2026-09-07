@@ -1,10 +1,5 @@
 import { describe, expect, it, afterEach } from 'vitest';
-import {
-  isMacPlatform,
-  getModifierKeySymbol,
-  getAltKeySymbol,
-  getSaveShortcutHint,
-} from './platform';
+import { isMacPlatform, getModifierKeySymbol, getAltKeySymbol, getSaveShortcutHint } from './platform';
 
 describe('platform utility', () => {
   const originalNavigator = globalThis.navigator;

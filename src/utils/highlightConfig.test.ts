@@ -46,7 +46,6 @@ describe('highlightConfig', () => {
       'docker-compose',
     ];
 
-
     expect(supportedLanguages.filter((language) => !hljs.getLanguage(language))).toEqual([]);
   });
 });

@@ -47,9 +47,7 @@ export const LiveArtifactsFontSizeControl: React.FC<LiveArtifactsFontSizeControl
         max={LIVE_ARTIFACTS_CUSTOM_FONT_SIZE_MAX}
         step={1}
         value={customFontSize}
-        onChange={(val) =>
-          onUpdate('liveArtifactsCustomFontSize', clampLiveArtifactsCustomFontSize(Math.round(val)))
-        }
+        onChange={(val) => onUpdate('liveArtifactsCustomFontSize', clampLiveArtifactsCustomFontSize(Math.round(val)))}
         ariaLabel={t('settingsLiveArtifactsFontSize')}
       />
       <div className="flex justify-between px-1 font-mono text-xs text-[var(--theme-text-secondary)]">

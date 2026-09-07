@@ -218,7 +218,10 @@ describe('LibraryPickerModal', () => {
 
     // Find filter button (has SlidersHorizontal)
     const filterBtn = Array.from(document.body.querySelectorAll('button')).find(
-      (b) => b.getAttribute('title')?.includes('排序') || b.getAttribute('aria-label')?.includes('排序') || b.getAttribute('title')?.toLowerCase().includes('sort'),
+      (b) =>
+        b.getAttribute('title')?.includes('排序') ||
+        b.getAttribute('aria-label')?.includes('排序') ||
+        b.getAttribute('title')?.toLowerCase().includes('sort'),
     );
     expect(filterBtn).toBeDefined();
 

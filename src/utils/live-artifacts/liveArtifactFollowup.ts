@@ -76,7 +76,10 @@ export const normalizeLiveArtifactFollowupPayload = (payload: unknown): LiveArti
   };
 };
 
-export const formatLiveArtifactFollowupPrompt = (payload: unknown, language: SupportedLanguage = 'zh'): string | null => {
+export const formatLiveArtifactFollowupPrompt = (
+  payload: unknown,
+  language: SupportedLanguage = 'zh',
+): string | null => {
   const normalizedPayload = normalizeLiveArtifactFollowupPayload(payload);
   if (!normalizedPayload) {
     return null;

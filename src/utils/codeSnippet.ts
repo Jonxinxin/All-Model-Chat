@@ -193,7 +193,10 @@ export const repairIncompleteSvg = (svgText: string): string => {
   }
 
   // Close open tags in LIFO order
-  const closingTags = openTagStack.reverse().map((tag) => `</${tag}>`).join('\n');
+  const closingTags = openTagStack
+    .reverse()
+    .map((tag) => `</${tag}>`)
+    .join('\n');
   const repaired = `${cleaned}\n${closingTags}`;
 
   return ensureSvgXmlNamespace(repaired);
@@ -310,9 +313,7 @@ export const detectSnippetFilename = (
     }
 
     // 5b. Strict line comment containing ONLY a filename: ^// App.tsx$ or ^# main.py$
-    const strictMatch = trimmedLine.match(
-      /^(?:#|\/\/|\/\*|<!--)\s*([a-zA-Z0-9_.-]+\.[a-zA-Z0-9_-]+)\s*(?:\*\/|-->)?$/,
-    );
+    const strictMatch = trimmedLine.match(/^(?:#|\/\/|\/\*|<!--)\s*([a-zA-Z0-9_.-]+\.[a-zA-Z0-9_-]+)\s*(?:\*\/|-->)?$/);
     if (strictMatch && strictMatch[1]) {
       const cand = strictMatch[1].trim();
       const dotIdx = cand.lastIndexOf('.');

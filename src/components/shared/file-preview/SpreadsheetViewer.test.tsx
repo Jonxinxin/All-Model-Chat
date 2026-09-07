@@ -82,10 +82,7 @@ describe('SpreadsheetViewer', () => {
     });
 
     // React state update via onChange
-    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-      window.HTMLInputElement.prototype,
-      'value',
-    )?.set;
+    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
     await act(async () => {
       nativeInputValueSetter?.call(searchInput, 'Google');
       searchInput.dispatchEvent(new Event('input', { bubbles: true }));

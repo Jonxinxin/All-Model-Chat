@@ -18,7 +18,11 @@ import { oneDark } from '@codemirror/theme-one-dark';
 import { useSettingsStore } from '@/stores/settingsStore';
 
 export const getLanguageExtension = (language: string): Extension | null => {
-  const lang = (language || '').toLowerCase().trim().replace(/^language-/, '').replace(/^\./, '');
+  const lang = (language || '')
+    .toLowerCase()
+    .trim()
+    .replace(/^language-/, '')
+    .replace(/^\./, '');
   if (['javascript', 'js', 'jsx', 'ts', 'typescript', 'tsx', 'mjs', 'cjs', 'node'].includes(lang)) {
     return javascript({ jsx: true, typescript: true });
   }

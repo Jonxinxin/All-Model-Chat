@@ -93,7 +93,10 @@ export function validateZipStructure(
   let estimatedTotalBytes = 0;
 
   for (const entry of entries) {
-    const zipData = '_data' in entry ? (entry as { _data?: { uncompressedSize?: number; compressedSize?: number } })._data : undefined;
+    const zipData =
+      '_data' in entry
+        ? (entry as { _data?: { uncompressedSize?: number; compressedSize?: number } })._data
+        : undefined;
     const uncompressedSize = zipData?.uncompressedSize;
     const compressedSize = zipData?.compressedSize;
 

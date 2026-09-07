@@ -245,9 +245,7 @@ describe('CloudFilesModal', () => {
     expect(document.body.textContent).toContain('确定要从 Gemini 云端永久删除此文件吗');
 
     const confirmModalButtons = Array.from(document.body.querySelectorAll('button'));
-    const confirmBtn = confirmModalButtons.find(
-      (b) => b.textContent === '确认' || b.textContent === '删除',
-    );
+    const confirmBtn = confirmModalButtons.find((b) => b.textContent === '确认' || b.textContent === '删除');
     expect(confirmBtn).toBeDefined();
 
     await act(async () => {
@@ -294,9 +292,7 @@ describe('CloudFilesModal', () => {
     expect(document.body.textContent).toContain('确定要从 Gemini 云端删除选中的');
 
     const confirmModalButtons = Array.from(document.body.querySelectorAll('button'));
-    const confirmBtn = confirmModalButtons.find(
-      (b) => b.textContent === '确认' || b.textContent === '删除',
-    );
+    const confirmBtn = confirmModalButtons.find((b) => b.textContent === '确认' || b.textContent === '删除');
     expect(confirmBtn).toBeDefined();
 
     await act(async () => {

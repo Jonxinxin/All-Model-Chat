@@ -25,8 +25,7 @@ const mockReleaseOwner = vi.fn();
 const mockAcquire = vi.fn((_blob: Blob, options?: { key?: string }) => `blob:mock-url-${options?.key ?? 'anon'}`);
 
 vi.mock('@/services/objectUrlManager', () => ({
-  createManagedObjectUrl: (blob: Blob, options?: { key?: string; ownerId?: string }) =>
-    mockAcquire(blob, options),
+  createManagedObjectUrl: (blob: Blob, options?: { key?: string; ownerId?: string }) => mockAcquire(blob, options),
   releaseManagedObjectUrlsByOwner: (ownerId: string) => mockReleaseOwner(ownerId),
 }));
 

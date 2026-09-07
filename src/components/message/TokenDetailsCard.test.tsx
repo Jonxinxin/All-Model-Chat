@@ -90,11 +90,7 @@ describe('TokenDetailsCard', () => {
   it('expands and collapses runtime breakdown when clicking More details', () => {
     act(() => {
       renderer.root.render(
-        <TokenDetailsCard
-          message={{ ...message, thinkingTimeMs: 500 }}
-          elapsedSeconds={3.0}
-          ttftSeconds={0.8}
-        />,
+        <TokenDetailsCard message={{ ...message, thinkingTimeMs: 500 }} elapsedSeconds={3.0} ttftSeconds={0.8} />,
       );
     });
 

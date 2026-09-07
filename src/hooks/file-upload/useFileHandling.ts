@@ -24,14 +24,15 @@ export const useFileHandling = (props: FileHandlingProps) => {
     currentChatSettings: props.currentChatSettings,
   });
 
-  const { handleProcessAndAddFiles, handleCancelFileUpload, handleAddFileById, handleAddFilesFromCloud } = useFileUpload({
-    appSettings: props.appSettings,
-    selectedFiles: props.selectedFiles,
-    setSelectedFiles: props.setSelectedFiles,
-    setAppFileError: props.setAppFileError,
-    currentChatSettings: props.currentChatSettings,
-    setCurrentChatSettings: props.setCurrentChatSettings,
-  });
+  const { handleProcessAndAddFiles, handleCancelFileUpload, handleAddFileById, handleAddFilesFromCloud } =
+    useFileUpload({
+      appSettings: props.appSettings,
+      selectedFiles: props.selectedFiles,
+      setSelectedFiles: props.setSelectedFiles,
+      setAppFileError: props.setAppFileError,
+      currentChatSettings: props.currentChatSettings,
+      setCurrentChatSettings: props.setCurrentChatSettings,
+    });
 
   useEffect(() => {
     const anyFileProcessing = selectedFiles.some((file) => file.isProcessing);

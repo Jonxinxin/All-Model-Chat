@@ -2,11 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useI18n } from '@/contexts/I18nContext';
 import { Modal } from '@/components/shared/Modal';
 import { Link, X, AlertTriangle, CheckCircle, Info, Globe } from 'lucide-react';
-import {
-  parseAndValidateUrlList,
-  formatUrlDisplay,
-  type ParsedUrlItem,
-} from '@/utils/urlContext';
+import { parseAndValidateUrlList, formatUrlDisplay, type ParsedUrlItem } from '@/utils/urlContext';
 import { getFavicon } from '@/components/message/grounded-response/groundingSources';
 import { interpolate } from '@/i18n/interpolate';
 import { useChatStore } from '@/stores/chatStore';
@@ -29,10 +25,7 @@ export const UrlContextModal: React.FC<UrlContextModalProps> = ({
   const { t } = useI18n();
   const [rawInput, setRawInput] = useState('');
 
-  const { items, validUrls, hasLimitWarning } = useMemo(
-    () => parseAndValidateUrlList(rawInput),
-    [rawInput],
-  );
+  const { items, validUrls, hasLimitWarning } = useMemo(() => parseAndValidateUrlList(rawInput), [rawInput]);
 
   const handleRemoveItem = (itemToRemove: ParsedUrlItem) => {
     // Reconstruct input without this candidate
@@ -79,9 +72,7 @@ export const UrlContextModal: React.FC<UrlContextModalProps> = ({
               <Link size={18} strokeWidth={2} />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-[var(--theme-text-primary)]">
-                {t('urlContextModalTitle')}
-              </h3>
+              <h3 className="text-base font-semibold text-[var(--theme-text-primary)]">{t('urlContextModalTitle')}</h3>
               <p className="text-xs text-[var(--theme-text-secondary)] mt-0.5 max-w-sm">
                 {t('urlContextModalSubtitle')}
               </p>
@@ -118,9 +109,7 @@ export const UrlContextModal: React.FC<UrlContextModalProps> = ({
           {items.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs text-[var(--theme-text-secondary)] font-medium">
-                <span>
-                  {interpolate(t('urlContextValidCount'), { count: validUrls.length })}
-                </span>
+                <span>{interpolate(t('urlContextValidCount'), { count: validUrls.length })}</span>
                 {items.length !== validUrls.length && (
                   <span className="text-[var(--theme-text-danger)] text-[11px]">
                     {items.length - validUrls.length} invalid
@@ -162,9 +151,7 @@ export const UrlContextModal: React.FC<UrlContextModalProps> = ({
                         </div>
                         <span
                           className={`font-mono truncate ${
-                            item.isValid
-                              ? 'text-[var(--theme-text-primary)]'
-                              : 'text-[var(--theme-text-danger)]'
+                            item.isValid ? 'text-[var(--theme-text-primary)]' : 'text-[var(--theme-text-danger)]'
                           }`}
                         >
                           {display}

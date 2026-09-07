@@ -50,11 +50,7 @@ export const isTranscribeModel = (modelId: string): boolean =>
 export const bansModelTurnPrefill = (modelId: string): boolean => {
   if (!modelId) return false;
   const lowerId = modelId.toLowerCase();
-  return (
-    /gemini-3\.[6-9]/.test(lowerId) ||
-    lowerId.includes('gemini-3.5-flash-lite') ||
-    /gemini-[4-9]/.test(lowerId)
-  );
+  return /gemini-3\.[6-9]/.test(lowerId) || lowerId.includes('gemini-3.5-flash-lite') || /gemini-[4-9]/.test(lowerId);
 };
 
 const isNativeAudioModel = (modelId: string): boolean => {

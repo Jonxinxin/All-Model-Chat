@@ -32,7 +32,9 @@ export const getLatencyGrade = (latencyMs: number, isSuccess: boolean): LatencyG
 /**
  * Returns Tailwind color classes corresponding to latency grade.
  */
-export const getLatencyBadgeStyles = (grade: LatencyGrade): {
+export const getLatencyBadgeStyles = (
+  grade: LatencyGrade,
+): {
   badge: string;
   dot: string;
   text: string;
@@ -40,29 +42,25 @@ export const getLatencyBadgeStyles = (grade: LatencyGrade): {
   switch (grade) {
     case 'fast':
       return {
-        badge:
-          'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20',
+        badge: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20',
         dot: 'bg-emerald-500',
         text: 'text-emerald-600 dark:text-emerald-400',
       };
     case 'normal':
       return {
-        badge:
-          'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20',
+        badge: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20',
         dot: 'bg-amber-500',
         text: 'text-amber-600 dark:text-amber-400',
       };
     case 'slow':
       return {
-        badge:
-          'bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20',
+        badge: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20',
         dot: 'bg-orange-500',
         text: 'text-orange-600 dark:text-orange-400',
       };
     case 'error':
       return {
-        badge:
-          'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20',
+        badge: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20',
         dot: 'bg-rose-500',
         text: 'text-rose-600 dark:text-rose-400',
       };
@@ -136,7 +134,8 @@ export const getModelProbeSafety = (modelId: string): ModelProbeSafety => {
     return {
       isSafe: false,
       category: 'image',
-      skipReason: 'Image generation models are not compatible with chat completion probes and would incur unintended generation costs.',
+      skipReason:
+        'Image generation models are not compatible with chat completion probes and would incur unintended generation costs.',
     };
   }
 
@@ -155,24 +154,16 @@ export const getModelProbeSafety = (modelId: string): ModelProbeSafety => {
     };
   }
 
-  if (
-    lower.includes('whisper') ||
-    lower.includes('tts') ||
-    lower.includes('voice') ||
-    lower.includes('elevenlabs')
-  ) {
+  if (lower.includes('whisper') || lower.includes('tts') || lower.includes('voice') || lower.includes('elevenlabs')) {
     return {
       isSafe: false,
       category: 'audio',
-      skipReason: 'Audio and speech models require specialized endpoints and are skipped during chat completion probes.',
+      skipReason:
+        'Audio and speech models require specialized endpoints and are skipped during chat completion probes.',
     };
   }
 
-  if (
-    lower.includes('embed') ||
-    lower.includes('bge-') ||
-    lower.includes('e5-')
-  ) {
+  if (lower.includes('embed') || lower.includes('bge-') || lower.includes('e5-')) {
     return {
       isSafe: false,
       category: 'embedding',

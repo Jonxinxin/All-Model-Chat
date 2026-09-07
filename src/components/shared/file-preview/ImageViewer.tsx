@@ -80,10 +80,7 @@ const ImageViewerContent: React.FC<ImageViewerProps> = ({ file, highlight }) => 
       const isPinch = event.ctrlKey;
       const zoomFactor = isPinch ? 0.012 : 0.0018;
       const currentScale = pz.getScale();
-      const targetScale = Math.min(
-        MAX_SCALE,
-        Math.max(MIN_SCALE, currentScale * Math.exp(-delta * zoomFactor)),
-      );
+      const targetScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, currentScale * Math.exp(-delta * zoomFactor)));
 
       if (targetScale !== currentScale) {
         pz.zoomToPoint(targetScale, event, { animate: false });
@@ -308,11 +305,7 @@ const ImageViewerContent: React.FC<ImageViewerProps> = ({ file, highlight }) => 
             <RotateCcw size={16} strokeWidth={1.5} />
           </ToolbarButton>
 
-          <ToolbarButton
-            onClick={handleRotateRight}
-            title={t('filePreviewRotate')}
-            aria-label={t('filePreviewRotate')}
-          >
+          <ToolbarButton onClick={handleRotateRight} title={t('filePreviewRotate')} aria-label={t('filePreviewRotate')}>
             <RotateCw size={16} strokeWidth={1.5} />
           </ToolbarButton>
         </FloatingToolbar>

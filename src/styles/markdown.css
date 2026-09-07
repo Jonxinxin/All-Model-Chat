@@ -192,7 +192,6 @@
   background-color: rgba(248, 81, 73, 0.12);
 }
 
-
 /* Tighter line height for headers */
 .markdown-body h1,
 .markdown-body h2,
@@ -579,7 +578,9 @@ pre.code-exec-code {
    ========================================================================== */
 
 .modern-markdown-reader {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI Variable", "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI Variable', 'Segoe UI', Roboto, 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', sans-serif;
   font-size: 15px;
   line-height: 1.75;
   color: var(--theme-text-primary);
@@ -642,7 +643,7 @@ pre.code-exec-code {
   padding: 2px 7px !important;
   margin: 0 2px !important;
   border-radius: 5px !important;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace !important;
   font-size: 0.88em !important;
   font-weight: 500 !important;
   letter-spacing: -0.01em !important;
@@ -793,8 +794,8 @@ pre.code-exec-code {
   list-style-type: none !important;
 }
 
-.markdown-body .task-list-item input[type="checkbox"],
-.modern-markdown-reader .task-list-item input[type="checkbox"] {
+.markdown-body .task-list-item input[type='checkbox'],
+.modern-markdown-reader .task-list-item input[type='checkbox'] {
   margin-top: 0.32em !important;
   margin-right: 0 !important;
   accent-color: var(--theme-bg-accent, #0ea5e9) !important;
@@ -815,5 +816,3 @@ pre.code-exec-code {
   animation: headingTargetPulse 1.8s ease-out !important;
   border-radius: 6px !important;
 }
-
-

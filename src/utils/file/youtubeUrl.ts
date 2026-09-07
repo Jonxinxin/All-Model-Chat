@@ -77,4 +77,3 @@ export const toYoutubeEmbedUrl = (input?: string | null): string | null => {
 export const isYoutubeUrl = (input?: string | null): boolean => {
   return extractYoutubeVideoId(input) !== null;
 };
-

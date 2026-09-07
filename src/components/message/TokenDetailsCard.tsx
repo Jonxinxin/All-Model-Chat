@@ -46,7 +46,10 @@ const PrimaryMetric: React.FC<PrimaryMetricProps> = ({ label, value, testId }) =
   }, [value]);
 
   return (
-    <div data-testid={testId} className="min-w-0 rounded-lg bg-[var(--theme-bg-tertiary)]/50 px-2.5 py-2 sm:px-3 sm:py-2.5">
+    <div
+      data-testid={testId}
+      className="min-w-0 rounded-lg bg-[var(--theme-bg-tertiary)]/50 px-2.5 py-2 sm:px-3 sm:py-2.5"
+    >
       <dt className="truncate text-[11px] text-[var(--theme-text-tertiary)] leading-4" title={label}>
         {label}
       </dt>
@@ -207,10 +210,7 @@ export const TokenDetailsCard: React.FC<TokenDetailsCardProps> = ({
   const speedUnit = t('metricsSpeedUnit');
   const inputLabel = `${exact(view.promptTokens)} ${tokensUnit}`;
   const outputLabel = `${exact(view.completionTokens)} ${tokensUnit}`;
-  const speedLabel =
-    modelTps !== undefined && modelTps > 0
-      ? `${modelTps.toFixed(1)} ${speedUnit}`
-      : '—';
+  const speedLabel = modelTps !== undefined && modelTps > 0 ? `${modelTps.toFixed(1)} ${speedUnit}` : '—';
 
   // 估算费用（对标 Cherry Studio 的费用行）
   const estimatedCost = useMemo(() => {
@@ -304,7 +304,7 @@ export const TokenDetailsCard: React.FC<TokenDetailsCardProps> = ({
     }
 
     return items;
-  }, [view, ttftSeconds, endToEndTps, elapsedSeconds, t, exact, tokensUnit]);
+  }, [view, ttftSeconds, endToEndTps, elapsedSeconds, t, exact, tokensUnit, speedUnit]);
 
   // 运行时间细分（等待 / 推理 / 文本生成）
   const performanceBreakdown = useMemo(() => {
@@ -354,10 +354,7 @@ export const TokenDetailsCard: React.FC<TokenDetailsCardProps> = ({
             {resolvedModelName}
           </div>
           {resolvedProviderName && (
-            <div
-              className="truncate text-xs text-[var(--theme-text-secondary)] leading-5"
-              title={resolvedProviderName}
-            >
+            <div className="truncate text-xs text-[var(--theme-text-secondary)] leading-5" title={resolvedProviderName}>
               {resolvedProviderName}
             </div>
           )}
@@ -375,21 +372,9 @@ export const TokenDetailsCard: React.FC<TokenDetailsCardProps> = ({
 
       <div className="space-y-3 border-t border-[var(--theme-border-secondary)]/50 p-3">
         <dl className="grid grid-cols-3 gap-2" data-testid="message-primary-metrics">
-          <PrimaryMetric
-            testId="message-metric-input"
-            label={t('metricsInput')}
-            value={inputLabel}
-          />
-          <PrimaryMetric
-            testId="message-metric-output"
-            label={t('metricsOutput')}
-            value={outputLabel}
-          />
-          <PrimaryMetric
-            testId="message-metric-speed"
-            label={t('metricsModelThroughputTitle')}
-            value={speedLabel}
-          />
+          <PrimaryMetric testId="message-metric-input" label={t('metricsInput')} value={inputLabel} />
+          <PrimaryMetric testId="message-metric-output" label={t('metricsOutput')} value={outputLabel} />
+          <PrimaryMetric testId="message-metric-speed" label={t('metricsModelThroughputTitle')} value={speedLabel} />
         </dl>
 
         {costLabel && (
@@ -399,7 +384,9 @@ export const TokenDetailsCard: React.FC<TokenDetailsCardProps> = ({
           >
             <span className="truncate text-[var(--theme-text-tertiary)]">{t('metricsCost')}</span>
             <span className="flex shrink-0 items-center gap-1.5 leading-5">
-              <span className="text-[11px] text-[var(--theme-text-tertiary)] leading-5">{t('metricsCostEstimated')}</span>
+              <span className="text-[11px] text-[var(--theme-text-tertiary)] leading-5">
+                {t('metricsCostEstimated')}
+              </span>
               <span className="text-[var(--theme-text-primary)] font-semibold tabular-nums leading-5">{costLabel}</span>
             </span>
           </div>
@@ -411,12 +398,7 @@ export const TokenDetailsCard: React.FC<TokenDetailsCardProps> = ({
             data-testid="message-secondary-metrics"
           >
             {detailMetrics.map((metric) => (
-              <DetailMetric
-                key={metric.id}
-                testId={metric.testId}
-                label={metric.label}
-                value={metric.value}
-              />
+              <DetailMetric key={metric.id} testId={metric.testId} label={metric.label} value={metric.value} />
             ))}
           </dl>
         )}
@@ -475,4 +457,3 @@ export const TokenDetailsCard: React.FC<TokenDetailsCardProps> = ({
     </div>
   );
 };
-

@@ -47,9 +47,7 @@ export const FolderZipImportModal: React.FC<FolderZipImportModalProps> = ({
               <h3 className="text-lg font-bold text-[var(--theme-text-primary)] leading-tight">
                 {t('folderZipModalTitle')}
               </h3>
-              <p className="text-xs text-[var(--theme-text-secondary)] mt-0.5">
-                {t('folderZipModalDesc')}
-              </p>
+              <p className="text-xs text-[var(--theme-text-secondary)] mt-0.5">{t('folderZipModalDesc')}</p>
             </div>
           </div>
           <button

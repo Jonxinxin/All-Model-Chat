@@ -102,7 +102,9 @@ export const HtmlPreviewModal: React.FC<HtmlPreviewModalProps> = ({
 
   return createPortal(
     <div className={containerClass} role="dialog" aria-modal="true" aria-labelledby="html-preview-modal-title">
-      <div className={`bg-[var(--theme-bg-secondary)] w-full h-full flex flex-col overflow-hidden relative ${animationClass}`}>
+      <div
+        className={`bg-[var(--theme-bg-secondary)] w-full h-full flex flex-col overflow-hidden relative ${animationClass}`}
+      >
         <HtmlPreviewHeader
           title={getPreviewTitle()}
           privilege={privilege}
@@ -131,7 +133,9 @@ export const HtmlPreviewModal: React.FC<HtmlPreviewModalProps> = ({
         {viewMode === 'code' ? (
           <div className="flex-grow relative flex flex-col min-h-0 bg-[var(--theme-bg-code-block)]">
             <div className="flex items-center justify-between px-4 py-2 bg-[var(--theme-bg-secondary)] border-b border-[var(--theme-border-secondary)] text-xs font-mono text-[var(--theme-text-secondary)] shrink-0">
-              <span className="font-semibold uppercase tracking-wider text-[11px] text-[var(--theme-text-tertiary)]">HTML</span>
+              <span className="font-semibold uppercase tracking-wider text-[11px] text-[var(--theme-text-tertiary)]">
+                HTML
+              </span>
               <button
                 type="button"
                 onClick={handleCopyCode}
@@ -143,12 +147,7 @@ export const HtmlPreviewModal: React.FC<HtmlPreviewModalProps> = ({
               </button>
             </div>
             <div className="flex-1 min-h-0 overflow-auto">
-              <CodeEditor
-                value={htmlContent}
-                onChange={() => {}}
-                language="html"
-                readOnly={true}
-              />
+              <CodeEditor value={htmlContent} onChange={() => {}} language="html" readOnly={true} />
             </div>
           </div>
         ) : (
@@ -195,12 +194,12 @@ export const HtmlPreviewModal: React.FC<HtmlPreviewModalProps> = ({
                   <div className="text-rose-400 font-bold">{diag.message || diag.type}</div>
                   {diag.source && (
                     <div className="text-neutral-400 truncate mt-0.5">
-                      {diag.source}{diag.line !== undefined ? `:${diag.line}` : ''}{diag.column !== undefined ? `:${diag.column}` : ''}
+                      {diag.source}
+                      {diag.line !== undefined ? `:${diag.line}` : ''}
+                      {diag.column !== undefined ? `:${diag.column}` : ''}
                     </div>
                   )}
-                  {diag.url && (
-                    <div className="text-neutral-400 truncate mt-0.5">URL: {diag.url}</div>
-                  )}
+                  {diag.url && <div className="text-neutral-400 truncate mt-0.5">URL: {diag.url}</div>}
                 </div>
               ))}
             </div>

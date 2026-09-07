@@ -140,14 +140,17 @@ const parseExcelBlob = async (blob: Blob, maxRows = 5, maxCols = 4): Promise<str
       defval: '',
       blankrows: false,
     });
-    return rawRows.slice(0, maxRows).map((row) =>
-      (Array.isArray(row) ? row : []).slice(0, maxCols).map((cell) => (cell !== null && cell !== undefined ? String(cell) : ''))
-    );
+    return rawRows
+      .slice(0, maxRows)
+      .map((row) =>
+        (Array.isArray(row) ? row : [])
+          .slice(0, maxCols)
+          .map((cell) => (cell !== null && cell !== undefined ? String(cell) : '')),
+      );
   } catch {
     return [];
   }
 };
-
 
 const isTextSnippetCandidate = (item: LibraryItem): boolean => {
   if (isImageFileType(item.type, item.name)) return false;
@@ -168,12 +171,52 @@ const extractSnippetLines = (content: string): string[] => {
 };
 
 const CODE_KEYWORDS = new Set([
-  'import', 'export', 'from', 'default', 'const', 'let', 'var', 'function',
-  'return', 'if', 'else', 'for', 'while', 'class', 'extends', 'interface',
-  'type', 'async', 'await', 'def', 'self', 'public', 'private', 'static',
-  'new', 'try', 'catch', 'throw', 'package', 'use', 'fn', 'mut', 'struct',
-  'true', 'false', 'null', 'undefined', 'nil', 'None', 'True', 'False',
-  'select', 'where', 'insert', 'update', 'delete',
+  'import',
+  'export',
+  'from',
+  'default',
+  'const',
+  'let',
+  'var',
+  'function',
+  'return',
+  'if',
+  'else',
+  'for',
+  'while',
+  'class',
+  'extends',
+  'interface',
+  'type',
+  'async',
+  'await',
+  'def',
+  'self',
+  'public',
+  'private',
+  'static',
+  'new',
+  'try',
+  'catch',
+  'throw',
+  'package',
+  'use',
+  'fn',
+  'mut',
+  'struct',
+  'true',
+  'false',
+  'null',
+  'undefined',
+  'nil',
+  'None',
+  'True',
+  'False',
+  'select',
+  'where',
+  'insert',
+  'update',
+  'delete',
 ]);
 
 const renderHighlightedCodeLine = (text: string, ext: string) => {
@@ -201,21 +244,39 @@ const renderHighlightedCodeLine = (text: string, ext: string) => {
     }
   }
 
-  const tokens = text.split(/("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`[^`]*`|\b[a-zA-Z_$][a-zA-Z0-9_$]*\b|[^\w\s"'`]+|\s+)/g).filter(Boolean);
+  const tokens = text
+    .split(/("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`[^`]*`|\b[a-zA-Z_$][a-zA-Z0-9_$]*\b|[^\w\s"'`]+|\s+)/g)
+    .filter(Boolean);
   return (
     <>
       {tokens.map((tok, i) => {
         if (tok.startsWith('"') || tok.startsWith("'") || tok.startsWith('`')) {
-          return <span key={i} className="text-[#a6e3a1]">{tok}</span>;
+          return (
+            <span key={i} className="text-[#a6e3a1]">
+              {tok}
+            </span>
+          );
         }
         if (CODE_KEYWORDS.has(tok)) {
-          return <span key={i} className="text-[#cba6f7] font-medium">{tok}</span>;
+          return (
+            <span key={i} className="text-[#cba6f7] font-medium">
+              {tok}
+            </span>
+          );
         }
         if (/^\d+(\.\d+)?$/.test(tok)) {
-          return <span key={i} className="text-[#fab387]">{tok}</span>;
+          return (
+            <span key={i} className="text-[#fab387]">
+              {tok}
+            </span>
+          );
         }
         if (tok === '=' || tok === '=>' || tok === '==' || tok === '===' || tok === ':' || tok === '+' || tok === '-') {
-          return <span key={i} className="text-[#89dceb]">{tok}</span>;
+          return (
+            <span key={i} className="text-[#89dceb]">
+              {tok}
+            </span>
+          );
         }
         return <span key={i}>{tok}</span>;
       })}
@@ -236,7 +297,9 @@ const LibraryItemThumbnailComponent: React.FC<LibraryItemThumbnailProps> = ({ it
 
   const pdfWidth = size === 'sm' ? 92 : size === 'md' ? 128 : 280;
   const pdfCacheKey = useMemo(() => (isPdf ? getPdfThumbnailCacheKey(item, pdfWidth) : ''), [isPdf, item, pdfWidth]);
-  const [cachedPdfImage, setCachedPdfImage] = useState(() => (pdfCacheKey ? readPdfThumbnailCache(pdfCacheKey) : undefined));
+  const [cachedPdfImage, setCachedPdfImage] = useState(() =>
+    pdfCacheKey ? readPdfThumbnailCache(pdfCacheKey) : undefined,
+  );
 
   useEffect(() => {
     if (pdfCacheKey) {
@@ -247,14 +310,16 @@ const LibraryItemThumbnailComponent: React.FC<LibraryItemThumbnailProps> = ({ it
   const hasCachedPdf = !!cachedPdfImage;
   const cachedBlob = readThumbnailBlobCache(item.id);
   const initialBlobUrl = item.dataUrl
-    ? (isSvg && item.dataUrl.startsWith('data:') && !item.dataUrl.startsWith('data:image/svg+xml')
-        ? item.dataUrl.replace(/^data:[^;]+;/, 'data:image/svg+xml;')
-        : item.dataUrl)
+    ? isSvg && item.dataUrl.startsWith('data:') && !item.dataUrl.startsWith('data:image/svg+xml')
+      ? item.dataUrl.replace(/^data:[^;]+;/, 'data:image/svg+xml;')
+      : item.dataUrl
     : (cachedBlob ?? null);
 
   const [blobUrl, setBlobUrl] = useState<string | null>(initialBlobUrl);
   const [hasError, setHasError] = useState(false);
-  const [videoPoster, setVideoPoster] = useState<string | null>(() => readThumbnailBlobCache(`poster:${item.id}`) ?? null);
+  const [videoPoster, setVideoPoster] = useState<string | null>(
+    () => readThumbnailBlobCache(`poster:${item.id}`) ?? null,
+  );
   const recoveryAttemptedRef = useRef(false);
 
   const youtubeVideoId = useMemo(() => {
@@ -752,11 +817,7 @@ const LibraryItemThumbnailComponent: React.FC<LibraryItemThumbnailProps> = ({ it
         className={`relative ${pdfSizeClasses} overflow-hidden bg-white dark:bg-[var(--theme-bg-secondary)] flex-shrink-0 flex items-center justify-center border border-[var(--theme-border-secondary)] ${containerClassName}`}
       >
         {cachedPdfImage ? (
-          <img
-            src={cachedPdfImage}
-            alt={item.name}
-            className={`w-full h-full ${objectFitClass}`}
-          />
+          <img src={cachedPdfImage} alt={item.name} className={`w-full h-full ${objectFitClass}`} />
         ) : (
           <Suspense fallback={innerFallback}>
             <LazyPdfFileThumbnail
@@ -768,16 +829,13 @@ const LibraryItemThumbnailComponent: React.FC<LibraryItemThumbnailProps> = ({ it
           </Suspense>
         )}
         {size !== 'sm' && (
-          <div
-            className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded bg-red-600/80 backdrop-blur-xs flex items-center gap-1 pointer-events-none text-white text-[10px] font-bold tracking-wider shadow-xs"
-          >
+          <div className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded bg-red-600/80 backdrop-blur-xs flex items-center gap-1 pointer-events-none text-white text-[10px] font-bold tracking-wider shadow-xs">
             PDF
           </div>
         )}
       </div>
     );
   }
-
 
   if (isTextCandidate && textLines.length > 0) {
     const textSnippetSizeClasses =
@@ -812,9 +870,7 @@ const LibraryItemThumbnailComponent: React.FC<LibraryItemThumbnailProps> = ({ it
           <div className="p-2.5 sm:p-3 flex-1 overflow-hidden flex flex-col justify-start gap-1 font-mono text-[10px] leading-[1.55]">
             {textLines.map((line, idx) => (
               <div key={idx} className="flex items-start gap-2 min-w-0">
-                <span className="text-white/20 select-none text-[9px] w-3 text-right shrink-0 pt-0.5">
-                  {idx + 1}
-                </span>
+                <span className="text-white/20 select-none text-[9px] w-3 text-right shrink-0 pt-0.5">{idx + 1}</span>
                 <span className="truncate flex-1 text-white/85 font-mono">
                   {renderHighlightedCodeLine(line, displayExt)}
                 </span>
@@ -841,18 +897,14 @@ const LibraryItemThumbnailComponent: React.FC<LibraryItemThumbnailProps> = ({ it
               </div>
             ))}
           </div>
-          <span className="text-[9px] font-bold text-[#89dceb] tracking-wider uppercase">
-            {displayExt.slice(0, 4)}
-          </span>
+          <span className="text-[9px] font-bold text-[#89dceb] tracking-wider uppercase">{displayExt.slice(0, 4)}</span>
         </div>
       );
     }
 
     if (size === 'sm') {
       return (
-        <div
-          className="w-10 h-10 rounded-lg flex flex-col items-center justify-center bg-[#181825] text-[#89dceb] border border-[var(--theme-border-secondary)] font-semibold flex-shrink-0 font-mono shadow-xs"
-        >
+        <div className="w-10 h-10 rounded-lg flex flex-col items-center justify-center bg-[#181825] text-[#89dceb] border border-[var(--theme-border-secondary)] font-semibold flex-shrink-0 font-mono shadow-xs">
           {displayExt && displayExt.length <= 4 ? (
             <span className="text-[10px] font-bold tracking-wider leading-none text-[#89dceb] uppercase font-mono">
               {displayExt}
@@ -921,7 +973,9 @@ const LibraryItemThumbnailComponent: React.FC<LibraryItemThumbnailProps> = ({ it
 
           <div className="p-2 flex-1 overflow-hidden flex flex-col relative font-mono text-[9px]">
             <div className="grid grid-cols-5 gap-0.5 mb-0.5">
-              <div className="text-center py-0.5 text-[8px] text-emerald-500/50 bg-emerald-950/70 rounded-xs font-bold">#</div>
+              <div className="text-center py-0.5 text-[8px] text-emerald-500/50 bg-emerald-950/70 rounded-xs font-bold">
+                #
+              </div>
               {colLabels.slice(0, numCols).map((col) => (
                 <div
                   key={col}

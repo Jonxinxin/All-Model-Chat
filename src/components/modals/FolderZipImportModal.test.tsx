@@ -23,7 +23,9 @@ describe('FolderZipImportModal', () => {
     });
 
     const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>('button'));
-    const folderBtn = buttons.find((b) => b.textContent?.includes('导入文件夹') || b.textContent?.includes('Import Folder'));
+    const folderBtn = buttons.find(
+      (b) => b.textContent?.includes('导入文件夹') || b.textContent?.includes('Import Folder'),
+    );
     const zipBtn = buttons.find((b) => b.textContent?.includes('导入 Zip') || b.textContent?.includes('Import Zip'));
 
     expect(folderBtn).toBeDefined();

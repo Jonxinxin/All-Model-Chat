@@ -5,14 +5,7 @@ export type LibraryCategoryFilter = 'all' | 'image' | 'document' | 'audio' | 'vi
 export type LibrarySourceFilter = 'all' | 'uploaded' | 'generated';
 
 export type LibraryFileTypeFilter =
-  | 'all'
-  | 'image'
-  | 'document'
-  | 'spreadsheet'
-  | 'presentation'
-  | 'pdf'
-  | 'audio'
-  | 'video';
+  'all' | 'image' | 'document' | 'spreadsheet' | 'presentation' | 'pdf' | 'audio' | 'video';
 
 export type LibrarySortOption = 'date_desc' | 'date_asc' | 'name_asc' | 'name_desc' | 'size_desc' | 'size_asc';
 
