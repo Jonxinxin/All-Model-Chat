@@ -73,7 +73,17 @@ export const MainContent: React.FC<MainContentProps> = ({ app }) => {
               }
             }}
             onSelectSession={sidebarProps.onSelectSession}
-            onClose={() => setActiveView('chat')}
+            onClose={() => {
+              if (
+                typeof window !== 'undefined' &&
+                window.history.state?.view === 'library' &&
+                window.history.length > 1
+              ) {
+                window.history.back();
+              } else {
+                setActiveView('chat');
+              }
+            }}
             themeId={currentThemeId}
           />
         </Suspense>

@@ -173,4 +173,25 @@ describe('ImageHighlightOverlay', () => {
     ) as HTMLElement;
     expect(leftArrow?.style.transform).toContain('rotate(90deg)');
   });
+
+  it('applies inverse scale compensation to corner brackets, reticle, and badge', () => {
+    const { container } = render(
+      <ImageHighlightOverlay
+        visible={true}
+        scale={2}
+        highlight={{
+          box2d: [100, 200, 500, 800],
+          label: '缩放补偿测试',
+        }}
+      />,
+    );
+
+    const box = container.querySelector('[data-testid="image-highlight-box"]') as HTMLElement;
+    const corner = box.querySelector('div') as HTMLElement;
+    // 1 / 2 = 0.5
+    expect(corner.style.transform).toContain('scale(0.5)');
+
+    const badge = container.querySelector('.inline-flex')?.parentElement as HTMLElement;
+    expect(badge.style.transform).toContain('scale(0.5)');
+  });
 });

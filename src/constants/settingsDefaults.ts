@@ -55,6 +55,7 @@ export const DEFAULT_CHAT_SETTINGS: Omit<ChatSettings, 'lockedApiKey'> & { locke
   lockedApiKey: null,
   isGoogleSearchEnabled: false,
   isGoogleMapsEnabled: false,
+  googleMapsLocation: undefined,
   isCodeExecutionEnabled: false,
   isUrlContextEnabled: false,
   isDeepSearchEnabled: false,

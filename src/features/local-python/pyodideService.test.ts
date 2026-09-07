@@ -136,6 +136,26 @@ describe('buildPyodideWorkerScript', () => {
     expect(workerCode).not.toContain('function listFilesRecursively(basePath');
     expect(workerCode).toContain('listFilesRecursively(runDir)');
   });
+
+  it('emits worker code that parses without syntax errors', () => {
+    const { workerCode } = buildPyodideWorkerScript('https://example.com/app/index.html');
+
+    expect(() => new Function(workerCode)).not.toThrow();
+  });
+
+  it('keeps path-sanitizer regexes intact after template substitution', () => {
+    const { workerCode } = buildPyodideWorkerScript('https://example.com/app/index.html');
+
+    expect(workerCode).toContain('[/\\\\]');
+  });
+
+  it('fetches same-origin pyodide assets directly without CDN host rewriting', () => {
+    const { workerCode } = buildPyodideWorkerScript('https://example.com/app/index.html');
+
+    expect(workerCode).toContain('if (!isJsdelivr) {');
+    expect(workerCode).toContain('const hostsToTry = JSDELIVR_MIRRORS;');
+    expect(workerCode).not.toContain('isJsdelivr ? JSDELIVR_MIRRORS');
+  });
 });
 
 describe('PyodideService', () => {

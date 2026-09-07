@@ -2,6 +2,7 @@ import React from 'react';
 import { MapPin } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { seekSessionPdf } from '@/utils/media-nav/seekPdf';
+import { extractTextFromNode } from '@/utils/reactNodeText';
 
 interface InlinePdfLocateButtonProps {
   pageNumber: number;
@@ -49,7 +50,7 @@ export const InlinePdfLocateButton: React.FC<InlinePdfLocateButtonProps> = ({
     });
   };
 
-  const labelText = typeof children === 'string' ? children : '';
+  const labelText = extractTextFromNode(children);
   const buttonTitle = labelText ? `${t('pdfNavLocateButton')}: ${labelText}` : t('pdfNavLocateButton');
 
   return (

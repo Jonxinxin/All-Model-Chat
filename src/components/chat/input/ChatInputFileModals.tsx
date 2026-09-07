@@ -25,6 +25,10 @@ const LazyCloudFilesModal = lazyNamedComponent(
   () => import('@/components/modals/cloud-files/CloudFilesModal'),
   'CloudFilesModal',
 );
+const LazyFolderZipImportModal = lazyNamedComponent(
+  () => import('@/components/modals/FolderZipImportModal'),
+  'FolderZipImportModal',
+);
 
 interface ChatInputFileModalsProps {
   configuringFile: UploadedFile | null;
@@ -38,6 +42,10 @@ interface ChatInputFileModalsProps {
   setShowCloudFilesModal?: (show: boolean) => void;
   onAddFilesFromCloud?: (files: GeminiFile[]) => void;
   onAddFileById?: (fileId: string) => Promise<void>;
+  showFolderZipModal?: boolean;
+  setShowFolderZipModal?: (show: boolean) => void;
+  onSelectFolderImport?: () => void;
+  onSelectZipImport?: () => void;
   rawAppSettings?: AppSettings;
   currentChatSettings?: ChatSettings;
   isImageGenerationModel?: boolean;
@@ -51,6 +59,7 @@ interface ChatInputFileModalsProps {
   isGemini3: boolean;
   isPreviewEditable?: boolean;
   onSaveTextFile?: (fileId: string, content: string, newName: string) => void;
+  onConvertToContext?: (contextFile: File) => void | Promise<void>;
   onSaveFileConfig: (
     fileId: string,
     updates: { videoMetadata?: VideoMetadata; mediaResolution?: MediaResolution },
@@ -75,6 +84,10 @@ export const ChatInputFileModals: React.FC<ChatInputFileModalsProps> = ({
   setShowCloudFilesModal,
   onAddFilesFromCloud,
   onAddFileById,
+  showFolderZipModal,
+  setShowFolderZipModal,
+  onSelectFolderImport,
+  onSelectZipImport,
   rawAppSettings,
   currentChatSettings,
   isImageGenerationModel,
@@ -88,6 +101,7 @@ export const ChatInputFileModals: React.FC<ChatInputFileModalsProps> = ({
   isGemini3,
   isPreviewEditable,
   onSaveTextFile,
+  onConvertToContext,
   onSaveFileConfig,
   previewNavigation,
 }) => {
@@ -142,6 +156,17 @@ export const ChatInputFileModals: React.FC<ChatInputFileModalsProps> = ({
         </Suspense>
       )}
 
+      {showFolderZipModal && setShowFolderZipModal && onSelectFolderImport && onSelectZipImport && (
+        <Suspense fallback={null}>
+          <LazyFolderZipImportModal
+            isOpen={showFolderZipModal}
+            onClose={() => setShowFolderZipModal(false)}
+            onSelectFolder={onSelectFolderImport}
+            onSelectZip={onSelectZipImport}
+          />
+        </Suspense>
+      )}
+
       <Suspense fallback={null}>
         <LazyFilePreviewModal
           file={previewFile}
@@ -154,6 +179,7 @@ export const ChatInputFileModals: React.FC<ChatInputFileModalsProps> = ({
             previewNavigation.currentImageIndex < previewNavigation.inputImages.length - 1
           }
           onSaveText={onSaveTextFile}
+          onConvertToContext={onConvertToContext}
           initialEditMode={isPreviewEditable}
         />
       </Suspense>

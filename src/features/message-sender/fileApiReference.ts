@@ -10,6 +10,7 @@ import {
   getApiKeyFingerprint,
   getGeminiFilesApiName,
   getGeminiFilesApiNameFromUri,
+  INVALID_FILE_API_KEY_FINGERPRINT,
   isFileApiKeyMismatch,
   isGeminiFilesApiReferenceStillValid,
   sessionHasGeminiFilesApiReferences,
@@ -35,6 +36,7 @@ interface EnsureFilesApiReferencesParams {
   apiKey: string;
   abortSignal: AbortSignal;
   onFileUpdate?: (fileId: string, patch: FilePatch) => void;
+  allowDegrade?: boolean;
 }
 
 type EnsureFilesApiReferencesResult =
@@ -81,6 +83,42 @@ type ResolvedRemoteFile =
   | { kind: 'needs-backup' }
   | { kind: 'refresh-failed'; patch: FilePatch; fileName: string }
   | { kind: 'verify-failed'; fileName: string };
+
+export const resolveUploadableFile = async (file: UploadedFile): Promise<File | null> => {
+  if (file.rawFile instanceof File) {
+    return file.rawFile;
+  }
+
+  if (file.rawFile instanceof Blob) {
+    return new File([file.rawFile], file.name, { type: file.type || file.rawFile.type });
+  }
+
+  if (file.dataUrl && (file.dataUrl.startsWith('blob:') || file.dataUrl.startsWith('data:'))) {
+    try {
+      const response = await fetch(file.dataUrl);
+      const blob = await response.blob();
+      if (blob && blob.size > 0) {
+        return new File([blob], file.name, { type: file.type || blob.type });
+      }
+    } catch {
+      // Ignore preview fetch failure and proceed to persistent lookups
+    }
+  }
+
+  if (file.id) {
+    try {
+      const { dbService } = await import('@/services/db/dbService');
+      const blob = await dbService.fetchLibraryFileBlob(file as any);
+      if (blob && blob.size > 0) {
+        return new File([blob], file.name, { type: file.type || blob.type });
+      }
+    } catch {
+      // Ignore DB lookup failure
+    }
+  }
+
+  return null;
+};
 
 const toUploadableFile = (file: UploadedFile): File | null => {
   if (file.rawFile instanceof File) {
@@ -310,15 +348,25 @@ const resolveRemoteFileReference = async (
     return { kind: 'active', patch: {} };
   }
 
-  const uploadableFile = toUploadableFile(file);
+  const uploadableFile = await resolveUploadableFile(file);
   // Files API access is scoped to the uploading key's project: once the key
   // changed, a local backup must be re-uploaded right away — metadata probing
   // would only yield 403. Without a backup we still probe, since keys from the
   // same project remain valid.
   const keyChanged = isFileApiKeyMismatch(file, apiKey);
-  if (!keyChanged || !uploadableFile) {
-    if (!keyChanged && isGeminiFilesApiReferenceStillValid(file)) {
-      return { kind: 'active', patch: {} };
+  const isInvalidated =
+    file.fileApiKeyFingerprint === INVALID_FILE_API_KEY_FINGERPRINT ||
+    file.uploadState === 'failed' ||
+    Boolean(file.error);
+
+  const mustReupload = (keyChanged || isInvalidated) && Boolean(uploadableFile);
+
+  if (!mustReupload) {
+    if (!keyChanged && !isInvalidated && isGeminiFilesApiReferenceStillValid(file)) {
+      return {
+        kind: 'active',
+        patch: uploadableFile && !file.rawFile ? { rawFile: uploadableFile } : {},
+      };
     }
 
     if (!shouldRefreshGeminiFilesApiReferenceFromExpiration(file)) {
@@ -326,7 +374,11 @@ const resolveRemoteFileReference = async (
         const metadata = await getFileMetadataApi(apiKey, fileApiName);
 
         if (metadata?.state === 'ACTIVE') {
-          return { kind: 'active', patch: buildActivePatchFromMetadata(metadata, file, apiKey) };
+          const patch = buildActivePatchFromMetadata(metadata, file, apiKey);
+          if (uploadableFile && !file.rawFile) {
+            patch.rawFile = uploadableFile;
+          }
+          return { kind: 'active', patch };
         }
 
         if (metadata && metadata.state !== 'FAILED') {
@@ -340,6 +392,7 @@ const resolveRemoteFileReference = async (
               fileApiName: metadata.name ?? file.fileApiName,
               fileApiExpirationTime: toFileApiExpirationTime((metadata as { expirationTime?: unknown }).expirationTime),
               fileApiKeyFingerprint: getApiKeyFingerprint(apiKey),
+              ...(uploadableFile && !file.rawFile ? { rawFile: uploadableFile } : {}),
             } as FilePatch,
           };
         }
@@ -456,6 +509,7 @@ export const ensureFilesApiReferences = async ({
   apiKey,
   abortSignal,
   onFileUpdate,
+  allowDegrade,
 }: EnsureFilesApiReferencesParams): Promise<EnsureFilesApiReferencesResult> => {
   let nextFiles = files;
 
@@ -485,6 +539,13 @@ export const ensureFilesApiReferences = async ({
     }
 
     if (resolved.kind === 'needs-backup') {
+      if (allowDegrade) {
+        const patch: FilePatch = createFileReferenceUnavailablePatch(
+          formatHistoryFileApiUnavailablePartText(currentFile.name),
+        );
+        nextFiles = applyFilePatch(nextFiles, currentFile.id, patch, onFileUpdate);
+        continue;
+      }
       return {
         ok: false,
         files: nextFiles,

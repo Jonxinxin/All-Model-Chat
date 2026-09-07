@@ -12,6 +12,7 @@ import {
   type ChatInputContextValue,
   type ChatInputToolbarContextValue,
 } from './ChatInputContext';
+import { GEMINI_PROVIDER_ID } from '@/types';
 
 const useLatestCallback = <Args extends unknown[], ReturnValue>(callback: (...args: Args) => ReturnValue) => {
   const callbackRef = React.useRef(callback);
@@ -164,10 +165,13 @@ export const ChatInputProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     ],
   );
 
-  const actionsValue = useMemo<ChatInputActionsContextValue>(
-    () => ({
+  const actionsValue = useMemo<ChatInputActionsContextValue>(() => {
+    const providerId = logic.chatInput.currentChatSettings.providerId;
+    const isGeminiNative = providerId === undefined || providerId === GEMINI_PROVIDER_ID;
+
+    return {
       currentModelId: logic.chatInput.currentChatSettings.modelId,
-      providerId: logic.chatInput.currentChatSettings.providerId,
+      providerId,
       toolStates: logic.chatInput.toolStates,
       onAttachmentAction,
       onNewChat,
@@ -198,14 +202,15 @@ export const ChatInputProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       isLiveTranslate: logic.capabilities.isLiveTranslate || false,
       isLiveTranscribe: logic.capabilities.isLiveTranscribe || false,
       isTtsModel: logic.capabilities.isTtsModel || false,
-      canAddYouTubeVideo: !!logic.capabilities.permissions?.canUseYouTubeUrl,
+      canAddYouTubeVideo: isGeminiNative && !!logic.capabilities.permissions?.canUseYouTubeUrl,
       isLoading: logic.chatInput.isLoading,
       isEditing: logic.chatInput.isEditing,
       showInputTranslationButton: logic.chatInput.appSettings.showInputTranslationButton ?? false,
       showInputPasteButton: logic.chatInput.appSettings.showInputPasteButton ?? true,
       showInputClearButton: logic.chatInput.appSettings.showInputClearButton ?? true,
       showVoiceInputButton: logic.chatInput.appSettings.showVoiceInputButton ?? false,
-    }),
+    };
+  },
     [
       actionDisabled,
       inputState.isFullscreen,

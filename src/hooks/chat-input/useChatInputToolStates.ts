@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react';
 import { type ChatSettings, GEMINI_PROVIDER_ID } from '@/types';
 import type { ChatToolSettingKey, ChatToolToggleStates, ToggleableChatToolId } from '@/types/chatTools';
 import { useChatStore } from '@/stores/chatStore';
+import { supportsSearchMapsCombination } from '@/utils/model/modelCapabilities';
 
 interface UseChatInputToolStatesParams {
   currentChatSettings: ChatSettings;
@@ -36,15 +37,19 @@ export const getNextSettingsForToolToggle = (settings: ChatSettings, toolId: Tog
     };
   }
 
-  // googleSearch, deepSearch, and googleMaps are mutually exclusive:
-  // enabling any of them disables the other search/grounding tools.
+  // googleSearch and deepSearch are mutually exclusive search prompt modes:
+  // enabling either one disables the other.
+  // Google Maps can be combined with Google Search on Gemini 3.5+ models.
+  // On older models (e.g. Gemini 2.5), Google Search and Google Maps remain mutually exclusive.
+  const canCombineSearchMaps = supportsSearchMapsCombination(settings.modelId);
+
   if (toolId === 'googleSearch') {
     const willEnable = !settings.isGoogleSearchEnabled;
     return {
       ...settings,
       isGoogleSearchEnabled: willEnable,
-      isGoogleMapsEnabled: willEnable ? false : settings.isGoogleMapsEnabled,
       isDeepSearchEnabled: willEnable ? false : settings.isDeepSearchEnabled,
+      isGoogleMapsEnabled: willEnable && !canCombineSearchMaps ? false : settings.isGoogleMapsEnabled,
     };
   }
 
@@ -54,7 +59,7 @@ export const getNextSettingsForToolToggle = (settings: ChatSettings, toolId: Tog
       ...settings,
       isDeepSearchEnabled: willEnable,
       isGoogleSearchEnabled: willEnable ? false : settings.isGoogleSearchEnabled,
-      isGoogleMapsEnabled: willEnable ? false : settings.isGoogleMapsEnabled,
+      isGoogleMapsEnabled: willEnable && !canCombineSearchMaps ? false : settings.isGoogleMapsEnabled,
     };
   }
 
@@ -63,8 +68,8 @@ export const getNextSettingsForToolToggle = (settings: ChatSettings, toolId: Tog
     return {
       ...settings,
       isGoogleMapsEnabled: willEnable,
-      isGoogleSearchEnabled: willEnable ? false : settings.isGoogleSearchEnabled,
-      isDeepSearchEnabled: willEnable ? false : settings.isDeepSearchEnabled,
+      isGoogleSearchEnabled: willEnable && !canCombineSearchMaps ? false : settings.isGoogleSearchEnabled,
+      isDeepSearchEnabled: willEnable && !canCombineSearchMaps ? false : settings.isDeepSearchEnabled,
     };
   }
 

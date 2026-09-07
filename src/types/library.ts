@@ -1,10 +1,18 @@
 import type { FileTransferStrategy } from './chat';
 
-export type LibraryCategoryFilter = 'all' | 'image' | 'document';
+export type LibraryCategoryFilter = 'all' | 'image' | 'document' | 'audio' | 'video';
 
 export type LibrarySourceFilter = 'all' | 'uploaded' | 'generated';
 
-export type LibraryFileTypeFilter = 'all' | 'image' | 'document' | 'spreadsheet' | 'presentation' | 'pdf';
+export type LibraryFileTypeFilter =
+  | 'all'
+  | 'image'
+  | 'document'
+  | 'spreadsheet'
+  | 'presentation'
+  | 'pdf'
+  | 'audio'
+  | 'video';
 
 export type LibrarySortOption = 'date_desc' | 'date_asc' | 'name_asc' | 'name_desc' | 'size_desc' | 'size_asc';
 

@@ -21,6 +21,10 @@ describe('libraryFiles utils', () => {
     expect(getLibraryFileType('application/vnd.ms-powerpoint', 'slides.pptx')).toBe('presentation');
     expect(getLibraryFileType('text/plain', 'notes.txt')).toBe('document');
     expect(getLibraryFileType('text/markdown', 'readme.md')).toBe('document');
+    expect(getLibraryFileType('audio/mp3', 'song.mp3')).toBe('audio');
+    expect(getLibraryFileType('audio/wav', 'voice.wav')).toBe('audio');
+    expect(getLibraryFileType('video/mp4', 'clip.mp4')).toBe('video');
+    expect(getLibraryFileType('video/webm', 'recording.webm')).toBe('video');
   });
 
   it('determines isImageFileType and isDocumentFileType', () => {
@@ -29,6 +33,8 @@ describe('libraryFiles utils', () => {
 
     expect(isDocumentFileType('application/pdf', 'test.pdf')).toBe(true);
     expect(isDocumentFileType('image/png', 'test.png')).toBe(false);
+    expect(isDocumentFileType('audio/mp3', 'test.mp3')).toBe(false);
+    expect(isDocumentFileType('video/mp4', 'test.mp4')).toBe(false);
   });
 
   it('determines isVideoFileType correctly', () => {
@@ -37,6 +43,7 @@ describe('libraryFiles utils', () => {
     expect(isVideoFileType('video/webm', 'recording.webm')).toBe(true);
     expect(isVideoFileType('image/png', 'photo.png')).toBe(false);
     expect(isVideoFileType('application/pdf', 'document.pdf')).toBe(false);
+    expect(isVideoFileType('audio/mp3', 'song.mp3')).toBe(false);
   });
 
   it('formats library dates nicely', () => {
@@ -130,6 +137,22 @@ describe('libraryFiles utils', () => {
         timestamp: 200,
         source: 'generated',
       },
+      {
+        id: '4',
+        name: 'D-voice.mp3',
+        type: 'audio/mp3',
+        size: 800,
+        timestamp: 250,
+        source: 'uploaded',
+      },
+      {
+        id: '5',
+        name: 'E-clip.mp4',
+        type: 'video/mp4',
+        size: 3000,
+        timestamp: 350,
+        source: 'uploaded',
+      },
     ];
 
     const baseFilter: LibraryFilterState = {
@@ -151,6 +174,16 @@ describe('libraryFiles utils', () => {
     expect(docOnly).toHaveLength(1);
     expect(docOnly[0].id).toBe('2');
 
+    // Category: audio
+    const audioOnly = filterAndSortLibraryItems(items, { ...baseFilter, category: 'audio' });
+    expect(audioOnly).toHaveLength(1);
+    expect(audioOnly[0].id).toBe('4');
+
+    // Category: video
+    const videoOnly = filterAndSortLibraryItems(items, { ...baseFilter, category: 'video' });
+    expect(videoOnly).toHaveLength(1);
+    expect(videoOnly[0].id).toBe('5');
+
     // Source: generated
     const genOnly = filterAndSortLibraryItems(items, { ...baseFilter, source: 'generated' });
     expect(genOnly).toHaveLength(1);
@@ -158,11 +191,17 @@ describe('libraryFiles utils', () => {
 
     // Sort: name_asc
     const nameAsc = filterAndSortLibraryItems(items, { ...baseFilter, sort: 'name_asc' });
-    expect(nameAsc.map((i) => i.name)).toEqual(['A-photo.png', 'B-doc.pdf', 'C-photo.jpg']);
+    expect(nameAsc.map((i) => i.name)).toEqual([
+      'A-photo.png',
+      'B-doc.pdf',
+      'C-photo.jpg',
+      'D-voice.mp3',
+      'E-clip.mp4',
+    ]);
 
     // Sort: size_desc
     const sizeDesc = filterAndSortLibraryItems(items, { ...baseFilter, sort: 'size_desc' });
-    expect(sizeDesc.map((i) => i.size)).toEqual([2000, 1500, 500]);
+    expect(sizeDesc.map((i) => i.size)).toEqual([3000, 2000, 1500, 800, 500]);
 
     // Search query
     const searchDoc = filterAndSortLibraryItems(items, { ...baseFilter, searchQuery: 'doc' });

@@ -37,6 +37,9 @@ type MockDbService = MockRecord & {
   addApiUsageRecord: MockFn;
   getApiUsageByTimeRange: MockFn;
   clearApiUsage: MockFn;
+  saveDraftFiles: MockFn;
+  getDraftFiles: MockFn;
+  deleteDraftFiles: MockFn;
   estimateAppDataSize: MockFn;
   clearAllData: MockFn;
 };
@@ -94,6 +97,9 @@ export const createMockDbService = (overrides: Partial<MockDbService> = {}): Moc
   addApiUsageRecord: asyncMockFn(undefined),
   getApiUsageByTimeRange: asyncMockFn([]),
   clearApiUsage: asyncMockFn(undefined),
+  saveDraftFiles: asyncMockFn(undefined),
+  getDraftFiles: asyncMockFn([]),
+  deleteDraftFiles: asyncMockFn(undefined),
   estimateAppDataSize: asyncMockFn({
     totalBytes: 0,
     indexedDbBytes: 0,

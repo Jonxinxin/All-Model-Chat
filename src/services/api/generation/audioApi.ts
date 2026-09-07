@@ -6,6 +6,7 @@ import { calculateTokenStats } from '@/utils/model/modelUsageStats';
 import { buildExactPricingFromUsageMetadata } from '@/utils/usagePricingTelemetry';
 import { AVAILABLE_TTS_VOICES } from '@/constants/voiceOptions';
 import { SUPPORTED_AUDIO_MIME_TYPES } from '@/constants/fileTypeSupport';
+import { normalizeMimeType } from '@/utils/file/fileTypeClassification';
 
 // TTS responses can hang indefinitely when the upstream proxy/relay stalls, so
 // the request gets a hard wall-clock timeout. The SDK's httpOptions.timeout is
@@ -18,10 +19,8 @@ const SPEAKER_VOICES_HEADER_REGEX = /^#{1,6}\s*SPEAKER VOICES(?:\s*\(.*\))?\s*$/
 const MARKDOWN_HEADER_REGEX = /^#{1,6}\s+\S/;
 const SPEAKER_VOICE_LINE_REGEX = /^(?:[-*]\s*)?([^:]+?)\s*:\s*([A-Za-z][\w-]*)\s*$/;
 
-const normalizeAudioMimeType = (mimeType: string): string => mimeType.trim().toLowerCase().split(';')[0];
-
 const getSupportedTranscriptionMimeType = (audioFile: File): string => {
-  const mimeType = normalizeAudioMimeType(audioFile.type);
+  const mimeType = normalizeMimeType(audioFile.type);
   if (SUPPORTED_AUDIO_MIME_TYPES.includes(mimeType)) {
     return mimeType;
   }

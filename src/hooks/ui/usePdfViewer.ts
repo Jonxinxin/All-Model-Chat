@@ -5,6 +5,7 @@ import { MOBILE_BREAKPOINT_PX } from '@/constants/layout';
 import { ensurePdfWorkerConfigured } from '@/utils/pdfRuntime';
 import { useI18n } from '@/contexts/I18nContext';
 import { formatI18nErrorMessage } from '@/i18n/interpolate';
+import { getRotatedCoords } from '@/utils/media-nav/seekPdf';
 
 const PDF_TABLET_BREAKPOINT_PX = 1024;
 const INITIAL_MOBILE_SCALE = 0.6;
@@ -267,10 +268,49 @@ export const usePdfViewer = (_file: UploadedFile, options?: UsePdfViewerOptions)
   };
 
   /** Scrolls to a page; returns false when the page element is not mounted yet. */
-  const scrollToPage = (pageNumber: number): boolean => {
+  const scrollToPage = (
+    pageNumber: number,
+    targetCoords?: { box2d?: [number, number, number, number]; point?: [number, number] } | null,
+  ): boolean => {
     const pageElement = pageRefs.current.get(pageNumber);
     if (pageElement) {
-      pageElement.scrollIntoView({ behavior: 'auto', block: 'start' });
+      const container = containerRef.current;
+      if (container && targetCoords && (targetCoords.box2d || targetCoords.point)) {
+        const rotated = getRotatedCoords(targetCoords.box2d, targetCoords.point, rotation);
+        let normY: number;
+        let normX: number;
+        if (rotated) {
+          const centerYPercent = rotated.isPoint ? rotated.top : rotated.top + rotated.height / 2;
+          const centerXPercent = rotated.isPoint ? rotated.left : rotated.left + rotated.width / 2;
+          normY = centerYPercent / 100;
+          normX = centerXPercent / 100;
+        } else {
+          normY = targetCoords.box2d
+            ? Math.min(targetCoords.box2d[0], targetCoords.box2d[2]) / 1000
+            : targetCoords.point
+              ? targetCoords.point[0] / 1000
+              : 0;
+          normX = targetCoords.box2d
+            ? Math.min(targetCoords.box2d[1], targetCoords.box2d[3]) / 1000
+            : targetCoords.point
+              ? targetCoords.point[1] / 1000
+              : 0;
+        }
+        const pageOffsetTop = pageElement.offsetTop;
+        const pageOffsetLeft = pageElement.offsetLeft;
+        const targetPixelY = pageOffsetTop + normY * pageElement.clientHeight;
+        const targetPixelX = pageOffsetLeft + normX * pageElement.clientWidth;
+        const desiredScrollTop = Math.max(0, targetPixelY - container.clientHeight / 2);
+        const desiredScrollLeft = Math.max(0, targetPixelX - container.clientWidth / 2);
+        if (typeof container.scrollTo === 'function') {
+          container.scrollTo({ top: desiredScrollTop, left: desiredScrollLeft, behavior: 'smooth' });
+        } else {
+          container.scrollTop = desiredScrollTop;
+          container.scrollLeft = desiredScrollLeft;
+        }
+      } else {
+        pageElement.scrollIntoView({ behavior: 'auto', block: 'start' });
+      }
       setCurrentPage(pageNumber);
       return true;
     }

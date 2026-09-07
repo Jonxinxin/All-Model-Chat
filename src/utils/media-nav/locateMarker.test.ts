@@ -80,6 +80,52 @@ describe('parseLocateMarkers (pdf)', () => {
     const { pdfLocates } = parseLocateMarkers(content);
     expect(pdfLocates[0].box2d).toBeUndefined();
   });
+
+  it('supports single-quoted and unquoted attributes', () => {
+    const content = "<pdf-locate page='5' doc='handbook.pdf' box='100,200,300,400'>单引号</pdf-locate> <pdf-locate page=7>无引号</pdf-locate>";
+    const { pdfLocates, cleanContent } = parseLocateMarkers(content);
+    expect(pdfLocates).toHaveLength(2);
+    expect(pdfLocates[0]).toEqual({
+      pageNumber: 5,
+      docName: 'handbook.pdf',
+      box2d: [100, 200, 300, 400],
+      point: undefined,
+      snippet: '单引号',
+    });
+    expect(pdfLocates[1]).toEqual({
+      pageNumber: 7,
+      docName: undefined,
+      box2d: undefined,
+      point: undefined,
+      snippet: '无引号',
+    });
+    expect(cleanContent.trim()).toBe('');
+  });
+
+  it('supports self-closing tags', () => {
+    const content = '正文开始 <pdf-locate page="3" box="50,60,70,80" /> 补充说明 <image-locate point="500,500" arrow="top" label="Logo" /> 结尾';
+    const { pdfLocates, imageLocates, cleanContent } = parseLocateMarkers(content);
+    expect(pdfLocates).toEqual([
+      {
+        pageNumber: 3,
+        docName: undefined,
+        box2d: [50, 60, 70, 80],
+        point: undefined,
+        snippet: undefined,
+      },
+    ]);
+    expect(imageLocates).toEqual([
+      {
+        imageName: undefined,
+        box2d: undefined,
+        point: [500, 500],
+        arrow: 'top',
+        label: 'Logo',
+        snippet: undefined,
+      },
+    ]);
+    expect(cleanContent.replace(/\s+/g, ' ').trim()).toBe('正文开始 补充说明 结尾');
+  });
 });
 
 describe('parseLocateMarkers (video)', () => {

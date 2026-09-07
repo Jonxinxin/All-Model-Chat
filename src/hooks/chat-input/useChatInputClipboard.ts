@@ -1,16 +1,13 @@
 import { useCallback, type MutableRefObject, type RefObject } from 'react';
 import { deferToNextTick } from '@/utils/deferToNextTick';
-import type { AppSettings, UploadedFile } from '@/types';
+import type { AppSettings, UploadedFile, SetSelectedFiles } from '@/types';
 import { processChatInputClipboardData, shouldHandleChatInputClipboardData } from '@/utils/chat-input/clipboardData';
 import { useI18n } from '@/contexts/I18nContext';
 import { MIME_TO_EXTENSION_MAP, SUPPORTED_IMAGE_MIME_TYPES } from '@/constants/fileTypeSupport';
-
-const YOUTUBE_URL_REGEX = /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{11})(?:\S+)?$/;
+import { isYoutubeUrl, normalizeYoutubeUrl } from '@/utils/file/youtubeUrl';
 const DEFAULT_CLIPBOARD_IMAGE_EXTENSION = '.image';
 const IMAGE_FILE_NAME_TEXT_REGEX = /^(?:file:\/\/\/)?[^\r\n]+\.(?:png|jpe?g|webp|gif|heic|heif|avif|bmp|tiff?)$/i;
 const LOCAL_CLIPBOARD_IMAGE_ENDPOINT = '/api/local-clipboard-image';
-
-type SetSelectedFiles = (files: UploadedFile[] | ((prevFiles: UploadedFile[]) => UploadedFile[])) => void;
 
 const getClipboardImageFileName = (mimeType: string, index: number) => {
   const extension = MIME_TO_EXTENSION_MAP[mimeType] ?? DEFAULT_CLIPBOARD_IMAGE_EXTENSION;
@@ -118,7 +115,8 @@ export const useChatInputClipboard = ({
   const { t } = useI18n();
   const handleAddUrl = useCallback(
     async (url: string) => {
-      if (!YOUTUBE_URL_REGEX.test(url)) {
+      const canonicalUrl = normalizeYoutubeUrl(url);
+      if (!canonicalUrl) {
         setAppFileError(t('addByUrlInvalid'));
         return;
       }
@@ -126,10 +124,10 @@ export const useChatInputClipboard = ({
       justInitiatedFileOpRef.current = true;
       const newUrlFile: UploadedFile = {
         id: `url-${Date.now()}`,
-        name: url.length > 30 ? `${url.substring(0, 27)}...` : url,
+        name: canonicalUrl.length > 30 ? `${canonicalUrl.substring(0, 27)}...` : canonicalUrl,
         type: 'video/youtube-link',
         size: 0,
-        fileUri: url,
+        fileUri: canonicalUrl,
         transferStrategy: 'remote-file-id',
         uploadState: 'active',
         isProcessing: false,
@@ -175,7 +173,7 @@ export const useChatInputClipboard = ({
       if (result.type === 'text') {
         const pastedText = result.content;
 
-        if (YOUTUBE_URL_REGEX.test(pastedText.trim())) {
+        if (isYoutubeUrl(pastedText.trim())) {
           await handleAddUrl(pastedText.trim());
           return true;
         }
@@ -213,7 +211,7 @@ export const useChatInputClipboard = ({
       const pastedText = event.clipboardData.getData('text/plain');
       const shouldAppHandleClipboardData =
         shouldHandleChatInputClipboardData(event.clipboardData, clipboardOptions) ||
-        YOUTUBE_URL_REGEX.test(pastedText.trim());
+        isYoutubeUrl(pastedText.trim());
       const shouldHandle = canHandlePaste && shouldAppHandleClipboardData;
 
       if (shouldHandle) {

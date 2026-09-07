@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useRef, type Dispatch, type RefObject, type SetStateAction } from 'react';
-import { type AppSettings, type UploadedFile, type ChatSettings } from '@/types';
+import { type AppSettings, type UploadedFile, type ChatSettings, type SetSelectedFiles } from '@/types';
 import { buildPendingChatInputSubmission } from '@/utils/chat-input/pendingSubmission';
 import { useChatDraftStore } from '@/stores/chatDraftStore';
 import { useLiveModeHandler, type LiveModeApi } from './useLiveModeHandler';
 import { useMessageQueue } from './useMessageQueue';
-
-type SetSelectedFiles = (files: UploadedFile[] | ((prevFiles: UploadedFile[]) => UploadedFile[])) => void;
 
 interface ChatInputSubmissionState {
   inputText: string;

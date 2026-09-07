@@ -1,6 +1,6 @@
-import { getErrorMessage } from '@/utils/errorMessage';
-import { parseApiKeys } from '@/utils/apiKeySelection';
-import { getProxyProviderHeader } from '@/utils/thirdPartyApiProviders';
+import { getErrorMessage } from './errorMessage';
+import { parseApiKeys } from './apiKeySelection';
+import { getProxyProviderHeader } from './thirdPartyApiProviders';
 import { sendAnthropicMessageNonStream } from '@/services/api/anthropicApi';
 import { sendOpenAICompatibleMessageNonStream } from '@/services/api/openaiCompatibleApi';
 import { sendOpenAIResponsesNonStream } from '@/services/api/openaiResponsesApi';

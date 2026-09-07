@@ -78,7 +78,6 @@ export const ModelDetailCard: React.FC<ModelDetailCardProps> = ({
       data-testid="model-detail-card"
       className={`w-72 sm:w-80 rounded-2xl bg-[var(--theme-bg-secondary)] border border-[var(--theme-border-primary)] p-3.5 shadow-premium space-y-3 pointer-events-auto select-none ${className}`}
     >
-      {/* Header with Icon, Name, Provider */}
       <div className="flex items-start gap-2.5">
         <div className="mt-0.5 flex-shrink-0">
           {renderModelIcon ? (
@@ -104,14 +103,12 @@ export const ModelDetailCard: React.FC<ModelDetailCardProps> = ({
         </div>
       </div>
 
-      {/* Description if present */}
       {spec.description && (
         <p className="text-xs leading-relaxed text-[var(--theme-text-secondary)] line-clamp-2">
           {spec.description}
         </p>
       )}
 
-      {/* Specifications Grid */}
       <div className="grid grid-cols-2 gap-2 pt-1 border-t border-[var(--theme-border-secondary)]/40">
         <div className="rounded-lg bg-[var(--theme-bg-tertiary)]/40 p-2 space-y-0.5 border border-[var(--theme-border-secondary)]/30">
           <div className="flex items-center gap-1.5 text-[11px] text-[var(--theme-text-tertiary)]">
@@ -134,7 +131,6 @@ export const ModelDetailCard: React.FC<ModelDetailCardProps> = ({
         </div>
       </div>
 
-      {/* Thinking Budget if applicable */}
       {spec.thinkingBudgetRange && (
         <div className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-lg bg-purple-500/5 border border-purple-500/15 text-xs">
           <div className="flex items-center gap-1.5 text-purple-600 dark:text-purple-400">
@@ -147,7 +143,6 @@ export const ModelDetailCard: React.FC<ModelDetailCardProps> = ({
         </div>
       )}
 
-      {/* Capabilities Badges */}
       {spec.capabilities.length > 0 && (
         <div className="space-y-1.5 pt-1">
           <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--theme-text-tertiary)]">

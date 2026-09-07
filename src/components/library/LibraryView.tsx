@@ -18,6 +18,7 @@ import { LibraryListView } from './LibraryListView';
 import { LibraryGridView } from './LibraryGridView';
 import { LibraryEmptyState } from './LibraryEmptyState';
 import { FilePreviewModal } from '@/components/modals/FilePreviewModal';
+import { ConfirmationModal } from '@/components/modals/ConfirmationModal';
 import { Upload } from 'lucide-react';
 
 interface LibraryViewProps {
@@ -50,6 +51,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onNewChat, onSelectSes
   const [historicalFiles, setHistoricalFiles] = useState<LibraryItem[]>([]);
   const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [deleteConfirmTarget, setDeleteConfirmTarget] = useState<LibraryItem | 'selected' | null>(null);
 
   // Load standalone files and historical session files from IndexedDB
   const refreshLibraryFiles = useCallback(async () => {
@@ -217,10 +219,25 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onNewChat, onSelectSes
   }, [allItems, selectedFileIds, handleDownloadItem]);
 
   // Delete item
-  const handleDeleteItem = useCallback(
-    async (item: LibraryItem) => {
-      if (!window.confirm(t('libraryDeleteConfirm'))) return;
+  const handleDeleteItem = useCallback((item: LibraryItem) => {
+    setDeleteConfirmTarget(item);
+  }, []);
 
+  const handleDeleteSelected = useCallback(() => {
+    setDeleteConfirmTarget('selected');
+  }, []);
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!deleteConfirmTarget) return;
+
+    if (deleteConfirmTarget === 'selected') {
+      const ids = Array.from(selectedFileIds);
+      await dbService.deleteStandaloneLibraryFiles(ids);
+      setHistoricalFiles((prev) => prev.filter((i) => !selectedFileIds.has(i.id)));
+      clearSelection();
+      await refreshLibraryFiles();
+    } else {
+      const item = deleteConfirmTarget;
       if (item.isStandalone) {
         await dbService.deleteStandaloneLibraryFiles([item.id]);
         await refreshLibraryFiles();
@@ -228,19 +245,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onNewChat, onSelectSes
         // Session file: remove from view state
         setHistoricalFiles((prev) => prev.filter((i) => i.id !== item.id));
       }
-    },
-    [t, refreshLibraryFiles],
-  );
-
-  const handleDeleteSelected = useCallback(async () => {
-    if (!window.confirm(t('libraryDeleteConfirm'))) return;
-
-    const ids = Array.from(selectedFileIds);
-    await dbService.deleteStandaloneLibraryFiles(ids);
-    setHistoricalFiles((prev) => prev.filter((i) => !selectedFileIds.has(i.id)));
-    clearSelection();
-    await refreshLibraryFiles();
-  }, [t, selectedFileIds, clearSelection, refreshLibraryFiles]);
+    }
+  }, [deleteConfirmTarget, selectedFileIds, clearSelection, refreshLibraryFiles]);
 
   // Preview item
   const handlePreviewItem = useCallback(async (item: LibraryItem) => {
@@ -325,6 +331,19 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onNewChat, onSelectSes
       </div>
 
       {previewFile && <FilePreviewModal file={previewFile} onClose={handleClosePreview} />}
+
+      {deleteConfirmTarget && (
+        <ConfirmationModal
+          isOpen={Boolean(deleteConfirmTarget)}
+          onClose={() => setDeleteConfirmTarget(null)}
+          onConfirm={handleConfirmDelete}
+          title={t('confirm')}
+          message={t('libraryDeleteConfirm')}
+          isDanger
+          confirmLabel={t('delete')}
+          cancelLabel={t('cancel')}
+        />
+      )}
     </div>
   );
 };

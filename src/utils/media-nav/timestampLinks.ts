@@ -1,4 +1,5 @@
 import { formatTimestamp, parseTimestamp } from './timestamp';
+import { parseTagAttributes } from './tagAttributes';
 import { transformMarkdownTextSegments } from '@/utils/markdownSegments';
 
 // Matches mm:ss or hh:mm:ss, with optional range separator (- ~ – — 至 到 to)
@@ -10,13 +11,12 @@ const TIMESTAMP_BRACKET_PATTERN =
   /(?:(\[|\()(?<![:\d]))?(\b\d{1,2}:\d{2}(?::\d{2})?)(?:\s*(?:[-–—~至到]|to)\s*(\d{1,2}:\d{2}(?::\d{2})?))?(?![:\d])\b(?:(\]|\)))?/g;
 
 // Matches markdown links so we don't transform timestamps inside existing links [text](url)
-const MARKDOWN_LINK_PATTERN = /\[([^\]]+)\]\(([^)]+)\)/g;
+const MARKDOWN_LINK_PATTERN = /\[((?:\\\]|[^\]])+)\]\(([^)]+)\)/g;
 
-const TIME_LOCATE_TAG_RE = /<(?:video|audio)-locate\b([^>]*)>([\s\S]*?)<\/(?:video|audio)-locate>/gi;
+const TIME_LOCATE_TAG_RE = /<(?:video|audio)-locate\b([^>]*?)(?:\/>|>([\s\S]*?)<\/(?:video|audio)-locate>)/gi;
 const INLINE_TIME_LOCATE_RE =
-  /(?:(\r?\n[ \t]*)|([ \t]*))<(?:video|audio)-locate\b([^>]*)>([\s\S]*?)<\/(?:video|audio)-locate>/gi;
+  /(?:(\r?\n[ \t]*)|([ \t]*))<(?:video|audio)-locate\b([^>]*?)(?:\/>|>([\s\S]*?)<\/(?:video|audio)-locate>)/gi;
 const PARTIAL_TIME_LOCATE_RE = /<(?:video|audio)-locate\b[^>]*(?:>[^<]*)?$/i;
-const ATTRIBUTE_RE = /([a-zA-Z][a-zA-Z0-9_-]*)\s*=\s*"([^"]*)"/g;
 
 const checkPrecedingTextHasMatchingTimestamp = (precedingText: string, startSec: number): boolean => {
   const clean = precedingText.replace(TIME_LOCATE_TAG_RE, '');
@@ -36,16 +36,6 @@ const checkPrecedingTextHasMatchingTimestamp = (precedingText: string, startSec:
   return false;
 };
 
-const parseTagAttributes = (attributeString: string): Record<string, string> => {
-  const attributes: Record<string, string> = {};
-  let match: RegExpExecArray | null;
-  ATTRIBUTE_RE.lastIndex = 0;
-  while ((match = ATTRIBUTE_RE.exec(attributeString)) !== null) {
-    attributes[match[1]] = match[2];
-  }
-  return attributes;
-};
-
 const buildVideoSeekMarkdownLink = (attrs: Record<string, string>, inner: string): string | null => {
   const rawStart = attrs.start ?? attrs.ts ?? attrs.time;
   const startSeconds = parseTimestamp(rawStart);
@@ -57,8 +47,24 @@ const buildVideoSeekMarkdownLink = (attrs: Record<string, string>, inner: string
   const query = new URLSearchParams();
   query.set('start', String(startSeconds));
   if (hasValidEnd) query.set('end', String(endSeconds));
-  if (attrs.point) query.set('point', attrs.point.trim());
-  if (attrs.box) query.set('box', attrs.box.trim());
+  if (attrs.point?.trim()) {
+    const normalizedPoint = attrs.point
+      .replace(/[()[\]]/g, '')
+      .split(/[,;\s]+/)
+      .map((v) => v.trim())
+      .filter(Boolean)
+      .join(',');
+    if (normalizedPoint) query.set('point', normalizedPoint);
+  }
+  if (attrs.box?.trim()) {
+    const normalizedBox = attrs.box
+      .replace(/[()[\]]/g, '')
+      .split(/[,;\s]+/)
+      .map((v) => v.trim())
+      .filter(Boolean)
+      .join(',');
+    if (normalizedBox) query.set('box', normalizedBox);
+  }
   if (attrs.video) query.set('video', attrs.video.trim());
   if (attrs.audio) query.set('video', attrs.audio.trim());
   const cleanSnippet = inner.trim();
@@ -77,7 +83,8 @@ const buildVideoSeekMarkdownLink = (attrs: Record<string, string>, inner: string
     label = `${timeStr} · ${cleanSnippet}`;
   }
 
-  return `[${label}](#video-seek?${query.toString()})`;
+  const safeLabel = label.replace(/[[\]]/g, '\\$&');
+  return `[${safeLabel}](#video-seek?${query.toString()})`;
 };
 
 /**
@@ -96,7 +103,7 @@ export const linkifyTimestamps = (text: string): string => {
     if (processedText.includes('<video-locate') || processedText.includes('<audio-locate')) {
       // Split off trailing locate tags that appear as a distinct bottom block separated by blank line
       const trailingMatch = processedText.match(
-        /^([\s\S]*?\n)\s*\n\s*((?:<(?:video|audio)-locate\b[^>]*>[^<]*<\/(?:video|audio)-locate>\s*)+)$/i,
+        /^([\s\S]*?\n)\s*\n\s*((?:<(?:video|audio)-locate\b[^>]*(?:\/>|>[\s\S]*?<\/(?:video|audio)-locate>)\s*)+)$/i,
       );
 
       const bodyPart = trailingMatch ? trailingMatch[1] : processedText;
@@ -120,7 +127,7 @@ export const linkifyTimestamps = (text: string): string => {
           leadingNewline: string | undefined,
           leadingSpace: string | undefined,
           attrStr: string,
-          inner: string,
+          inner: string | undefined,
           offset: number,
           fullStr: string,
         ) => {
@@ -133,7 +140,7 @@ export const linkifyTimestamps = (text: string): string => {
             return '';
           }
 
-          const link = buildVideoSeekMarkdownLink(attrs, inner);
+          const link = buildVideoSeekMarkdownLink(attrs, inner || '');
           if (link) {
             existingTimestamps.add(sec);
             const prefix = leadingNewline || leadingSpace || '';
@@ -157,7 +164,7 @@ export const linkifyTimestamps = (text: string): string => {
           // Already represented by an inline button in the body text
           continue;
         }
-        const link = buildVideoSeekMarkdownLink(attrs, trailingMatchItem[2]);
+        const link = buildVideoSeekMarkdownLink(attrs, trailingMatchItem[2] || '');
         if (link) {
           transformedTrailingButtons.push(link);
           if (sec !== null) existingTimestamps.add(sec);

@@ -193,6 +193,40 @@ const rehypeSafeInlineStyles = () => {
   };
 };
 
+export const normalizeCodeBlockLanguages = (node: Nodes | Root): void => {
+  if (node.type === 'element' && node.tagName === 'code') {
+    const className = node.properties?.className;
+    if (Array.isArray(className)) {
+      const newClasses = [...className];
+      for (const cls of className) {
+        if (typeof cls === 'string' && cls.startsWith('language-')) {
+          const langPart = cls.slice('language-'.length);
+          const colonIdx = langPart.indexOf(':');
+          if (colonIdx > 0) {
+            const baseLang = langPart.slice(0, colonIdx).toLowerCase();
+            const normalizedClass = `language-${baseLang}`;
+            if (!newClasses.includes(normalizedClass)) {
+              newClasses.unshift(normalizedClass);
+            }
+          }
+        }
+      }
+      node.properties.className = newClasses;
+    }
+  }
+
+  if ('children' in node) {
+    node.children.forEach(normalizeCodeBlockLanguages);
+  }
+};
+
+export const rehypeNormalizeCodeLanguages = () => {
+  return (tree: Root) => {
+    normalizeCodeBlockLanguages(tree);
+  };
+};
+
+
 export const getBaseRehypePlugins = (
   allowHtml: boolean,
   options: { syntaxHighlighting?: boolean } = {},
@@ -316,6 +350,7 @@ export const getBaseRehypePlugins = (
   plugins.push([rehypeSanitize, sanitizeSchema] as const);
 
   if (options.syntaxHighlighting ?? true) {
+    plugins.push(rehypeNormalizeCodeLanguages);
     plugins.push([
       rehypeHighlight,
       {
@@ -328,6 +363,7 @@ export const getBaseRehypePlugins = (
       },
     ] as const);
   }
+
 
   return plugins;
 };

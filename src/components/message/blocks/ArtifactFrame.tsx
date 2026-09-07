@@ -4,6 +4,7 @@ import { Maximize2 } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { useWindowContext } from '@/contexts/WindowContext';
 import { SMALL_ICON_BUTTON_CLASS } from '@/constants/buttonClasses';
+import { hashString } from '@/utils/stringHash';
 import {
   buildStreamingHtmlPreviewRenderPayload,
   buildHtmlPreviewSrcDoc,
@@ -36,16 +37,6 @@ const STREAMING_SRC_DOC_THROTTLE_MS = 120;
 const frameHeightCache = new Map<string, number>();
 
 const normalizeFrameHeight = (height: number) => Math.max(MIN_FRAME_HEIGHT, Math.ceil(height));
-
-const hashString = (value: string): string => {
-  let hash = 0;
-
-  for (let i = 0; i < value.length; i += 1) {
-    hash = (hash * 31 + value.charCodeAt(i)) | 0;
-  }
-
-  return (hash >>> 0).toString(36);
-};
 
 const getContentFrameHeightCacheKey = (html: string, cacheKey?: string): string => {
   const contentHash = `${html.length}:${hashString(html)}`;

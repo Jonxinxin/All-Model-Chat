@@ -21,6 +21,7 @@ import { useSettingsStore } from '@/stores/settingsStore';
 import { useSelectionAsk } from '@/hooks/text-selection/useSelectionAsk';
 import { resolveAskPanelDockSide, type AskPanelDockSide } from '@/utils/text-selection/askPanelDocking';
 import { formatSelectionAskModelLabel } from '@/utils/text-selection/selectionAskDisplay';
+import TextareaAutosize from 'react-textarea-autosize';
 import { MathMarkdownRenderer } from '@/components/message/MathMarkdownRenderer';
 import { copyTextToClipboard } from '@/utils/clipboard';
 import { SELECTION_ASK_PANEL_SIZE_KEY } from '@/constants/storageKeys';
@@ -873,16 +874,16 @@ export const SelectionAskPanel: React.FC<SelectionAskPanelProps> = ({
             </div>
           )}
           <div className="flex items-end gap-2">
-            <textarea
-              ref={textareaRef}
+            <TextareaAutosize
+              ref={textareaRef as React.Ref<HTMLTextAreaElement>}
               value={question}
               onChange={handleTextareaInput}
               onKeyDown={handleKeyDown}
-              rows={1}
+              minRows={1}
+              maxRows={4}
               disabled={isLoading}
               placeholder={isLoading ? t('askThinking') : t('askPlaceholder')}
-              className="max-h-24 min-h-[40px] flex-1 resize-none overflow-y-hidden rounded-2xl border border-[var(--theme-border-secondary)] bg-[var(--theme-bg-input)] px-3.5 py-2.5 text-sm text-[var(--theme-text-primary)] outline-none transition-colors placeholder:text-[var(--theme-text-tertiary)] focus:border-[var(--theme-border-focus)] disabled:cursor-not-allowed disabled:opacity-60"
-              style={{ fieldSizing: 'content' } as React.CSSProperties}
+              className="flex-1 resize-none rounded-2xl border border-[var(--theme-border-secondary)] bg-[var(--theme-bg-input)] px-3.5 py-2.5 text-sm text-[var(--theme-text-primary)] outline-none transition-colors placeholder:text-[var(--theme-text-tertiary)] focus:border-[var(--theme-border-focus)] disabled:cursor-not-allowed disabled:opacity-60 leading-relaxed"
             />
             {isLoading ? (
               <button

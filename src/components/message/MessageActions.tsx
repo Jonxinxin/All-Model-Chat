@@ -9,6 +9,8 @@ import { useIsMobile, useResponsiveValue } from '@/hooks/useDevice';
 import { useWindowContext } from '@/contexts/WindowContext';
 import { IconBranch } from '@/components/icons';
 import { stripLocateMarkers } from '@/utils/media-nav/locateMarker';
+import { getModelCapabilities } from '@/utils/model/modelCapabilities';
+import { useChatStore } from '@/stores/chatStore';
 
 const AvatarWrapper: React.FC<{
   children: React.ReactNode;
@@ -87,8 +89,23 @@ export const MessageActions: React.FC<MessageActionsProps> = ({
   const overflowRef = useRef<HTMLDivElement | null>(null);
   const actionIconSize = useResponsiveValue(15, 16);
   const [isRetrying, setIsRetrying] = useState(false);
-  const showRetryButton = message.role === 'model' || (message.role === 'error' && message.generationStartTime);
-  const showContinueGenerationAction = message.role === 'model' && !message.isLoading;
+  const showRetryButton = message.role === 'model' || message.role === 'error';
+  const activeModelId = useChatStore((state) => {
+    const activeSession = state.savedSessions.find((s) => s.id === state.activeSessionId);
+    return activeSession?.settings?.modelId;
+  });
+  const isSpecialMediaModel =
+    activeModelId &&
+    (getModelCapabilities(activeModelId).isTtsModel ||
+      getModelCapabilities(activeModelId).isImageGenerationModel ||
+      getModelCapabilities(activeModelId).isTranscribeModel);
+  const hasTextContent = Boolean(message.content && message.content.trim());
+  const showContinueGenerationAction =
+    message.role === 'model' &&
+    !message.isLoading &&
+    !isSpecialMediaModel &&
+    hasTextContent &&
+    !message.audioSrc;
   const showForkAction = message.role === 'model' && !message.isLoading;
   const showEditModelAction = message.role === 'model' && !message.isLoading;
   const showOverflowActions = showContinueGenerationAction || showForkAction || showEditModelAction;

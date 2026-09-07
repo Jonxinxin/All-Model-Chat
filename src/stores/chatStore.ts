@@ -18,6 +18,7 @@ import { sanitizeSessionModel, sortSessionsInPlace } from './sessionModels';
 import {
   updateMessageInSession as updateMessageInSessions,
   updateSessionById as updateSessionByIdInSessions,
+  type MessagePatchOrUpdater,
 } from '@/utils/chat/sessionMutations';
 import {
   finishActiveGenerationJob,
@@ -41,7 +42,6 @@ import { resolveUpdaterOrValue, type UpdaterOrValue } from './stateUpdaters';
 import { useChatDraftStore } from './chatDraftStore';
 
 type SessionUpdateOptions = { persist?: boolean };
-type MessagePatchOrUpdater = Partial<ChatMessage> | ((message: ChatMessage) => ChatMessage);
 export type { SessionHistoryMode };
 export interface SetActiveSessionOptions {
   history?: SessionHistoryMode;
@@ -351,8 +351,9 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     const { setCommandedInput, setSelectedFiles, setEditingMessageId, setEditMode, setAppFileError, activeSessionId } =
       get();
     const savedDraft = activeSessionId ? useChatDraftStore.getState().drafts[activeSessionId]?.inputText ?? '' : '';
+    const savedFiles = activeSessionId ? get()._fileDrafts.current[activeSessionId] ?? [] : [];
     setCommandedInput({ text: savedDraft, id: Date.now() });
-    setSelectedFiles([]);
+    setSelectedFiles(savedFiles);
     setEditingMessageId(null);
     setEditMode('resend'); // Reset to default
     setAppFileError(null);

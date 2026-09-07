@@ -79,5 +79,21 @@ describe('mediaNavSettings', () => {
       expect(updated.isAudioNavEnabled).toBe(true);
       expect(updated.systemInstruction).toBe(customInstruction);
     });
+
+    it('preserves other media kinds when preserveOtherMediaKinds is true', () => {
+      const initial = {
+        ...DEFAULT_APP_SETTINGS,
+        isPdfNavEnabled: true,
+        isVideoNavEnabled: false,
+        isAudioNavEnabled: false,
+        isImageNavEnabled: false,
+      };
+
+      const updated = applyMediaNavKindToSettings(initial, 'image', { preserveOtherMediaKinds: true });
+      expect(updated.isPdfNavEnabled).toBe(true);
+      expect(updated.isImageNavEnabled).toBe(true);
+      expect(updated.isVideoNavEnabled).toBe(false);
+      expect(updated.isAudioNavEnabled).toBe(false);
+    });
   });
 });

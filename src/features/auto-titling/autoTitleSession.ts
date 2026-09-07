@@ -1,4 +1,4 @@
-import { type AppSettings, type ChatMessage, type SavedChatSession } from '@/types';
+import { type AppSettings, type ChatMessage, type SavedChatSession, type SessionsUpdater } from '@/types';
 import type { SupportedLanguage } from '@/i18n/languageRegistry';
 import { getGeminiKeyForRequest } from '@/utils/apiKeySelection';
 import { generateTitleApi } from '@/services/api/generation/textApi';
@@ -6,11 +6,6 @@ import { generateSessionTitle } from '@/utils/chat/session';
 import { getVisibleChatMessages } from '@/utils/chat/visibility';
 import { dbService } from '@/services/db/dbService';
 import { logService } from '@/services/logService';
-
-type AutoTitleSessionsUpdater = (
-  updater: (prev: SavedChatSession[]) => SavedChatSession[],
-  options?: { persist?: boolean },
-) => void | Promise<void>;
 
 const TITLE_SOURCE_MAX_CHARS = 2000;
 const clampForTitle = (text: string) =>
@@ -110,7 +105,7 @@ interface AutoTitleSessionOptions {
   appSettings: AppSettings;
   language: SupportedLanguage;
   stickyKey?: string;
-  updateAndPersistSessions: AutoTitleSessionsUpdater;
+  updateAndPersistSessions: SessionsUpdater;
 }
 
 export const autoTitleSession = async ({

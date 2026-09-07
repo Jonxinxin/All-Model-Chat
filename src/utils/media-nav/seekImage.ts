@@ -1,23 +1,8 @@
 import { useChatStore } from '@/stores/chatStore';
 import { useMediaNavStore } from '@/stores/mediaNavStore';
-import { collectSessionMediaFiles, isImageFile } from './sessionMediaFiles';
-import { parseLocateMarkers } from './locateMarker';
+import { collectSessionMediaFiles, isImageFile, resolveNamedFile } from './sessionMediaFiles';
+import { parseLocateMarkers, toImageNavHighlight } from './locateMarker';
 import { applyMediaNavKindToSettings } from './mediaNavSettings';
-
-const resolveNamedFile = (files: { id: string; name: string }[], locateName?: string, activeFileId?: string | null) => {
-  if (locateName) {
-    return (
-      files.find((file) => file.name === locateName) ??
-      files.find((file) => file.name.toLowerCase().includes(locateName.toLowerCase())) ??
-      files[0]
-    );
-  }
-  if (activeFileId) {
-    const current = files.find((file) => file.id === activeFileId);
-    if (current) return current;
-  }
-  return files[0];
-};
 
 export interface SeekSessionImageParams {
   fileName?: string;
@@ -74,16 +59,12 @@ export const seekSessionImage = (params: SeekSessionImageParams): boolean => {
 
   store.openAs('image');
   store.setActiveFile(target.id);
-  store.setImageHighlight({
-    messageId: params.messageId,
-    imageName: target.name,
-    box2d,
-    point,
-    arrow,
-    label,
-    snippet,
-    focusToken: ++focusTokenCounter,
-  });
+  store.setImageHighlight(
+    toImageNavHighlight(
+      { imageName: target.name, box2d, point, arrow, label, snippet },
+      { messageId: params.messageId, focusToken: ++focusTokenCounter },
+    ),
+  );
 
   const chatStore = useChatStore.getState();
   if (typeof chatStore.setCurrentChatSettings === 'function') {

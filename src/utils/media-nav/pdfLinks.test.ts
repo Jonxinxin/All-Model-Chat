@@ -63,4 +63,19 @@ describe('linkifyPdfLocates', () => {
 
     expect(output).toContain('<pdf-locate page="1">code</pdf-locate>');
   });
+
+  it('handles self-closing <pdf-locate /> tags', () => {
+    const input = '参考文档 <pdf-locate page="8" doc="manual.pdf" />。';
+    const output = linkifyPdfLocates(input);
+
+    expect(output).not.toContain('<pdf-locate');
+    expect(output).toContain('[第 8 页](#pdf-seek?page=8&doc=manual.pdf)');
+  });
+
+  it('escapes square brackets inside snippet to avoid breaking markdown link syntax', () => {
+    const input = '<pdf-locate page="2">见 [图 1.2 架构图]</pdf-locate>';
+    const output = linkifyPdfLocates(input);
+
+    expect(output).toContain('[第 2 页 · 见 \\[图 1.2 架构图\\]](#pdf-seek?page=2');
+  });
 });

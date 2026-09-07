@@ -71,34 +71,46 @@ describe('openaiResponsesMessages', () => {
 
   it('maps thinkingLevel to reasoning.effort', () => {
     expect(
-      buildOpenAIResponsesRequestBody('o3-mini', [], [{ text: 'hi' }], { thinkingLevel: 'HIGH' }, 'user', false),
+      buildOpenAIResponsesRequestBody('o4-mini', [], [{ text: 'hi' }], { thinkingLevel: 'HIGH' }, 'user', false),
     ).toMatchObject({
       reasoning: { effort: 'high' },
     });
 
     expect(
-      buildOpenAIResponsesRequestBody('o3-mini', [], [{ text: 'hi' }], { thinkingLevel: 'MEDIUM' }, 'user', false),
+      buildOpenAIResponsesRequestBody('o4-mini', [], [{ text: 'hi' }], { thinkingLevel: 'MEDIUM' }, 'user', false),
     ).toMatchObject({
       reasoning: { effort: 'medium' },
     });
 
     expect(
-      buildOpenAIResponsesRequestBody('o3-mini', [], [{ text: 'hi' }], { thinkingLevel: 'LOW' }, 'user', false),
+      buildOpenAIResponsesRequestBody('o4-mini', [], [{ text: 'hi' }], { thinkingLevel: 'LOW' }, 'user', false),
     ).toMatchObject({
       reasoning: { effort: 'low' },
     });
 
     expect(
-      buildOpenAIResponsesRequestBody('o3-mini', [], [{ text: 'hi' }], { thinkingLevel: 'MINIMAL' }, 'user', false),
+      buildOpenAIResponsesRequestBody('o4-mini', [], [{ text: 'hi' }], { thinkingLevel: 'MINIMAL' }, 'user', false),
     ).toMatchObject({
       reasoning: { effort: 'minimal' },
     });
 
     expect(
-      buildOpenAIResponsesRequestBody('o3-mini', [], [{ text: 'hi' }], { thinkingLevel: 'XHIGH' }, 'user', false),
+      buildOpenAIResponsesRequestBody('o4-mini', [], [{ text: 'hi' }], { thinkingLevel: 'XHIGH' }, 'user', false),
     ).toMatchObject({
       reasoning: { effort: 'xhigh' },
     });
+  });
+
+  it('does not attach reasoning for non-reasoning models in OpenAI Responses mode', () => {
+    const body = buildOpenAIResponsesRequestBody(
+      'gpt-4o',
+      [],
+      [{ text: 'hi' }],
+      { thinkingLevel: 'HIGH' },
+      'user',
+      false,
+    );
+    expect(body.reasoning).toBeUndefined();
   });
 
   it('includes tools and previous_response_id when provided', () => {

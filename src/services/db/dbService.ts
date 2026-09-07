@@ -31,6 +31,7 @@ import {
   fetchLibraryFileBlob,
   getAllHistoricalSessionFiles,
 } from './libraryRecords';
+import { deleteDraftFiles, getDraftFiles, saveDraftFiles } from './draftFileRecords';
 
 export type {
   ApiUsageExactPricing,
@@ -78,6 +79,10 @@ export const dbService = {
   addApiUsageRecord,
   getApiUsageByTimeRange,
   clearApiUsage,
+
+  saveDraftFiles,
+  getDraftFiles,
+  deleteDraftFiles,
 
   estimateAppDataSize,
   clearAllData: () =>

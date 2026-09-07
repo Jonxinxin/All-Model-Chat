@@ -3,6 +3,7 @@ import type { ChatHistoryItem, ThinkingLevel } from '@/types';
 import { isImageMimeType } from '@/utils/file/fileTypeClassification';
 import { isAnthropicEffortModel, isAnthropicThinkingModel } from '@/utils/model/modelCapabilities';
 import type { AnthropicChatConfig, AnthropicContentBlock, AnthropicMessage } from './anthropicTypes';
+import { collapseOnlyTextContent, hasNonEmptyMessageContent } from './chatMessageContent';
 import { appendSamplingParameters } from './requestFactory';
 
 const ANTHROPIC_FILE_DATA_ERROR = 'Anthropic mode cannot send Gemini Files API file references.';
@@ -39,20 +40,11 @@ const partToAnthropicContentItems = (part: Part): AnthropicContentBlock[] => {
   return [];
 };
 
-const partsToAnthropicContent = (parts: Part[]): string | AnthropicContentBlock[] => {
-  const items = parts.flatMap(partToAnthropicContentItems);
-  const hasOnlyText = items.every((item) => item.type === 'text');
-  if (hasOnlyText) {
-    return items
-      .map((item) => (item.type === 'text' ? item.text : ''))
-      .filter(Boolean)
-      .join('\n');
-  }
-  return items;
-};
-
-const hasAnthropicContent = (content: string | AnthropicContentBlock[]) =>
-  typeof content === 'string' ? content.trim().length > 0 : content.length > 0;
+const partsToAnthropicContent = (parts: Part[]): string | AnthropicContentBlock[] =>
+  collapseOnlyTextContent(
+    parts.flatMap(partToAnthropicContentItems),
+    (item) => (item.type === 'text' ? item.text : null),
+  );
 
 const buildAnthropicMessages = (
   history: ChatHistoryItem[],
@@ -62,11 +54,11 @@ const buildAnthropicMessages = (
   const messages: AnthropicMessage[] = [];
   for (const item of history) {
     const content = partsToAnthropicContent(item.parts);
-    if (!hasAnthropicContent(content)) continue;
+    if (!hasNonEmptyMessageContent(content)) continue;
     messages.push({ role: item.role === 'model' ? 'assistant' : 'user', content });
   }
   const currentContent = partsToAnthropicContent(parts);
-  if (hasAnthropicContent(currentContent)) {
+  if (hasNonEmptyMessageContent(currentContent)) {
     messages.push({ role: role === 'model' ? 'assistant' : 'user', content: currentContent });
   }
   return messages;

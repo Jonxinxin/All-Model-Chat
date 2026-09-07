@@ -40,7 +40,7 @@ export const PdfSidebar: React.FC<PdfSidebarProps> = ({
         />
       )}
       <div
-        className={`bg-gray-950 border-r border-white/10 flex flex-col h-full ${
+        className={`bg-gray-950 border-r border-white/10 flex flex-col h-full select-none ${
           isOverlay
             ? 'absolute left-0 top-0 bottom-0 z-40 w-44 shadow-2xl bg-gray-950/95 animate-in slide-in-from-left duration-200'
             : 'relative flex-shrink-0 w-44'

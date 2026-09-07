@@ -1,23 +1,8 @@
 import { useChatStore } from '@/stores/chatStore';
 import { useMediaNavStore } from '@/stores/mediaNavStore';
-import { collectSessionMediaFiles, isPdfFile } from './sessionMediaFiles';
+import { collectSessionMediaFiles, isPdfFile, resolveNamedFile } from './sessionMediaFiles';
 import { parseLocateMarkers, toPdfNavHighlight } from './locateMarker';
 import { applyMediaNavKindToSettings } from './mediaNavSettings';
-
-const resolveNamedFile = (files: { id: string; name: string }[], locateName?: string, activeFileId?: string | null) => {
-  if (locateName) {
-    return (
-      files.find((file) => file.name === locateName) ??
-      files.find((file) => file.name.toLowerCase().includes(locateName.toLowerCase())) ??
-      files[0]
-    );
-  }
-  if (activeFileId) {
-    const current = files.find((file) => file.id === activeFileId);
-    if (current) return current;
-  }
-  return files[0];
-};
 
 export interface SeekSessionPdfParams {
   pageNumber: number;
@@ -27,6 +12,105 @@ export interface SeekSessionPdfParams {
   snippet?: string;
   messageId?: string;
 }
+
+export interface RotatedPdfCoords {
+  isPoint: boolean;
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+}
+
+export const getRotatedCoords = (
+  box2d: [number, number, number, number] | undefined,
+  point: [number, number] | undefined,
+  rotationDegrees: number = 0,
+): RotatedPdfCoords | null => {
+  const normDeg = ((rotationDegrees % 360) + 360) % 360;
+
+  if (box2d && box2d.length === 4) {
+    const [ymin, xmin, ymax, xmax] = box2d;
+    const y0 = Math.min(ymin, ymax);
+    const y1 = Math.max(ymin, ymax);
+    const x0 = Math.min(xmin, xmax);
+    const x1 = Math.max(xmin, xmax);
+
+    let newYmin: number;
+    let newXmin: number;
+    let newYmax: number;
+    let newXmax: number;
+
+    switch (normDeg) {
+      case 90:
+        newYmin = x0;
+        newYmax = x1;
+        newXmin = 1000 - y1;
+        newXmax = 1000 - y0;
+        break;
+      case 180:
+        newYmin = 1000 - y1;
+        newYmax = 1000 - y0;
+        newXmin = 1000 - x1;
+        newXmax = 1000 - x0;
+        break;
+      case 270:
+        newYmin = 1000 - x1;
+        newYmax = 1000 - x0;
+        newXmin = y0;
+        newXmax = y1;
+        break;
+      default:
+        newYmin = y0;
+        newYmax = y1;
+        newXmin = x0;
+        newXmax = x1;
+        break;
+    }
+
+    return {
+      isPoint: false,
+      top: newYmin / 10,
+      left: newXmin / 10,
+      height: Math.max((newYmax - newYmin) / 10, 0.5),
+      width: Math.max((newXmax - newXmin) / 10, 0.5),
+    };
+  }
+
+  if (point && point.length === 2) {
+    const [y, x] = point;
+    let newY: number;
+    let newX: number;
+
+    switch (normDeg) {
+      case 90:
+        newY = x;
+        newX = 1000 - y;
+        break;
+      case 180:
+        newY = 1000 - y;
+        newX = 1000 - x;
+        break;
+      case 270:
+        newY = 1000 - x;
+        newX = y;
+        break;
+      default:
+        newY = y;
+        newX = x;
+        break;
+    }
+
+    return {
+      isPoint: true,
+      top: newY / 10,
+      left: newX / 10,
+      width: 0,
+      height: 0,
+    };
+  }
+
+  return null;
+};
 
 /**
  * Open the PDF navigation panel, jump to a target page, and highlight visual bounding box.

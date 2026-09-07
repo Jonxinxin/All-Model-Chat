@@ -25,9 +25,12 @@ export const MessageFooter: React.FC<MessageFooterProps> = ({ message, onSuggest
         </div>
       )}
 
-      {showTokenStats && (role === 'model' || (role === 'error' && generationStartTime)) && (
-        <PerformanceMetrics message={message} hideTimer={message.isLoading} />
-      )}
+      {showTokenStats &&
+        (role === 'model' ||
+          (role === 'error' && generationStartTime) ||
+          (role === 'user' && Boolean(message.promptTokens || message.totalTokens))) && (
+          <PerformanceMetrics message={message} hideTimer={message.isLoading} />
+        )}
 
       {suggestions && suggestions.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-2 animate-in fade-in slide-in-from-bottom-1 duration-300">

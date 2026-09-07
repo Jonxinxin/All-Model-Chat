@@ -242,4 +242,90 @@ describe('LibraryView', () => {
     expect(videoElement).toBeInTheDocument();
     expect(videoElement).toHaveAttribute('src', 'blob:http://localhost/demo.mp4#t=0.1');
   });
+
+  it('filters items when clicking Audio and Video tabs', async () => {
+    const sessionWithAudioAndVideo: SavedChatSession = {
+      ...mockSession,
+      messages: [
+        {
+          id: 'msg-media',
+          role: 'user',
+          content: 'media',
+          timestamp: new Date(1700000000000),
+          files: [
+            { id: 'f-audio', name: 'podcast.mp3', type: 'audio/mp3', size: 1000 },
+            { id: 'f-video', name: 'movie.mp4', type: 'video/mp4', size: 2000 },
+            { id: 'f-doc', name: 'readme.txt', type: 'text/plain', size: 500 },
+          ],
+        },
+      ],
+    };
+
+    useChatStore.setState({ savedSessions: [sessionWithAudioAndVideo] });
+
+    await act(async () => {
+      renderer.root.render(<LibraryView />);
+      await Promise.resolve();
+    });
+
+    expect(screen.getByText('podcast.mp3')).toBeInTheDocument();
+    expect(screen.getByText('movie.mp4')).toBeInTheDocument();
+    expect(screen.getByText('readme.txt')).toBeInTheDocument();
+
+    // Click Audio tab
+    const audioTab = screen.getByRole('button', { name: 'Audio' });
+    await act(async () => {
+      fireEvent.click(audioTab);
+    });
+
+    expect(screen.getByText('podcast.mp3')).toBeInTheDocument();
+    expect(screen.queryByText('movie.mp4')).not.toBeInTheDocument();
+    expect(screen.queryByText('readme.txt')).not.toBeInTheDocument();
+
+    // Click Video tab
+    const videoTab = screen.getByRole('button', { name: 'Video' });
+    await act(async () => {
+      fireEvent.click(videoTab);
+    });
+
+    expect(screen.getByText('movie.mp4')).toBeInTheDocument();
+    expect(screen.queryByText('podcast.mp3')).not.toBeInTheDocument();
+    expect(screen.queryByText('readme.txt')).not.toBeInTheDocument();
+  });
+
+  it('opens advanced filter popover and filters by source and sub-formats', async () => {
+    useChatStore.setState({ savedSessions: [mockSession] });
+
+    await act(async () => {
+      renderer.root.render(<LibraryView />);
+      await Promise.resolve();
+    });
+
+    const filterBtn = screen.getByRole('button', { name: /filter/i });
+    await act(async () => {
+      fireEvent.click(filterBtn);
+    });
+
+    // Check menu sections
+    expect(screen.getByText('Source')).toBeInTheDocument();
+    expect(screen.getByText('All sources')).toBeInTheDocument();
+    expect(screen.getByText('Uploaded')).toBeInTheDocument();
+    expect(screen.getByText('Generated')).toBeInTheDocument();
+    expect(screen.getByText('Document Formats')).toBeInTheDocument();
+    expect(screen.getByText('PDF')).toBeInTheDocument();
+    expect(screen.getByText('Spreadsheet')).toBeInTheDocument();
+    expect(screen.getByText('Presentation')).toBeInTheDocument();
+    expect(screen.getByText('Sort by')).toBeInTheDocument();
+
+    // Filter by PDF sub-format
+    const pdfOption = screen.getByRole('button', { name: /PDF/i });
+    await act(async () => {
+      fireEvent.click(pdfOption);
+    });
+
+    expect(useLibraryStore.getState().fileTypeFilter).toBe('pdf');
+    expect(screen.getByText('quarterly_report.pdf')).toBeInTheDocument();
+    expect(screen.queryByText('revenue_graph.png')).not.toBeInTheDocument();
+    expect(screen.queryByText('demo_video.mp4')).not.toBeInTheDocument();
+  });
 });

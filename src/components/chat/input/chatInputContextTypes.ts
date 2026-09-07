@@ -22,17 +22,20 @@ import type {
   UploadedFile,
   VideoMetadata,
   LibraryItem,
+  SetSelectedFiles,
 } from '@/types';
 import type { File as GeminiFile } from '@google/genai';
 import type { ChatToolToggleStates } from '@/types/chatTools';
 import type { SlashCommand } from '@/types/slashCommands';
-import type { ChatInputBooleanUpdate, ChatInputMachineState } from '@/utils/chat-input/chatInputStateMachine';
+import type {
+  ChatInputBooleanUpdate,
+  ChatInputMachineState,
+  ChatInputMode,
+} from '@/utils/chat-input/chatInputStateMachine';
 import type { QueuedChatInputSubmission } from '@/utils/chat-input/pendingSubmission';
 import type { ModelCapabilities } from '@/utils/model/modelCapabilities';
 
 type ChatEditMode = 'update' | 'resend';
-type ChatInputMode = 'idle' | 'editing' | 'queuing' | 'live' | 'processing';
-type SetSelectedFiles = Dispatch<SetStateAction<UploadedFile[]>>;
 
 export interface ChatInputRuntimeState {
   appSettings: AppSettings;
@@ -163,6 +166,10 @@ export interface ChatInputModalsState {
   showLibraryPicker: boolean;
   setShowLibraryPicker: Dispatch<SetStateAction<boolean>>;
   handleImportFromLibrary: (items: LibraryItem[]) => Promise<void>;
+  showFolderZipModal: boolean;
+  setShowFolderZipModal: Dispatch<SetStateAction<boolean>>;
+  handleSelectFolderImport: () => void;
+  handleSelectZipImport: () => void;
   fileInputRef: RefObject<HTMLInputElement>;
   imageInputRef: RefObject<HTMLInputElement>;
   folderInputRef: RefObject<HTMLInputElement>;
@@ -193,6 +200,7 @@ export interface ChatInputLocalFileState {
   handleNextImage: () => void;
   inputImages: UploadedFile[];
   currentImageIndex: number;
+  handleConvertZipToContext: (contextFile: File) => Promise<void>;
 }
 
 export interface ChatInputVoiceState {

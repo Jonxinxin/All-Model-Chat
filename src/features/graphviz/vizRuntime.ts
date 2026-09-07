@@ -3,6 +3,7 @@ import { logService } from '@/services/logService';
 import { AVAILABLE_THEMES, DEFAULT_THEME_ID } from '@/constants/themeRegistry';
 import type { Theme } from '@/types/theme';
 import { getErrorMessage } from '@/utils/errorMessage';
+import { hashString } from '@/utils/stringHash';
 import { DOT_MAX_CHARS, DOT_MAX_EDGES, DOT_MAX_NODES, countDotEdges, countDotNodes } from './graphvizLimits';
 
 /**
@@ -73,14 +74,6 @@ const touchGraphvizCache = (key: string, value: string) => {
     if (oldestKey === undefined) break;
     graphvizCache.delete(oldestKey);
   }
-};
-
-const hashString = (value: string): string => {
-  let hash = 0;
-  for (let i = 0; i < value.length; i += 1) {
-    hash = (hash * 31 + value.charCodeAt(i)) | 0;
-  }
-  return (hash >>> 0).toString(36);
 };
 
 const THEME_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;

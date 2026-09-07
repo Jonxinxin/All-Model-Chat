@@ -3,7 +3,7 @@ import { setupProviderTestRenderer as setupTestRenderer } from '@/test/render/pr
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_APP_SETTINGS } from '@/constants/settingsDefaults';
 import { SETTINGS_SEARCH_CATALOG } from '@/constants/settingsSearchCatalog';
-import { SETTINGS_TAB_IDS } from '@/constants/settingsTabs';
+import { SETTINGS_TABS } from '@/constants/settingsTabs';
 import { ensureFeatureTranslations } from '@/i18n/featureTranslations';
 import { setupStoreStateReset } from '@/test/stores/reset';
 import { useSettingsUiStore } from '@/stores/settingsUiStore';
@@ -34,7 +34,11 @@ describe('settings search anchors', () => {
       const props: ComponentProps<typeof SettingsModal> = {
         isOpen: true,
         onClose: vi.fn(),
-        currentSettings: { ...DEFAULT_APP_SETTINGS, mcpServers: [TEST_MCP_SERVER] },
+        currentSettings: {
+          ...DEFAULT_APP_SETTINGS,
+          modelId: 'gemini-3-flash-preview',
+          mcpServers: [TEST_MCP_SERVER],
+        },
         currentThemeId: 'pearl',
         availableModels: [],
         onSave: vi.fn(),
@@ -62,7 +66,7 @@ describe('settings search anchors', () => {
     localStorage.clear();
   });
 
-  it.each(SETTINGS_TAB_IDS)('resolves every %s catalog entry to a rendered anchor', async (tab) => {
+  it.each(SETTINGS_TABS)('resolves every %s catalog entry to a rendered anchor', async (tab) => {
     await renderSettingsModal(tab);
 
     const missing = SETTINGS_SEARCH_CATALOG.filter((entry) => entry.tab === tab)

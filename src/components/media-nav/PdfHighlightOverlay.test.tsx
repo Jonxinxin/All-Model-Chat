@@ -89,4 +89,20 @@ describe('PdfHighlightOverlay', () => {
     expect(hud).not.toBeNull();
     expect(hud?.style.transform).toContain('translateY(8px)');
   });
+
+  it('rotates coordinates correctly when rotation prop is provided', () => {
+    const { container } = render(
+      <PdfHighlightOverlay
+        highlight={{ pageNumber: 2, box2d: [100, 200, 500, 800], snippet: '旋转测试' }}
+        rotation={90}
+      />,
+    );
+    const box = container.querySelector('[data-testid="pdf-highlight-box"]') as HTMLElement | null;
+    expect(box).not.toBeNull();
+    // 90 deg clockwise: y' = xmin=200, x' = 1000-ymax=500, h' = xmax-xmin=600, w' = ymax-ymin=400
+    expect(box?.style.top).toBe('20%');
+    expect(box?.style.left).toBe('50%');
+    expect(box?.style.height).toBe('60%');
+    expect(box?.style.width).toBe('40%');
+  });
 });

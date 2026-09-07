@@ -7,12 +7,13 @@ import { DESKTOP_BREAKPOINT_PX, FOCUS_HISTORY_SEARCH_EVENT } from '@/constants/l
 import type { SupportedLanguage } from '@/i18n/languageRegistry';
 import { dbService } from '@/services/db/dbService';
 import { SESSION_DRAG_TYPE, isGroupDrag, isSessionDrag } from './sidebarDragTypes';
+import type { HistoryDisplayMode } from '@/stores/uiStore';
+
+export type { HistoryDisplayMode };
 
 type HistoryTranslator = (key: string) => string;
 
 const TITLE_UPDATE_FEEDBACK_MS = 1500;
-
-export type HistoryDisplayMode = 'group' | 'time';
 
 interface UseHistorySidebarLogicProps {
   isOpen: boolean;
@@ -145,6 +146,15 @@ export const useHistorySidebarLogic = ({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element | null;
+      if (
+        target?.closest?.('[data-radix-menu-content]') ||
+        target?.closest?.('[data-radix-popper-content-wrapper]') ||
+        target?.closest?.('[role="menu"]') ||
+        target?.closest?.('[role="menuitem"]')
+      ) {
+        return;
+      }
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) setActiveMenu(null);
     };
     if (activeMenu) targetDocument.addEventListener('mousedown', handleClickOutside);

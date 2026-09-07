@@ -111,5 +111,37 @@ describe('VideoPlayer', () => {
 
     // Fullscreen key
     fireEvent.keyDown(window, { key: 'f' });
+
+    // Geek keys: j, k, l
+    fireEvent.keyDown(window, { key: 'k' });
+    fireEvent.keyDown(window, { key: 'j' });
+    fireEvent.keyDown(window, { key: 'l' });
+
+    // Frame stepping keys: , and .
+    fireEvent.keyDown(window, { key: ',' });
+    fireEvent.keyDown(window, { key: '.' });
+
+    // Volume arrow keys
+    fireEvent.keyDown(window, { key: 'ArrowUp' });
+    fireEvent.keyDown(window, { key: 'ArrowDown' });
+
+    // PiP key
+    fireEvent.keyDown(window, { key: 'p' });
+  });
+
+  it('supports Picture-in-Picture toggle and controls button', () => {
+    const playerRef = createRef<VideoPlayerHandle>();
+    renderer.render(<VideoPlayer ref={playerRef} src="blob:mock-video-url" />);
+
+    expect(typeof playerRef.current?.togglePictureInPicture).toBe('function');
+    const pipBtn = renderer.container.querySelector('button[aria-label="画中画"]');
+    expect(pipBtn).not.toBeNull();
+
+    act(() => {
+      playerRef.current?.togglePictureInPicture?.();
+    });
   });
 });
+
+
+

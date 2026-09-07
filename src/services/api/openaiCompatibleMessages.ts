@@ -14,6 +14,7 @@ import {
   isLocalEngineEndpoint,
 } from '@/utils/thirdPartyApiProviders';
 import type { OpenAICompatibleChatConfig, OpenAIMessage, OpenAIMessageContent } from './openaiCompatibleTypes';
+import { collapseOnlyTextContent, hasNonEmptyMessageContent } from './chatMessageContent';
 import { appendSamplingParameters } from './requestFactory';
 
 const OPENAI_COMPATIBLE_FILE_DATA_ERROR = 'OpenAI-compatible mode cannot send Gemini Files API file references.';
@@ -107,22 +108,11 @@ const partToOpenAIContentItems = (part: Part): Exclude<OpenAIMessageContent, str
   return [];
 };
 
-const partsToOpenAIContent = (parts: Part[]): OpenAIMessageContent => {
-  const contentItems = parts.flatMap(partToOpenAIContentItems);
-  const hasOnlyText = contentItems.every((item) => item.type === 'text');
-
-  if (hasOnlyText) {
-    return contentItems
-      .map((item) => (item.type === 'text' ? item.text : ''))
-      .filter(Boolean)
-      .join('\n');
-  }
-
-  return contentItems;
-};
-
-const hasOpenAIContent = (content: OpenAIMessageContent) =>
-  typeof content === 'string' ? content.trim().length > 0 : content.length > 0;
+const partsToOpenAIContent = (parts: Part[]): OpenAIMessageContent =>
+  collapseOnlyTextContent(
+    parts.flatMap(partToOpenAIContentItems),
+    (item) => (item.type === 'text' ? item.text : null),
+  ) as OpenAIMessageContent;
 
 const buildOpenAICompatibleMessages = (
   history: ChatHistoryItem[],
@@ -139,7 +129,7 @@ const buildOpenAICompatibleMessages = (
 
   for (const item of history) {
     const content = partsToOpenAIContent(item.parts);
-    if (!hasOpenAIContent(content)) {
+    if (!hasNonEmptyMessageContent(content)) {
       continue;
     }
 
@@ -150,7 +140,7 @@ const buildOpenAICompatibleMessages = (
   }
 
   const currentContent = partsToOpenAIContent(parts);
-  if (hasOpenAIContent(currentContent)) {
+  if (hasNonEmptyMessageContent(currentContent)) {
     messages.push({
       role: role === 'model' ? 'assistant' : 'user',
       content: currentContent,
@@ -239,7 +229,7 @@ export const buildOpenAICompatibleRequestBody = (
   else if (isKimiK3Model(modelId)) {
     body.reasoning_effort = mapThinkingLevelToKimiReasoningEffort(config.thinkingLevel);
   }
-  // 6. OpenAI reasoning models (o1, o3, o4, gpt-5, etc.) and third-party reasoning proxies (OpenRouter, SiliconFlow, Together, etc.):
+  // 6. OpenAI reasoning models (o4, gpt-5, etc.) and third-party reasoning proxies (OpenRouter, SiliconFlow, Together, etc.):
   else if (isOpenAIReasoningModel(modelId) || isOpenAIGpt5FamilyModel(modelId)) {
     body.reasoning_effort = mapThinkingLevelToOpenAIReasoningEffort(config.thinkingLevel);
   }

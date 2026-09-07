@@ -60,6 +60,31 @@ describe('modelSpecifications', () => {
     expect(spec.capabilities.some((c) => c.id === 'reasoning')).toBe(true);
   });
 
+  it('resolves specifications for latest OpenAI GPT-5 and o4 models', () => {
+    const gpt5Model: ModelOption = {
+      id: 'gpt-5.6-sol',
+      name: 'GPT-5.6 Sol',
+    };
+    const gpt5Spec = getModelSpecification(gpt5Model);
+    expect(gpt5Spec.providerDisplayName).toBe('OpenAI');
+    expect(gpt5Spec.contextWindow).toContain('200K');
+    expect(gpt5Spec.maxOutput).toContain('100K');
+    expect(gpt5Spec.isReasoning).toBe(true);
+    expect(gpt5Spec.isMultimodalVision).toBe(true);
+
+    const o4Model: ModelOption = {
+      id: 'o4-mini',
+      name: 'o4-mini',
+    };
+    const o4Spec = getModelSpecification(o4Model);
+    expect(o4Spec.providerDisplayName).toBe('OpenAI');
+    expect(o4Spec.contextWindow).toContain('200K');
+    expect(o4Spec.maxOutput).toContain('100K');
+    expect(o4Spec.isReasoning).toBe(true);
+    expect(o4Spec.isMultimodalVision).toBe(true);
+    expect(o4Spec.description).toContain('next-generation reasoning model');
+  });
+
   it('resolves custom provider connection names', () => {
     const model: ModelOption = {
       id: 'custom-gpt-4o',

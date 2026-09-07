@@ -70,8 +70,18 @@ import type { resolveStandardChatTurn } from './standardChatTurn';
 import { resolveChatApiRoute, isUnavailableThirdPartyRoute } from '@/utils/chatApiRoute';
 import { getProxyProviderHeader } from '@/utils/thirdPartyApiProviders';
 import { useChatStore } from '@/stores/chatStore';
-import { ensureHistoryFilesApiReferences } from './fileApiReference';
-import { invalidateSessionFilesApiReferences, isFilesApiPermissionDeniedError } from '@/utils/chat/geminiFilesApi';
+import { ensureHistoryFilesApiReferences, resolveUploadableFile } from './fileApiReference';
+import { uploadFileApi } from '@/services/api/fileApi';
+import { getUploadLifecycleForGeminiState } from '@/utils/file-upload/fileUploadPolicy';
+import {
+  extractFilesApiIdentifierFromError,
+  formatHistoryFileApiUnavailablePartText,
+  getApiKeyFingerprint,
+  getGeminiFilesApiNameFromUri,
+  invalidateSessionFilesApiReferences,
+  isFilesApiPermissionDeniedError,
+  toFileApiExpirationTime,
+} from '@/utils/chat/geminiFilesApi';
 import { getGeminiKeyForRequest } from '@/utils/apiKeySelection';
 import { getTranslator } from '@/i18n/translations';
 import { resolveAppLanguage } from '@/i18n/languageRegistry';
@@ -535,7 +545,8 @@ export const performStandardChatApiCall = async ({
             translate: t,
           });
 
-          if (historyRefResult.ok && historyRefResult.changed && !newAbortController.signal.aborted) {
+          const sessionWasInvalidated = invalidatedSession !== currentSession;
+          if (historyRefResult.ok && (historyRefResult.changed || sessionWasInvalidated) && !newAbortController.signal.aborted) {
             updateAndPersistSessions((prev) =>
               updateSessionById(prev, finalSessionId, (s) => ({
                 ...s,
@@ -543,7 +554,7 @@ export const performStandardChatApiCall = async ({
               })),
             );
 
-            const { baseMessagesForApi: nextBaseMessages } = resolveTurn({
+            const { baseMessagesForApi: nextBaseMessages, finalParts: turnFinalParts } = resolveTurn({
               messages: historyRefResult.messages,
               promptParts,
               textToUse,
@@ -552,6 +563,90 @@ export const performStandardChatApiCall = async ({
               isContinueMode,
               isRawMode,
               apiModelId,
+            });
+
+            const targetIdentifier = extractFilesApiIdentifierFromError(error);
+            const reuploadedFilesMap = new Map<string, UploadedFile>();
+
+            for (const file of enrichedFiles) {
+              const isTarget =
+                !targetIdentifier ||
+                (file.fileUri && file.fileUri.includes(targetIdentifier)) ||
+                (file.fileApiName && file.fileApiName.includes(targetIdentifier));
+
+              if (isTarget) {
+                const uploadable = await resolveUploadableFile(file);
+                if (uploadable) {
+                  try {
+                    const uploaded = await uploadFileApi(
+                      freshKey,
+                      uploadable,
+                      file.type || uploadable.type || 'application/octet-stream',
+                      file.name,
+                      newAbortController.signal,
+                    );
+                    const patch = {
+                      ...getUploadLifecycleForGeminiState(uploaded.state),
+                      fileUri: uploaded.uri,
+                      fileApiName: uploaded.name,
+                      rawFile: uploadable,
+                      fileApiExpirationTime: toFileApiExpirationTime((uploaded as { expirationTime?: unknown }).expirationTime),
+                      fileApiKeyFingerprint: getApiKeyFingerprint(freshKey),
+                    };
+                    reuploadedFilesMap.set(file.fileUri || file.id, { ...file, ...patch });
+                  } catch (reuploadErr) {
+                    logService.warn('Auto-retry re-upload failed, will degrade file reference', { error: reuploadErr });
+                  }
+                }
+              }
+            }
+
+            if (reuploadedFilesMap.size > 0) {
+              updateAndPersistSessions((prev) =>
+                updateSessionById(prev, finalSessionId, (s) => ({
+                  ...s,
+                  messages: s.messages.map((m) =>
+                    m.files
+                      ? {
+                          ...m,
+                          files: m.files.map((f) => reuploadedFilesMap.get(f.fileUri || f.id) || f),
+                        }
+                      : m,
+                  ),
+                })),
+              );
+            }
+
+            const retryFinalParts = turnFinalParts.map((part) => {
+              const fileUri = part.fileData?.fileUri;
+              if (!fileUri) return part;
+              const isTarget =
+                !targetIdentifier ||
+                fileUri.includes(targetIdentifier) ||
+                Boolean(getGeminiFilesApiNameFromUri(fileUri)?.includes(targetIdentifier));
+              if (isTarget) {
+                const reuploaded =
+                  reuploadedFilesMap.get(fileUri) ||
+                  Array.from(reuploadedFilesMap.values()).find(
+                    (f) => f.fileUri === fileUri || (targetIdentifier && f.fileApiName?.includes(targetIdentifier)),
+                  );
+                if (reuploaded?.fileUri) {
+                  return { fileData: { mimeType: reuploaded.type, fileUri: reuploaded.fileUri } };
+                }
+
+                const fileName =
+                  enrichedFiles.find(
+                    (f) =>
+                      f.fileUri === fileUri ||
+                      Boolean(
+                        targetIdentifier &&
+                          ((f.fileApiName && f.fileApiName.includes(targetIdentifier)) ||
+                            (f.fileUri && f.fileUri.includes(targetIdentifier))),
+                      ),
+                  )?.name || (targetIdentifier ? `File ${targetIdentifier}` : 'file');
+                return { text: formatHistoryFileApiUnavailablePartText(fileName) };
+              }
+              return part;
             });
 
             const retryHistoryForChat = await createChatHistoryForApi(
@@ -565,7 +660,7 @@ export const performStandardChatApiCall = async ({
             if (hasFunctionDeclarationsInRequest) {
               try {
                 const toolLoopResult = await runStandardToolLoop({
-                  initialContents: [...retryHistoryForChat, { role: finalRole, parts: finalParts }],
+                  initialContents: [...retryHistoryForChat, { role: finalRole, parts: retryFinalParts }],
                   clientFunctions: combinedClientFunctions,
                   abortSignal: newAbortController.signal,
                   onToolCallsStarted: (modelContent) => {
@@ -615,7 +710,7 @@ export const performStandardChatApiCall = async ({
                     freshKey,
                     apiModelId,
                     retryHistoryForChat,
-                    finalParts,
+                    retryFinalParts,
                     requestConfig,
                     newAbortController.signal,
                     streamOnPart,
@@ -637,7 +732,7 @@ export const performStandardChatApiCall = async ({
                   freshKey,
                   apiModelId,
                   retryHistoryForChat,
-                  finalParts,
+                  retryFinalParts,
                   requestConfig,
                   newAbortController.signal,
                   streamOnError,

@@ -1,7 +1,7 @@
 import type { StateStorage } from 'zustand/middleware';
 import { broadcastSyncMessage, getChatSyncChannel, CHAT_SYNC_CHANNEL_NAME } from './chatSyncChannel';
 
-type StorageArea = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
+export type StorageArea = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
 interface CreatePersistedStateStorageOptions {
   debounceMs?: number;

@@ -2,26 +2,17 @@ import { type LibraryItem, type PersistedSessionFileRecord, type SavedChatSessio
 import { getKeyValue, setKeyValue, getItem, getAll } from './indexedDbAccess';
 import { FILES_STORE, SESSIONS_STORE } from './dbSchema';
 import { extractLibraryItemsFromSessions } from '@/utils/library/libraryFiles';
-import { logService } from '@/services/logService';
+import { base64ToBlob } from '@/utils/file/fileEncoding';
 
 const STANDALONE_LIBRARY_STORAGE_KEY = 'amc_library_standalone_files_v1';
 
 export const getStandaloneLibraryFiles = async (): Promise<LibraryItem[]> => {
-  try {
-    const items = await getKeyValue<LibraryItem[]>(STANDALONE_LIBRARY_STORAGE_KEY);
-    return Array.isArray(items) ? items : [];
-  } catch (error) {
-    logService.error('Failed to get standalone library files from DB:', error);
-    return [];
-  }
+  const items = await getKeyValue<LibraryItem[]>(STANDALONE_LIBRARY_STORAGE_KEY);
+  return Array.isArray(items) ? items : [];
 };
 
 export const saveStandaloneLibraryFiles = async (files: LibraryItem[]): Promise<void> => {
-  try {
-    await setKeyValue(STANDALONE_LIBRARY_STORAGE_KEY, files);
-  } catch (error) {
-    logService.error('Failed to save standalone library files to DB:', error);
-  }
+  await setKeyValue(STANDALONE_LIBRARY_STORAGE_KEY, files);
 };
 
 export const addStandaloneLibraryFiles = async (newFiles: LibraryItem[]): Promise<void> => {
@@ -45,29 +36,92 @@ export const renameStandaloneLibraryFile = async (id: string, newName: string): 
 };
 
 export const fetchLibraryFileBlob = async (item: LibraryItem): Promise<Blob | undefined> => {
+  // 1. Direct rawFile Blob
   if (item.rawFile instanceof Blob) {
     return item.rawFile;
   }
 
-  // If item is associated with a session, attempt to retrieve from FILES_STORE
+  // 2. Direct inline base64 dataUrl
+  if (item.dataUrl && item.dataUrl.startsWith('data:')) {
+    try {
+      const base64Clean = item.dataUrl.includes(',') ? item.dataUrl.split(',')[1] : item.dataUrl;
+      return base64ToBlob(base64Clean, item.type);
+    } catch {
+      // ignore and fallback
+    }
+  }
+
+  // 3. Direct lookup in FILES_STORE by item.id
   try {
     const record = await getItem<PersistedSessionFileRecord>(FILES_STORE, item.id);
     if (record && record.rawFile instanceof Blob) {
       return record.rawFile;
     }
-  } catch (error) {
-    logService.warn(`Failed to fetch file payload for ${item.id}:`, error);
+  } catch {
+    // ignore and fallback
+  }
+
+  // 4. If associated with a session, retrieve from historical session in SESSIONS_STORE
+  if (item.sessionId) {
+    try {
+      const session = await getItem<SavedChatSession>(SESSIONS_STORE, item.sessionId);
+      if (session?.messages) {
+        for (const message of session.messages) {
+          if (!message.files) continue;
+          for (const file of message.files) {
+            if (file.id === item.id || (file.name === item.name && (item.size ? file.size === item.size : true))) {
+              if (file.rawFile instanceof Blob) {
+                return file.rawFile;
+              }
+              if (file.dataUrl && file.dataUrl.startsWith('data:')) {
+                try {
+                  const base64Clean = file.dataUrl.includes(',') ? file.dataUrl.split(',')[1] : file.dataUrl;
+                  return base64ToBlob(base64Clean, file.type || item.type);
+                } catch {
+                  // ignore
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  // 5. If standalone file, retrieve from standalone storage
+  if (item.isStandalone || !item.sessionId) {
+    try {
+      const standalone = await getStandaloneLibraryFiles();
+      const match = standalone.find((f) => f.id === item.id);
+      if (match) {
+        if (match.rawFile instanceof Blob) {
+          return match.rawFile;
+        }
+        if (match.dataUrl && match.dataUrl.startsWith('data:')) {
+          try {
+            const base64Clean = match.dataUrl.includes(',') ? match.dataUrl.split(',')[1] : match.dataUrl;
+            return base64ToBlob(base64Clean, match.type || item.type);
+          } catch {
+            // ignore
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  // 6. Text content fallback
+  if (item.textContent) {
+    return new Blob([item.textContent], { type: item.type || 'text/plain' });
   }
 
   return undefined;
 };
 
 export const getAllHistoricalSessionFiles = async (): Promise<LibraryItem[]> => {
-  try {
-    const sessions = await getAll<SavedChatSession>(SESSIONS_STORE);
-    return extractLibraryItemsFromSessions(sessions);
-  } catch (error) {
-    logService.error('Failed to get historical session files from DB:', error);
-    return [];
-  }
+  const sessions = await getAll<SavedChatSession>(SESSIONS_STORE);
+  return extractLibraryItemsFromSessions(sessions);
 };

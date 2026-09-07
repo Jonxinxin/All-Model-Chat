@@ -51,4 +51,19 @@ describe('linkifyImageLocates', () => {
 
     expect(output).toContain('<image-locate box="1,2,3,4">demo</image-locate>');
   });
+
+  it('handles self-closing <image-locate /> tags', () => {
+    const input = '查看 <image-locate point="500,500" label="中心点" />。';
+    const output = linkifyImageLocates(input);
+
+    expect(output).not.toContain('<image-locate');
+    expect(output).toContain('[中心点](#image-seek?point=500%2C500&label=%E4%B8%AD%E5%BF%83%E7%82%B9)');
+  });
+
+  it('escapes square brackets inside label to preserve markdown syntax', () => {
+    const input = '<image-locate box="10,20,30,40" label="[主界面]"></image-locate>';
+    const output = linkifyImageLocates(input);
+
+    expect(output).toContain('[\\[主界面\\]](#image-seek?');
+  });
 });

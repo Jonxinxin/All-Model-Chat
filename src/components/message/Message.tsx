@@ -1,4 +1,5 @@
 import React from 'react';
+import type { FunctionCall, Part } from '@google/genai';
 import { type ChatMessage, type UploadedFile, type SideViewContent } from '@/types';
 import type { OpenHtmlPreviewHandler } from '@/utils/html-preview/previewPrivilege';
 import { MessageContent } from './MessageContent';
@@ -29,6 +30,8 @@ interface MessageProps {
   onConfigureFile?: (file: UploadedFile, messageId: string) => void;
   isGemini3?: boolean;
   userMessageCollapse?: UserMessageCollapseController;
+  mcpPair?: { calls: FunctionCall[]; responses: Part[] };
+  isTurnActive?: boolean;
 }
 
 export const Message: React.FC<MessageProps> = React.memo((props) => {
@@ -68,7 +71,8 @@ export const Message: React.FC<MessageProps> = React.memo((props) => {
   } else if (message.role === 'model') {
     bubbleClasses += `w-full py-0 text-[var(--theme-text-primary)] ${isModelThinkingOrHasThoughts ? 'sm:min-w-[320px]' : ''}`;
     if (isCurrentlyEditing) {
-      bubbleClasses += ' ring-2 ring-[var(--theme-border-focus)]/70 rounded-2xl p-3 sm:p-4 bg-[var(--theme-bg-secondary)]/40 shadow-sm';
+      bubbleClasses +=
+        ' ring-2 ring-[var(--theme-border-focus)]/70 rounded-2xl p-3 sm:p-4 bg-[var(--theme-bg-secondary)]/40 shadow-sm';
     }
   } else {
     bubbleClasses += 'w-fit px-4 py-3 card-shadow ';
@@ -122,6 +126,8 @@ export const Message: React.FC<MessageProps> = React.memo((props) => {
             onConfigureFile={props.onConfigureFile}
             isGemini3={props.isGemini3}
             userMessageCollapse={props.userMessageCollapse}
+            mcpPair={props.mcpPair}
+            isTurnActive={props.isTurnActive}
           />
         </div>
         {message.role === 'user' && messageActions}

@@ -8,6 +8,15 @@ import { setupStoreStateReset } from '@/test/stores/reset';
 import type { AppSettings } from '@/types';
 import { AppearanceSection } from './AppearanceSection';
 
+vi.mock('@/components/shared/Tooltip', () => ({
+  Tooltip: ({ children, text }: { children: React.ReactNode; text?: string }) => (
+    <>
+      {children}
+      {text && <span className="sr-only">{text}</span>}
+    </>
+  ),
+}));
+
 const settingsFixture: AppSettings = {
   ...useSettingsStore.getState().appSettings,
   themeId: 'system',

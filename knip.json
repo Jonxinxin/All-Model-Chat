@@ -3,10 +3,6 @@
   "ignore": [
     "docker/web-server.js",
     "public/runtime-config.js",
-    "src/utils/export/dom.ts",
-    "src/utils/export/files.ts",
-    "src/utils/export/image.ts",
-    "src/utils/export/templates.ts",
     "e2e/fixtures/mcp-test-server.mjs"
   ],
   "ignoreDependencies": ["pdfjs-dist", "pyodide", "lamejs", "@iconify-json/material-icon-theme"],

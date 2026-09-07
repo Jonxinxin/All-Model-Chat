@@ -259,7 +259,7 @@ export class PyodideService {
     } else {
       const errorObj = this.normalizeWorkerError(error, 'Execution failed.');
       if (output) {
-        (errorObj as unknown as { output?: string }).output = output;
+        Object.assign(errorObj, { output });
       }
       promise.reject(errorObj);
     }

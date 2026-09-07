@@ -18,6 +18,7 @@ import { useChatInputContext } from './ChatInputContext';
 import { ChatInputExpandCorner } from './ChatInputExpandCorner';
 import { useChatInputExpandSizing } from './useChatInputExpandSizing';
 import { useCompactChatInputPresentation } from './useCompactChatInputPresentation';
+import { GEMINI_PROVIDER_ID } from '@/types';
 
 export const ChatInputArea: React.FC = () => {
   const { t } = useI18n();
@@ -37,6 +38,8 @@ export const ChatInputArea: React.FC = () => {
 
   const isFullscreen = inputState.isFullscreen;
   const isPipActive = chatInput.isPipActive;
+  const providerId = chatInput.currentChatSettings?.providerId;
+  const isGeminiNative = providerId === undefined || providerId === GEMINI_PROVIDER_ID;
   const { setCurrentChatSettings } = chatInput;
   const isMediaNavOpen = useMediaNavStore((state) => state.isOpen);
   const mediaNavOpenKind = useMediaNavStore((state) => state.openKind);
@@ -192,17 +195,17 @@ export const ChatInputArea: React.FC = () => {
             show={chatInput.showEmptyStateSuggestions}
             onSuggestionClick={chatInput.onSuggestionClick}
             onOrganizeInfoClick={chatInput.onOrganizeInfoClick}
-            onToggleBBox={chatInput.onToggleBBox}
+            onToggleBBox={isGeminiNative ? chatInput.onToggleBBox : undefined}
             isBBoxModeActive={chatInput.isBBoxModeActive}
-            onToggleGuide={chatInput.onToggleGuide}
+            onToggleGuide={isGeminiNative ? chatInput.onToggleGuide : undefined}
             isGuideModeActive={chatInput.isGuideModeActive}
-            onToggleImageNav={!capabilities.isGemmaModel ? handleToggleImageNav : undefined}
+            onToggleImageNav={isGeminiNative && !capabilities.isGemmaModel ? handleToggleImageNav : undefined}
             isImageNavEnabled={isImageNavOpen}
-            onTogglePdfNav={!capabilities.isGemmaModel ? handleTogglePdfNav : undefined}
+            onTogglePdfNav={isGeminiNative && !capabilities.isGemmaModel ? handleTogglePdfNav : undefined}
             isPdfNavEnabled={isPdfNavOpen}
-            onToggleVideoNav={!capabilities.isGemmaModel ? handleToggleVideoNav : undefined}
+            onToggleVideoNav={isGeminiNative && !capabilities.isGemmaModel ? handleToggleVideoNav : undefined}
             isVideoNavEnabled={isVideoNavOpen}
-            onToggleAudioNav={!capabilities.isGemmaModel ? handleToggleAudioNav : undefined}
+            onToggleAudioNav={isGeminiNative && !capabilities.isGemmaModel ? handleToggleAudioNav : undefined}
             isAudioNavEnabled={isAudioNavOpen}
             isFullscreen={isFullscreen}
           />

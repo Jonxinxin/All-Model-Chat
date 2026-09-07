@@ -3,7 +3,6 @@ import type { LiveArtifactsPromptMode } from '@/types';
 
 import type { SupportedLanguage } from '@/i18n/languageRegistry';
 
-type PromptLanguage = SupportedLanguage;
 type LiveArtifactsPromptModule = typeof import('./liveArtifacts');
 
 const LIVE_ARTIFACTS_PROMPT_MARKERS = [
@@ -41,7 +40,7 @@ export const isHdGuideSystemInstruction = (instruction?: string | null) =>
 // fall back to the EN prompt via the `?? .en` lookup below, hence Partial.
 const LIVE_ARTIFACT_PROMPT_EXPORT_BY_MODE: Record<
   LiveArtifactsPromptMode,
-  { en: keyof LiveArtifactsPromptModule } & Partial<Record<PromptLanguage, keyof LiveArtifactsPromptModule>>
+  { en: keyof LiveArtifactsPromptModule } & Partial<Record<SupportedLanguage, keyof LiveArtifactsPromptModule>>
 > = {
   inline: {
     en: 'LIVE_ARTIFACTS_INLINE_SYSTEM_PROMPT_EN',
@@ -50,7 +49,7 @@ const LIVE_ARTIFACT_PROMPT_EXPORT_BY_MODE: Record<
 };
 
 export const loadLiveArtifactsSystemPrompt = async (
-  language: PromptLanguage = 'zh',
+  language: SupportedLanguage = 'zh',
   mode: LiveArtifactsPromptMode = 'inline',
 ) => {
   const prompts = await import('./liveArtifacts');

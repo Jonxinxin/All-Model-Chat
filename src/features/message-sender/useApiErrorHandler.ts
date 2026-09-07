@@ -1,12 +1,10 @@
 import { useCallback } from 'react';
 import { logService } from '@/services/logService';
-import { type SavedChatSession } from '@/types';
+import { type SessionsUpdater } from '@/types';
 import { updateMessageInSession, updateSessionById } from '@/utils/chat/sessionMutations';
 import { invalidateSessionFilesApiReferences } from '@/utils/chat/geminiFilesApi';
 import { useI18n } from '@/contexts/I18nContext';
 import { formatMessageSenderText } from './i18nFormat';
-
-type SessionsUpdater = (updater: (prev: SavedChatSession[]) => SavedChatSession[]) => void;
 
 // An aborted/errored reply with thoughts but no settled thinking time gets a
 // fallback duration so the header still shows how long reasoning ran, matching
@@ -82,14 +80,17 @@ export const useApiErrorHandler = (updateAndPersistSessions: SessionsUpdater) =>
 
       updateAndPersistSessions((previousSessions) =>
         updateSessionById(previousSessions, sessionId, (session) => {
-          const sessionsWithMessageUpdated = updateMessageInSession([session], sessionId, modelMessageId, (message) => {
+          const updatedMessages = session.messages.map((message) => {
+            if (message.id !== modelMessageId) {
+              return message;
+            }
             const partial = (partialContent !== undefined ? partialContent : message.content || '').trim();
             const errorBody = quoteAsApiError ? `[${errorMessage}]` : errorMessage;
             const content = quoteAsApiError || partial ? `${partial}\n\n${errorBody}` : errorBody;
 
             return {
               ...message,
-              role: 'error',
+              role: 'error' as const,
               content,
               thoughts: partialThoughts !== undefined ? partialThoughts : message.thoughts,
               isLoading: false,
@@ -98,8 +99,7 @@ export const useApiErrorHandler = (updateAndPersistSessions: SessionsUpdater) =>
             };
           });
 
-          const updatedSession = sessionsWithMessageUpdated[0] ?? session;
-          return invalidateSessionFilesApiReferences(updatedSession, error);
+          return invalidateSessionFilesApiReferences({ ...session, messages: updatedMessages }, error);
         }),
       );
 

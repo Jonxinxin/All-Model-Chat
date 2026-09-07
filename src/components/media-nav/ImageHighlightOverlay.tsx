@@ -5,6 +5,7 @@ import { useMediaNavStore, type ImageNavHighlight } from '@/stores/mediaNavStore
 export interface ImageHighlightOverlayProps {
   highlight: ImageNavHighlight | null;
   visible?: boolean;
+  scale?: number;
   onClose?: () => void;
 }
 
@@ -12,11 +13,19 @@ export interface ImageHighlightOverlayProps {
  * Precision visual-grounding overlay for images.
  * Supports HUD bounding boxes (BBox) with corner brackets,
  * and high-contrast SVG guide arrows pointing directly at target coordinates.
+ * Compensates for image scale so UI reticle, arrows, and badges maintain crisp, constant pixel sizes.
  */
-export const ImageHighlightOverlay: React.FC<ImageHighlightOverlayProps> = ({ highlight, visible = true, onClose }) => {
+export const ImageHighlightOverlay: React.FC<ImageHighlightOverlayProps> = ({
+  highlight,
+  visible = true,
+  scale = 1,
+  onClose,
+}) => {
   if (!visible || !highlight) return null;
   const { box2d, point, arrow, label, snippet } = highlight;
   if (!box2d && !point) return null;
+
+  const counterScale = scale > 0 ? 1 / Math.max(0.15, Math.min(10, scale)) : 1;
 
   let boxTop = 0;
   let boxLeft = 0;
@@ -153,10 +162,22 @@ export const ImageHighlightOverlay: React.FC<ImageHighlightOverlayProps> = ({ hi
             height: `${boxHeight}%`,
           }}
         >
-          <div className="absolute -top-[1px] -left-[1px] w-3 h-3 border-t-2 border-l-2 border-red-600 dark:border-red-400 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)] rounded-tl-[2px]" />
-          <div className="absolute -top-[1px] -right-[1px] w-3 h-3 border-t-2 border-r-2 border-red-600 dark:border-red-400 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)] rounded-tr-[2px]" />
-          <div className="absolute -bottom-[1px] -left-[1px] w-3 h-3 border-b-2 border-l-2 border-red-600 dark:border-red-400 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)] rounded-bl-[2px]" />
-          <div className="absolute -bottom-[1px] -right-[1px] w-3 h-3 border-b-2 border-r-2 border-red-600 dark:border-red-400 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)] rounded-br-[2px]" />
+          <div
+            className="absolute -top-[1px] -left-[1px] w-3 h-3 border-t-2 border-l-2 border-red-600 dark:border-red-400 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)] rounded-tl-[2px]"
+            style={{ transform: `scale(${counterScale})`, transformOrigin: 'top left' }}
+          />
+          <div
+            className="absolute -top-[1px] -right-[1px] w-3 h-3 border-t-2 border-r-2 border-red-600 dark:border-red-400 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)] rounded-tr-[2px]"
+            style={{ transform: `scale(${counterScale})`, transformOrigin: 'top right' }}
+          />
+          <div
+            className="absolute -bottom-[1px] -left-[1px] w-3 h-3 border-b-2 border-l-2 border-red-600 dark:border-red-400 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)] rounded-bl-[2px]"
+            style={{ transform: `scale(${counterScale})`, transformOrigin: 'bottom left' }}
+          />
+          <div
+            className="absolute -bottom-[1px] -right-[1px] w-3 h-3 border-b-2 border-r-2 border-red-600 dark:border-red-400 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)] rounded-br-[2px]"
+            style={{ transform: `scale(${counterScale})`, transformOrigin: 'bottom right' }}
+          />
         </div>
       )}
 
@@ -169,7 +190,7 @@ export const ImageHighlightOverlay: React.FC<ImageHighlightOverlayProps> = ({ hi
             left: `${pointLeft}%`,
           }}
         >
-          <div className="relative flex items-center justify-center">
+          <div className="relative flex items-center justify-center" style={{ transform: `scale(${counterScale})` }}>
             <div className="w-5 h-5 rounded-full border-2 border-red-600 dark:border-red-400 drop-shadow-[0_1px_4px_rgba(0,0,0,0.7)] flex items-center justify-center">
               <div className="w-1.5 h-1.5 rounded-full bg-red-600 dark:bg-red-400 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" />
             </div>
@@ -180,7 +201,7 @@ export const ImageHighlightOverlay: React.FC<ImageHighlightOverlayProps> = ({ hi
             <div
               className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transition-transform duration-300 pointer-events-none"
               style={{
-                transform: `translate(${arrowConfig.dx}px, ${arrowConfig.dy}px) rotate(${arrowConfig.rotation}deg)`,
+                transform: `translate(${arrowConfig.dx * counterScale}px, ${arrowConfig.dy * counterScale}px) rotate(${arrowConfig.rotation}deg) scale(${counterScale})`,
               }}
             >
               <svg
@@ -209,8 +230,10 @@ export const ImageHighlightOverlay: React.FC<ImageHighlightOverlayProps> = ({ hi
         style={{
           top: `${isNearTop && hasBox ? boxTop + boxHeight : badgeAnchorY}%`,
           left: `${Math.max(8, Math.min(92, badgeAnchorX))}%`,
-          transform:
-            isNearTop && hasBox ? 'translate(-50%, 0) translateY(8px)' : 'translate(-50%, -100%) translateY(-10px)',
+          transform: `${
+            isNearTop && hasBox ? 'translate(-50%, 0) translateY(8px)' : 'translate(-50%, -100%) translateY(-10px)'
+          } scale(${counterScale})`,
+          transformOrigin: isNearTop && hasBox ? 'top center' : 'bottom center',
         }}
       >
         {isNearTop && hasBox && (

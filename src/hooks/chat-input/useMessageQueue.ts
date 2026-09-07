@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import { deferToNextTick } from '@/utils/deferToNextTick';
-import type { UploadedFile } from '@/types';
+import type { UploadedFile, SetSelectedFiles } from '@/types';
 import { useChatStore } from '@/stores/chatStore';
 import {
   MAX_QUEUED_SUBMISSIONS,
@@ -11,8 +11,6 @@ import {
   type QueuedChatInputSubmission,
   shouldFlushPendingSubmission,
 } from '@/utils/chat-input/pendingSubmission';
-
-type SetSelectedFiles = (files: UploadedFile[] | ((prevFiles: UploadedFile[]) => UploadedFile[])) => void;
 
 /** If a flushed send hasn't started its pipeline within this window, release the flush gate. */
 const FLUSH_RELEASE_TIMEOUT_MS = 5000;

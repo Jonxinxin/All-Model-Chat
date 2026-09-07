@@ -1,16 +1,17 @@
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { Maximize, Minimize, Pause, Play, Repeat, StepBack, StepForward, Volume2, VolumeX, X } from 'lucide-react';
-import { useI18n } from '@/contexts/I18nContext';
 import type { UploadedFile } from '@/types';
-import { formatTimestamp } from '@/utils/media-nav/timestamp';
-import { computeContainedVideoRect, type VideoDisplayRect } from '@/utils/media-nav/videoGeometry';
 import { VideoHighlightOverlay, type VideoAnnotation } from '@/components/media-nav/VideoHighlightOverlay';
+import { VideoSegmentBar } from './video/VideoSegmentBar';
+import { VideoControls } from './video/VideoControls';
+import { useVideoGeometry } from './video/useVideoGeometry';
+import { useVideoHotkeys } from './video/useVideoHotkeys';
 
 export interface VideoPlayerHandle {
   seekTo: (seconds: number, autoplay?: boolean, manual?: boolean) => void;
   stepFrame: (direction: 'back' | 'forward') => void;
   togglePlay: () => void;
   toggleFullscreen: () => Promise<void>;
+  togglePictureInPicture?: () => Promise<void>;
   toggleMute: () => void;
   getVideoElement: () => HTMLVideoElement | null;
   getCurrentTime: () => number;
@@ -38,6 +39,7 @@ export interface VideoPlayerProps {
   annotation?: VideoAnnotation | null;
   annotationTargetTime?: number | null;
   isAnnotationVisible?: boolean;
+  onAnnotationVisibilityChange?: (visible: boolean) => void;
   onAnnotationDismiss?: () => void;
   onLoadedMetadata?: (e: React.SyntheticEvent<HTMLVideoElement, Event>) => void;
   onTimeUpdate?: (currentTime: number) => void;
@@ -48,7 +50,7 @@ export interface VideoPlayerProps {
 }
 
 const PLAYBACK_RATES = [0.5, 1, 1.5, 2] as const;
-const FRAME_STEP_SECONDS = 0.04; // ~25-30fps precision
+const FRAME_STEP_SECONDS = 0.04;
 
 export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function VideoPlayer(
   {
@@ -71,7 +73,8 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
     annotation = null,
     annotationTargetTime = null,
     isAnnotationVisible: controlledIsAnnotationVisible,
-    onAnnotationDismiss,
+    onAnnotationVisibilityChange,
+    onAnnotationDismiss: _onAnnotationDismiss,
     onLoadedMetadata,
     onTimeUpdate,
     onSeeking,
@@ -81,8 +84,6 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
   },
   ref,
 ) {
-  const { t } = useI18n();
-
   const containerRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
@@ -93,12 +94,10 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isPictureInPicture, setIsPictureInPicture] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(true);
 
-  // Geometry display rect
-  const [displayRect, setDisplayRect] = useState<VideoDisplayRect | null>(null);
-
-  // Segment state (controlled or uncontrolled)
+  // Segment state
   const isControlledSegment = controlledSegment !== undefined;
   const [internalSegment, setInternalSegment] = useState<{ start: number; end: number } | null>(defaultSegment);
   const activeSegment = isControlledSegment ? controlledSegment : internalSegment;
@@ -115,7 +114,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
     [isControlledSegment, onSegmentChange],
   );
 
-  // Segment loop state (controlled or uncontrolled)
+  // Segment loop state
   const isControlledLoop = controlledIsSegmentLoopEnabled !== undefined;
   const [internalLoop, setInternalLoop] = useState(true);
   const isSegmentLoopEnabled = isControlledLoop ? controlledIsSegmentLoopEnabled : internalLoop;
@@ -134,60 +133,21 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
   const isControlledAnnotationVis = controlledIsAnnotationVisible !== undefined;
   const [internalAnnotationVisible, setInternalAnnotationVisible] = useState(false);
   const [isAnnotationDismissed, setIsAnnotationDismissed] = useState(false);
-  const isAnnotationDismissedRef = useRef(isAnnotationDismissed);
-  isAnnotationDismissedRef.current = isAnnotationDismissed;
 
   const effectiveAnnotationVisible = isControlledAnnotationVis
     ? controlledIsAnnotationVisible
     : !isAnnotationDismissed && internalAnnotationVisible;
 
   const isProgrammaticSeekRef = useRef(false);
-  const isScrubbingRef = useRef(false);
   const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Measure and compute the exact contained video rectangle
-  const updateDisplayRect = useCallback(() => {
-    const container = containerRef.current;
-    const video = videoRef.current;
-    if (!container || !video) return;
+  // Modular Video Geometry Hook
+  const { displayRect, updateDisplayRect } = useVideoGeometry({
+    containerRef,
+    videoRef,
+    onFullscreenChange: setIsFullscreen,
+  });
 
-    const cWidth = container.clientWidth;
-    const cHeight = container.clientHeight;
-    const vWidth = video.videoWidth;
-    const vHeight = video.videoHeight;
-
-    if (cWidth > 0 && cHeight > 0 && vWidth > 0 && vHeight > 0) {
-      const rect = computeContainedVideoRect(cWidth, cHeight, vWidth, vHeight);
-      setDisplayRect(rect);
-    }
-  }, []);
-
-  // Update rect on resize
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container || typeof ResizeObserver === 'undefined') return;
-
-    const observer = new ResizeObserver(() => {
-      updateDisplayRect();
-    });
-    observer.observe(container);
-
-    return () => observer.disconnect();
-  }, [updateDisplayRect]);
-
-  // Fullscreen change listener
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      const isNowFullscreen = document.fullscreenElement === containerRef.current;
-      setIsFullscreen(isNowFullscreen);
-      setTimeout(updateDisplayRect, 50);
-    };
-
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  }, [updateDisplayRect]);
-
-  // Seek function
   const seekTo = useCallback(
     (seconds: number, autoplay = true, manual = false) => {
       const video = videoRef.current;
@@ -213,9 +173,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
         try {
           const playPromise = video.play();
           if (playPromise && typeof playPromise.catch === 'function') {
-            playPromise.catch(() => {
-              // Autoplay may be blocked by browser policy
-            });
+            playPromise.catch(() => {});
           }
         } catch {
           // Fallback for mock environments
@@ -231,7 +189,6 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
     [updateSegment],
   );
 
-  // Reset states on src change (only when src actually changes, not on initial mount)
   const prevSrcRef = useRef(src);
   useEffect(() => {
     if (prevSrcRef.current !== src) {
@@ -247,7 +204,6 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
     }
   }, [src, defaultSegment, isControlledSegment]);
 
-  // Frame stepping
   const stepFrame = useCallback((direction: 'back' | 'forward') => {
     const video = videoRef.current;
     if (!video) return;
@@ -263,7 +219,6 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
     setCurrentTime(target);
   }, []);
 
-  // Play/pause toggle
   const togglePlay = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -271,9 +226,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
       try {
         const playPromise = video.play();
         if (playPromise && typeof playPromise.catch === 'function') {
-          playPromise.catch(() => {
-            // Autoplay may be blocked by browser policy
-          });
+          playPromise.catch(() => {});
         }
       } catch {
         // Fallback for mock environments
@@ -287,7 +240,6 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
     }
   }, []);
 
-  // Playback rate cycle
   const cyclePlaybackRate = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -297,7 +249,6 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
     setPlaybackRate(nextRate);
   }, [playbackRate]);
 
-  // Volume & Mute
   const toggleMute = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -305,18 +256,16 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
     setIsMuted(video.muted);
   }, []);
 
-  const handleVolumeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = Number.parseFloat(e.target.value);
+  const handleVolumeChange = useCallback((newVolume: number) => {
     const video = videoRef.current;
     if (video) {
-      video.volume = val;
-      video.muted = val === 0;
+      video.volume = newVolume;
+      video.muted = newVolume === 0;
     }
-    setVolume(val);
-    setIsMuted(val === 0);
+    setVolume(newVolume);
+    setIsMuted(newVolume === 0);
   }, []);
 
-  // Fullscreen toggle
   const toggleFullscreen = useCallback(async () => {
     const container = containerRef.current;
     if (!container) return;
@@ -324,7 +273,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
       try {
         await container.requestFullscreen();
       } catch {
-        // Fallback gracefully if fullscreen permissions denied
+        // Fallback gracefully
       }
     } else if (document.exitFullscreen) {
       try {
@@ -335,7 +284,35 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
     }
   }, []);
 
-  // Controls auto-hide
+  const togglePictureInPicture = useCallback(async () => {
+    const video = videoRef.current;
+    if (!video) return;
+    try {
+      if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+        setIsPictureInPicture(false);
+      } else if (document.pictureInPictureEnabled && typeof video.requestPictureInPicture === 'function') {
+        await video.requestPictureInPicture();
+        setIsPictureInPicture(true);
+      }
+    } catch {
+      // Fallback gracefully
+    }
+  }, []);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const onEnter = () => setIsPictureInPicture(true);
+    const onLeave = () => setIsPictureInPicture(false);
+    video.addEventListener('enterpictureinpicture', onEnter);
+    video.addEventListener('leavepictureinpicture', onLeave);
+    return () => {
+      video.removeEventListener('enterpictureinpicture', onEnter);
+      video.removeEventListener('leavepictureinpicture', onLeave);
+    };
+  }, []);
+
   const wakeControls = useCallback(() => {
     setControlsVisible(true);
     if (controlsTimeoutRef.current) {
@@ -359,7 +336,6 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
     onControlsVisibilityChange?.(controlsVisible);
   }, [controlsVisible, onControlsVisibilityChange]);
 
-  // Expose imperative handle
   useImperativeHandle(
     ref,
     () => ({
@@ -367,16 +343,16 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
       stepFrame,
       togglePlay,
       toggleFullscreen,
+      togglePictureInPicture,
       toggleMute,
       getVideoElement: () => videoRef.current,
       getCurrentTime: () => videoRef.current?.currentTime ?? currentTime,
       getDuration: () => videoRef.current?.duration ?? duration,
       wakeControls,
     }),
-    [currentTime, duration, seekTo, stepFrame, toggleFullscreen, toggleMute, togglePlay, wakeControls],
+    [currentTime, duration, seekTo, stepFrame, toggleFullscreen, togglePictureInPicture, toggleMute, togglePlay, wakeControls],
   );
 
-  // Video event handlers
   const handleLoadedMetadata = (e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
     const video = videoRef.current;
     if (video && Number.isFinite(video.duration)) {
@@ -406,25 +382,35 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
     const video = videoRef.current;
     if (!video) return;
 
-    if (!isScrubbingRef.current) {
-      setCurrentTime(video.currentTime);
-    }
+    setCurrentTime(video.currentTime);
 
     const seg = activeSegmentRef.current;
-    if (seg && isSegmentLoopEnabledRef.current) {
-      if (video.currentTime >= seg.end - 0.05) {
-        isProgrammaticSeekRef.current = true;
-        video.currentTime = seg.start;
+    if (seg) {
+      if (isSegmentLoopEnabledRef.current) {
+        if (video.currentTime >= seg.end - 0.05) {
+          isProgrammaticSeekRef.current = true;
+          video.currentTime = seg.start;
+        }
+      } else if (video.currentTime >= seg.end) {
+        try {
+          video.pause();
+          setIsPlaying(false);
+          onPause?.();
+        } catch {
+          // Fallback for mock environments
+        }
       }
     }
 
-    if (annotation && !isAnnotationDismissedRef.current) {
-      if (seg) {
-        const inSeg = video.currentTime >= seg.start - 0.2 && video.currentTime <= seg.end + 0.2;
-        setInternalAnnotationVisible(inSeg);
-      } else if (annotationTargetTime !== null) {
-        const inRange = Math.abs(video.currentTime - annotationTargetTime) <= 3.0;
-        setInternalAnnotationVisible(inRange);
+    if (annotation && (annotation.box2d || annotation.point)) {
+      let isVisibleNow = true;
+      if (annotationTargetTime !== null && annotationTargetTime !== undefined) {
+        const timeDiff = Math.abs(video.currentTime - annotationTargetTime);
+        isVisibleNow = timeDiff <= 1.5;
+      }
+      setInternalAnnotationVisible(isVisibleNow);
+      if (isControlledAnnotationVis) {
+        onAnnotationVisibilityChange?.(isVisibleNow);
       }
     }
 
@@ -434,92 +420,30 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
   const handleCloseAnnotation = useCallback(() => {
     setIsAnnotationDismissed(true);
     setInternalAnnotationVisible(false);
-    onAnnotationDismiss?.();
-  }, [onAnnotationDismiss]);
+    if (isControlledAnnotationVis) {
+      onAnnotationVisibilityChange?.(false);
+    }
+  }, [isControlledAnnotationVis, onAnnotationVisibilityChange]);
 
-  // Hotkeys
-  useEffect(() => {
-    if (!allowHotkeys) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const activeTag = (document.activeElement as HTMLElement)?.tagName?.toLowerCase();
-      if (
-        activeTag === 'input' ||
-        activeTag === 'textarea' ||
-        (document.activeElement as HTMLElement)?.isContentEditable
-      ) {
-        return;
-      }
-      if (!containerRef.current) return;
-      const isTargeted = containerRef.current.contains(document.activeElement) || isFullscreen;
-      if (!isTargeted && !containerRef.current.matches(':hover')) return;
-
-      if (e.key === ' ' || e.code === 'Space') {
-        e.preventDefault();
-        togglePlay();
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        wakeControls();
-        setVolume((prev) => {
-          const next = Math.min(1, Math.round((prev + 0.05) * 100) / 100);
-          if (videoRef.current) videoRef.current.volume = next;
-          return next;
-        });
-        setIsMuted(false);
-        if (videoRef.current) videoRef.current.muted = false;
-      } else if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        wakeControls();
-        setVolume((prev) => {
-          const next = Math.max(0, Math.round((prev - 0.05) * 100) / 100);
-          if (videoRef.current) videoRef.current.volume = next;
-          return next;
-        });
-      } else if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        wakeControls();
-        if (e.shiftKey) {
-          stepFrame('back');
-        } else {
-          const video = videoRef.current;
-          const cur = video?.currentTime ?? currentTime;
-          seekTo(Math.max(0, cur - 5), isPlaying, true);
-        }
-      } else if (e.key === 'ArrowRight') {
-        e.preventDefault();
-        wakeControls();
-        if (e.shiftKey) {
-          stepFrame('forward');
-        } else {
-          const video = videoRef.current;
-          const cur = video?.currentTime ?? currentTime;
-          const dur = Number.isFinite(video?.duration) && video!.duration > 0 ? video!.duration : duration;
-          seekTo(Math.min(dur, cur + 5), isPlaying, true);
-        }
-      } else if (e.key === 'f' || e.key === 'F') {
-        e.preventDefault();
-        void toggleFullscreen();
-      } else if (e.key === 'm' || e.key === 'M') {
-        e.preventDefault();
-        toggleMute();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [
-    allowHotkeys,
+  // Modular Video Hotkeys Hook (Space, J/K/L, Frame Step, Volume, Fullscreen, Mute, PiP)
+  useVideoHotkeys({
+    enabled: allowHotkeys,
+    containerRef,
+    videoRef,
     currentTime,
     duration,
-    isFullscreen,
     isPlaying,
-    seekTo,
-    stepFrame,
-    toggleFullscreen,
-    toggleMute,
-    togglePlay,
+    volume,
+    isMuted,
+    onTogglePlay: togglePlay,
+    onSeek: seekTo,
+    onStepFrame: stepFrame,
+    onToggleFullscreen: toggleFullscreen,
+    onToggleMute: toggleMute,
+    onVolumeChange: handleVolumeChange,
+    onTogglePictureInPicture: togglePictureInPicture,
     wakeControls,
-  ]);
+  });
 
   const clickTimerRef = useRef<number | null>(null);
 
@@ -557,44 +481,15 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
     };
   }, [displayRect]);
 
-  const progressPercent = duration > 0 ? Math.min(100, Math.max(0, (currentTime / duration) * 100)) : 0;
-  const volumePercent = isMuted ? 0 : Math.min(100, Math.max(0, volume * 100));
-
   return (
     <div className="h-full w-full flex flex-col bg-black select-none relative">
       {showSegmentBar && activeSegment && (
-        <div className="flex items-center justify-between gap-2 px-3 py-1.5 bg-[#101113] border-b border-white/10 text-xs text-white/90 flex-shrink-0 z-30">
-          <span className="font-mono">
-            {t('videoLocateSegment')
-              .replace('{start}', formatTimestamp(activeSegment.start))
-              .replace('{end}', formatTimestamp(activeSegment.end))}
-          </span>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={toggleSegmentLoop}
-              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                isSegmentLoopEnabled ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10'
-              }`}
-              aria-pressed={isSegmentLoopEnabled}
-              aria-label={t('videoSegmentLoop')}
-              title={t('videoSegmentLoop')}
-              data-testid="media-segment-loop"
-            >
-              <Repeat size={14} />
-            </button>
-            <button
-              type="button"
-              onClick={() => updateSegment(null)}
-              className="p-1.5 rounded-lg text-white/70 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
-              aria-label={t('videoSegmentExit')}
-              title={t('videoSegmentExit')}
-              data-testid="media-segment-exit"
-            >
-              <X size={14} />
-            </button>
-          </div>
-        </div>
+        <VideoSegmentBar
+          segment={activeSegment}
+          isLoopEnabled={isSegmentLoopEnabled}
+          onToggleLoop={toggleSegmentLoop}
+          onExit={() => updateSegment(null)}
+        />
       )}
 
       <div className="flex-grow min-h-0 flex items-center justify-center relative overflow-hidden">
@@ -640,141 +535,27 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
           />
 
           {showControls && (
-            <div
-              className={`absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/95 via-black/60 to-transparent px-3 sm:px-4 py-2.5 pt-8 flex flex-col gap-2 transition-opacity duration-300 z-30 pointer-events-auto rounded-b-xl ${
-                controlsVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
-              }`}
+            <VideoControls
+              visible={controlsVisible}
               style={controlsStyle}
-            >
-              <div className="relative w-full flex items-center group/timeline py-1.5 cursor-pointer">
-                <div className="absolute inset-x-0 h-1 group-hover/timeline:h-1.5 bg-white/25 rounded-full overflow-hidden transition-all pointer-events-none">
-                  <div
-                    className="h-full bg-white transition-[width] duration-75"
-                    style={{ width: `${progressPercent}%` }}
-                  />
-                </div>
-
-                {activeSegment && duration > 0 && (
-                  <div
-                    className="absolute top-1/2 -translate-y-1/2 h-1.5 bg-emerald-400/80 rounded-full pointer-events-none border border-emerald-300 shadow-[0_0_8px_rgba(52,211,153,0.6)] z-10"
-                    style={{
-                      left: `${Math.max(0, Math.min(100, (activeSegment.start / duration) * 100))}%`,
-                      width: `${Math.max(0.5, Math.min(100, ((activeSegment.end - activeSegment.start) / duration) * 100))}%`,
-                    }}
-                  />
-                )}
-
-                <input
-                  type="range"
-                  min={0}
-                  max={duration || 100}
-                  step={0.05}
-                  value={currentTime}
-                  onPointerDown={() => {
-                    isScrubbingRef.current = true;
-                  }}
-                  onPointerUp={() => {
-                    isScrubbingRef.current = false;
-                  }}
-                  onChange={(e) => {
-                    seekTo(Number.parseFloat(e.target.value), false, true);
-                  }}
-                  className="relative z-20 w-full h-1 group-hover/timeline:h-1.5 appearance-none bg-transparent outline-none cursor-pointer accent-white transition-all"
-                  aria-label="Seek timeline"
-                  title="Seek (← / →)"
-                />
-              </div>
-
-              <div className="flex items-center justify-between text-white/95 text-xs select-none">
-                <div className="flex items-center gap-1 sm:gap-1.5">
-                  <button
-                    type="button"
-                    onClick={togglePlay}
-                    className="p-1.5 rounded-lg hover:bg-white/20 active:bg-white/30 text-white transition-all active:scale-95 cursor-pointer"
-                    aria-label={isPlaying ? t('videoPause') : t('videoPlay')}
-                    title={`${isPlaying ? t('videoPause') : t('videoPlay')} (Space)`}
-                  >
-                    {isPlaying ? <Pause size={17} className="fill-current" /> : <Play size={17} className="fill-current ml-0.5" />}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => stepFrame('back')}
-                    className="p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/15 active:bg-white/25 transition-all active:scale-95 cursor-pointer"
-                    aria-label={t('videoStepBack')}
-                    title={`${t('videoStepBack')} (Shift+←)`}
-                  >
-                    <StepBack size={14} />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => stepFrame('forward')}
-                    className="p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/15 active:bg-white/25 transition-all active:scale-95 cursor-pointer"
-                    aria-label={t('videoStepForward')}
-                    title={`${t('videoStepForward')} (Shift+→)`}
-                  >
-                    <StepForward size={14} />
-                  </button>
-
-                  <div className="ml-1.5 font-mono text-xs tabular-nums text-white/90 select-none tracking-tight">
-                    <span>{formatTimestamp(currentTime)}</span>
-                    <span className="opacity-40 mx-1">/</span>
-                    <span className="opacity-70">{formatTimestamp(duration)}</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1 sm:gap-2">
-                  <button
-                    type="button"
-                    onClick={cyclePlaybackRate}
-                    className="px-2 py-0.5 rounded font-mono text-xs font-medium bg-white/10 hover:bg-white/20 active:bg-white/30 text-white transition-all active:scale-95 cursor-pointer shadow-sm"
-                    aria-label={t('videoSpeed')}
-                    title={t('videoSpeed')}
-                  >
-                    {playbackRate}x
-                  </button>
-
-                  <div className="flex items-center gap-1.5 group/volume relative">
-                    <button
-                      type="button"
-                      onClick={toggleMute}
-                      className="p-1.5 rounded-lg hover:bg-white/20 active:bg-white/30 text-white transition-all active:scale-95 cursor-pointer"
-                      aria-label={isMuted ? t('videoUnmute') : t('videoMute')}
-                      title={`${isMuted ? t('videoUnmute') : t('videoMute')} (M)`}
-                    >
-                      {isMuted || volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />}
-                    </button>
-                    <div className="relative w-14 sm:w-16 hidden sm:flex items-center py-1 cursor-pointer">
-                      <div className="absolute inset-x-0 h-1 bg-white/25 rounded-full overflow-hidden pointer-events-none">
-                        <div className="h-full bg-white transition-[width] duration-75" style={{ width: `${volumePercent}%` }} />
-                      </div>
-                      <input
-                        type="range"
-                        min={0}
-                        max={1}
-                        step={0.05}
-                        value={isMuted ? 0 : volume}
-                        onChange={handleVolumeChange}
-                        className="relative z-10 w-full h-1 appearance-none bg-transparent accent-white cursor-pointer"
-                        aria-label="Volume"
-                        title="Volume (↑ / ↓)"
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => void toggleFullscreen()}
-                    className="p-1.5 rounded-lg hover:bg-white/20 active:bg-white/30 text-white transition-all active:scale-95 cursor-pointer"
-                    aria-label={isFullscreen ? t('videoExitFullscreen') : t('videoFullscreen')}
-                    title={`${isFullscreen ? t('videoExitFullscreen') : t('videoFullscreen')} (F)`}
-                  >
-                    {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
-                  </button>
-                </div>
-              </div>
-            </div>
+              currentTime={currentTime}
+              duration={duration}
+              isPlaying={isPlaying}
+              playbackRate={playbackRate}
+              volume={volume}
+              isMuted={isMuted}
+              isFullscreen={isFullscreen}
+              isPictureInPicture={isPictureInPicture}
+              activeSegment={activeSegment}
+              onTogglePlay={togglePlay}
+              onStepFrame={stepFrame}
+              onCyclePlaybackRate={cyclePlaybackRate}
+              onToggleMute={toggleMute}
+              onVolumeChange={handleVolumeChange}
+              onToggleFullscreen={toggleFullscreen}
+              onTogglePictureInPicture={togglePictureInPicture}
+              onSeek={(seconds) => seekTo(seconds, false, true)}
+            />
           )}
         </div>
       </div>

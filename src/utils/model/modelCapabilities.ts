@@ -19,6 +19,15 @@ export const isGeminiRoboticsModel = (modelId: string): boolean =>
   !!modelId && modelId.toLowerCase().includes('gemini-robotics-er');
 
 /**
+ * Gemini 3.5 Flash and later models support combining Grounding with Google Maps
+ * with other built-in tools like Grounding with Google Search.
+ */
+export const supportsSearchMapsCombination = (modelId?: string | null): boolean => {
+  if (!modelId) return false;
+  return isGemini3Model(modelId) || isGeminiRoboticsModel(modelId);
+};
+
+/**
  * gemini-3.7-flash and gemini-3.8-flash have thinking levels low/medium/high
  * — minimal is not supported and returns an error per their model cards.
  * 3.5/3.6 Flash and 3.5 Flash-Lite do accept MINIMAL.
@@ -37,6 +46,16 @@ export const isLiveTranscribeModel = (modelId: string): boolean =>
 
 export const isTranscribeModel = (modelId: string): boolean =>
   !!modelId && modelId.toLowerCase().includes('transcribe') && !modelId.toLowerCase().includes('transcribe-live');
+
+export const bansModelTurnPrefill = (modelId: string): boolean => {
+  if (!modelId) return false;
+  const lowerId = modelId.toLowerCase();
+  return (
+    /gemini-3\.[6-9]/.test(lowerId) ||
+    lowerId.includes('gemini-3.5-flash-lite') ||
+    /gemini-[4-9]/.test(lowerId)
+  );
+};
 
 const isNativeAudioModel = (modelId: string): boolean => {
   const lowerId = modelId.toLowerCase();
@@ -94,14 +113,18 @@ export const isQwenReasoningModel = (modelId: string): boolean => {
 export const isOpenAIReasoningModel = (modelId: string): boolean => {
   if (!modelId) return false;
   const lowerId = modelId.toLowerCase();
-  if (lowerId.startsWith('gpt-4') || lowerId.startsWith('gpt-3') || lowerId.includes('turbo')) {
-    return false;
-  }
-  return (
+  if (
+    lowerId.startsWith('gpt-4') ||
+    lowerId.startsWith('gpt-3') ||
+    lowerId.includes('turbo') ||
     lowerId.startsWith('o1') ||
     lowerId.includes('/o1') ||
     lowerId.startsWith('o3') ||
-    lowerId.includes('/o3') ||
+    lowerId.includes('/o3')
+  ) {
+    return false;
+  }
+  return (
     lowerId.startsWith('o4') ||
     lowerId.includes('/o4') ||
     lowerId.startsWith('gpt-5') ||
@@ -226,6 +249,7 @@ export interface ModelCapabilities {
   isLiveTranslate: boolean;
   isLiveTranscribe: boolean;
   supportsBuiltInCustomToolCombination: boolean;
+  supportsSearchMapsCombination: boolean;
   permissions: ModelInteractionPermissions;
   supportedAspectRatios?: string[];
   supportedImageSizes?: string[];
@@ -334,6 +358,7 @@ export const getModelCapabilities = (modelId: string): ModelCapabilities => {
     isLiveTranslate: isLiveTranslateModel(modelId),
     isLiveTranscribe: isLiveTranscribeModel(modelId),
     supportsBuiltInCustomToolCombination: isGemini3,
+    supportsSearchMapsCombination: isGemini3 || roboticsModel,
     permissions,
     supportedAspectRatios,
     supportedImageSizes,

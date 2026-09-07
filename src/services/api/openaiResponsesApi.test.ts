@@ -102,7 +102,7 @@ describe('sendOpenAIResponsesNonStream', () => {
     const onComplete = vi.fn();
     await sendOpenAIResponsesNonStream(
       'sk-key',
-      'o3-mini',
+      'o4-mini',
       [],
       [{ text: 'Solve x' }],
       {},
@@ -237,7 +237,7 @@ describe('sendOpenAIResponsesStream', () => {
 
     await sendOpenAIResponsesStream(
       'sk-key',
-      'o3-mini',
+      'o4-mini',
       [],
       [{ text: 'calculate' }],
       {},
@@ -284,7 +284,7 @@ describe('fetchOpenAIResponsesModels', () => {
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
       mockResponse(
         JSON.stringify({
-          data: [{ id: 'gpt-4o' }, { id: 'o3-mini' }],
+          data: [{ id: 'gpt-4o' }, { id: 'o4-mini' }],
         }),
       ),
     );
@@ -297,7 +297,7 @@ describe('fetchOpenAIResponsesModels', () => {
 
     expect(models).toEqual([
       { id: 'gpt-4o', name: 'gpt-4o' },
-      { id: 'o3-mini', name: 'o3-mini' },
+      { id: 'o4-mini', name: 'o4-mini' },
     ]);
   });
 });

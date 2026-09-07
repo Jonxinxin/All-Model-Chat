@@ -1,21 +1,25 @@
 import { logService } from '@/services/logService';
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { type UploadedFile } from '@/types';
-import { ChevronLeft, ChevronRight, FileCode2, FileAudio } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FileCode2 } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { Modal } from '@/components/shared/Modal';
 import { FilePreviewHeader, type FilePreviewHeaderHandle } from '@/components/shared/file-preview/FilePreviewHeader';
 import { ImageViewer } from '@/components/shared/file-preview/ImageViewer';
 import { TextFileViewer } from '@/components/shared/file-preview/TextFileViewer';
 import { VideoPlayer, type VideoPlayerHandle } from '@/components/shared/file-preview/VideoPlayer';
-import { AudioPlayer } from '@/components/shared/AudioPlayer';
+import { AudioPreviewViewer } from '@/components/shared/file-preview/AudioPreviewViewer';
+import { DocxViewer } from '@/components/shared/file-preview/DocxViewer';
+import { SpreadsheetViewer } from '@/components/shared/file-preview/SpreadsheetViewer';
+import { ZipViewer } from '@/components/shared/file-preview/ZipViewer';
 import { IconYoutube } from '@/components/icons';
 import { copyFileToClipboard } from '@/utils/file/fileClipboard';
 import { cleanupFilePreviewUrl, fileToBlobUrl } from '@/utils/file/filePreviewUrls';
 import { extractDocxText, isDocxFile } from '@/utils/docxPreview';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { isShortcutPressed } from '@/utils/keyboardShortcuts';
-import { getFileKindFlags, isMarkdownFile, isTextFile } from '@/utils/file/fileTypeClassification';
+import { getFileKindFlags, isArchiveFile, isMarkdownFile, isSpreadsheetFile, isTextFile } from '@/utils/file/fileTypeClassification';
+import { toYoutubeEmbedUrl } from '@/utils/file/youtubeUrl';
 import { lazyNamedComponent } from '@/utils/lazyNamedComponent';
 import { interpolate } from '@/i18n/interpolate';
 import { isEditableElement } from '@/utils/chat-input/focus';
@@ -31,6 +35,7 @@ interface FilePreviewModalProps {
   hasNext?: boolean;
   onSaveText?: (fileId: string, content: string, newName: string) => void;
   initialEditMode?: boolean;
+  onConvertToContext?: (contextFile: File) => void | Promise<void>;
 }
 
 interface FilePreviewModalContentProps extends Omit<FilePreviewModalProps, 'file'> {
@@ -46,6 +51,7 @@ const FilePreviewModalContent: React.FC<FilePreviewModalContentProps> = ({
   hasNext = false,
   onSaveText,
   initialEditMode = false,
+  onConvertToContext,
 }) => {
   const { t } = useI18n();
   const appSettings = useSettingsStore((state) => state.appSettings);
@@ -60,11 +66,13 @@ const FilePreviewModalContent: React.FC<FilePreviewModalContentProps> = ({
     isDocxCandidate && file.textContent === undefined && !file.rawFile ? t('filePreviewWordUnavailable') : null,
   );
   const [isDocxPreviewLoading, setIsDocxPreviewLoading] = useState(false);
+  const [docxViewMode, setDocxViewMode] = useState<'rich' | 'text'>('rich');
   const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
   const [videoAspect, setVideoAspect] = useState<number | null>(null);
   const [areControlsVisible, setAreControlsVisible] = useState(true);
   const filePreviewHeaderRef = useRef<FilePreviewHeaderHandle>(null);
   const videoPlayerRef = useRef<VideoPlayerHandle>(null);
+  const modalShellRef = useRef<HTMLDivElement>(null);
   const previewFile = useMemo(
     () => (localPreviewUrl ? { ...file, dataUrl: localPreviewUrl } : file),
     [file, localPreviewUrl],
@@ -148,8 +156,11 @@ const FilePreviewModalContent: React.FC<FilePreviewModalContentProps> = ({
 
   const { isImage, isPdf, isVideo, isYoutube, isAudio } = getFileKindFlags(file);
   const isDocx = !isImage && !isPdf && !isVideo && !isYoutube && !isAudio && isDocxCandidate;
-  const isText = !isImage && !isDocx && !isPdf && !isVideo && !isYoutube && !isAudio && isTextFile(file);
+  const isSpreadsheet = !isImage && !isPdf && !isVideo && !isYoutube && !isAudio && (isSpreadsheetFile?.(file) ?? false);
+  const isArchive = !isImage && !isPdf && !isVideo && !isYoutube && !isAudio && (isArchiveFile?.(file) ?? false);
+  const isText = !isImage && !isDocx && !isSpreadsheet && !isArchive && !isPdf && !isVideo && !isYoutube && !isAudio && isTextFile(file);
   const isMarkdown = isText && isMarkdownFile(file);
+  const youtubeEmbedUrl = isYoutube ? toYoutubeEmbedUrl(file.fileUri || file.name) : null;
 
   useEffect(() => {
     let cancelled = false;
@@ -191,13 +202,6 @@ const FilePreviewModalContent: React.FC<FilePreviewModalContentProps> = ({
   const navButtonClass =
     'absolute top-1/2 -translate-y-1/2 p-2.5 sm:p-3 bg-black/70 hover:bg-black/90 text-white/80 hover:text-white rounded-full transition-all duration-200 z-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 shadow-xl hover:scale-105 border border-white/10';
 
-  const getYoutubeEmbedUrl = (url: string) => {
-    if (!url) return null;
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
-    return match && match[2].length === 11 ? `https://www.youtube.com/embed/${match[2]}` : null;
-  };
-
   const handleModalMouseMove = useCallback(() => {
     if (!areControlsVisible) {
       setAreControlsVisible(true);
@@ -206,28 +210,37 @@ const FilePreviewModalContent: React.FC<FilePreviewModalContentProps> = ({
   }, [areControlsVisible]);
 
   return (
-    <Modal isOpen={true} onClose={onClose} noPadding backdropClassName="bg-black/90 backdrop-blur-2xl" contentClassName="w-full h-full">
-      <div className="w-full h-full relative flex flex-col" onMouseMove={handleModalMouseMove}>
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      noPadding
+      backdropClassName="bg-black/90 backdrop-blur-2xl"
+      contentClassName="w-full h-full"
+      initialFocusRef={modalShellRef}
+    >
+      <div
+        ref={modalShellRef}
+        tabIndex={-1}
+        className="w-full h-full relative flex flex-col outline-none"
+        onMouseMove={handleModalMouseMove}
+      >
         <h2 id="file-preview-modal-title" className="sr-only">
           {interpolate(t('imageZoomTitle'), { filename: file.name })}
         </h2>
 
-        <div
-          className={`transition-opacity duration-300 pointer-events-none z-50 ${
-            isVideo && !areControlsVisible ? 'opacity-0' : 'opacity-100'
+        <FilePreviewHeader
+          ref={filePreviewHeaderRef}
+          file={previewFile}
+          onClose={onClose}
+          isEditable={isEditing}
+          onToggleEdit={isText && onSaveText ? handleToggleEdit : undefined}
+          onSave={handleSave}
+          editedName={editedName}
+          onNameChange={setEditedName}
+          className={`transition-opacity duration-300 ${
+            isVideo && !areControlsVisible ? 'opacity-0 pointer-events-none' : 'opacity-100'
           }`}
-        >
-          <FilePreviewHeader
-            ref={filePreviewHeaderRef}
-            file={previewFile}
-            onClose={onClose}
-            isEditable={isEditing}
-            onToggleEdit={isText && onSaveText ? handleToggleEdit : undefined}
-            onSave={handleSave}
-            editedName={editedName}
-            onNameChange={setEditedName}
-          />
-        </div>
+        />
 
         {!isEditing && hasPrev && onPrev && (
           <button
@@ -258,18 +271,59 @@ const FilePreviewModalContent: React.FC<FilePreviewModalContentProps> = ({
           </button>
         )}
 
-        <div className="flex-grow w-full h-full overflow-hidden relative">
+        <div className="flex-grow w-full min-h-0 overflow-hidden relative">
           {isImage ? (
             <ImageViewer file={previewFile} />
-          ) : isDocxPreviewLoading ? (
-            <div className="w-full h-full flex items-center justify-center text-white/70">
-              {t('filePreviewLoadingWord')}
-            </div>
-          ) : isDocx && docxPreviewError ? (
-            <div className="w-full h-full flex items-center justify-center text-white/60 px-6 text-center">
-              {docxPreviewError}
-            </div>
-          ) : isText || isDocx ? (
+          ) : isDocx ? (
+            docxViewMode === 'rich' && file.rawFile && !isEditing ? (
+              <div className="w-full h-full flex flex-col relative">
+                <div className="absolute top-3 sm:top-4 right-4 sm:right-6 z-20">
+                  <button
+                    type="button"
+                    onClick={() => setDocxViewMode('text')}
+                    className="px-3 py-1.5 text-xs rounded-lg bg-[var(--theme-bg-secondary)] border border-[var(--theme-border-secondary)] text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] shadow-md transition-all font-medium"
+                  >
+                    切换至纯文本模式
+                  </button>
+                </div>
+                <DocxViewer file={previewFile} />
+              </div>
+            ) : isDocxPreviewLoading ? (
+              <div className="w-full h-full flex items-center justify-center text-white/70">
+                {t('filePreviewLoadingWord')}
+              </div>
+            ) : docxPreviewError ? (
+              <div className="w-full h-full flex items-center justify-center text-white/60 px-6 text-center">
+                {docxPreviewError}
+              </div>
+            ) : (
+              <div className="w-full h-full flex flex-col relative">
+                {file.rawFile && !isEditing && (
+                  <div className="absolute top-3 sm:top-4 right-4 sm:right-6 z-20">
+                    <button
+                      type="button"
+                      onClick={() => setDocxViewMode('rich')}
+                      className="px-3 py-1.5 text-xs rounded-lg bg-[var(--theme-bg-secondary)] border border-[var(--theme-border-secondary)] text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] shadow-md transition-all font-medium"
+                    >
+                      切换至高保真排版
+                    </button>
+                  </div>
+                )}
+                <TextFileViewer
+                  file={previewFile}
+                  renderMode="plain"
+                  themeId={currentThemeId}
+                  isEditable={isEditing}
+                  onChange={setEditedContent}
+                  content={isEditing ? editedContent : docxPreviewContent}
+                />
+              </div>
+            )
+          ) : isSpreadsheet ? (
+            <SpreadsheetViewer file={previewFile} />
+          ) : isArchive ? (
+            <ZipViewer file={previewFile} onConvertToContext={onConvertToContext} />
+          ) : isText ? (
             <TextFileViewer
               file={previewFile}
               renderMode={isMarkdown ? 'markdown' : 'plain'}
@@ -283,13 +337,9 @@ const FilePreviewModalContent: React.FC<FilePreviewModalContentProps> = ({
                 }
               }}
               content={
-                isDocx
-                  ? isEditing
-                    ? editedContent
-                    : docxPreviewContent
-                  : isEditing && textContentLoaded
-                    ? editedContent
-                    : undefined
+                isEditing && textContentLoaded
+                  ? editedContent
+                  : undefined
               }
             />
           ) : isPdf ? (
@@ -328,9 +378,9 @@ const FilePreviewModalContent: React.FC<FilePreviewModalContentProps> = ({
             </div>
           ) : isYoutube ? (
             <div className="w-full h-full flex items-center justify-center p-4 pt-20 pb-20">
-              {file.fileUri && getYoutubeEmbedUrl(file.fileUri) ? (
+              {youtubeEmbedUrl ? (
                 <iframe
-                  src={getYoutubeEmbedUrl(file.fileUri)!}
+                  src={youtubeEmbedUrl}
                   title={t('filePreviewYoutubePlayer')}
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -345,29 +395,9 @@ const FilePreviewModalContent: React.FC<FilePreviewModalContentProps> = ({
               )}
             </div>
           ) : isAudio ? (
-            <div className="w-full h-full flex items-center justify-center p-4">
-              {previewFile.dataUrl && (
-                <div className="max-w-[calc(100vw-2rem)] bg-[var(--theme-bg-secondary)] p-6 sm:p-8 rounded-2xl border border-[var(--theme-border-secondary)] shadow-2xl flex flex-col items-center gap-4">
-                  <div className="p-3.5 rounded-2xl bg-purple-500/10 text-purple-500 dark:text-purple-400">
-                    <FileAudio size={44} strokeWidth={1.5} />
-                  </div>
-                  <div className="text-center max-w-sm px-2">
-                    <p
-                      className="text-sm font-semibold text-[var(--theme-text-primary)] truncate"
-                      title={previewFile.name}
-                    >
-                      {previewFile.name}
-                    </p>
-                    <p className="text-xs text-[var(--theme-text-tertiary)] mt-1 font-mono">{previewFile.type}</p>
-                  </div>
-                  <AudioPlayer
-                    src={previewFile.dataUrl}
-                    className="w-full max-w-full max-w-[calc(100vw-2rem)] sm:w-[400px]"
-                    audioClassName="max-w-full"
-                  />
-                </div>
-              )}
-            </div>
+            previewFile.dataUrl ? (
+              <AudioPreviewViewer file={previewFile} />
+            ) : null
           ) : (
             <div className="w-full h-full flex items-center justify-center text-white/50 flex-col gap-2">
               <FileCode2 size={48} />

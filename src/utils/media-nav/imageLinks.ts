@@ -1,19 +1,6 @@
-import { transformMarkdownTextSegments } from '@/utils/markdownSegments';
+import { createLocateTagPatterns, linkifyLocateTags } from './locateTagTransform';
 
-const IMAGE_LOCATE_TAG_RE = /<image-locate\b([^>]*)>([\s\S]*?)<\/image-locate>/gi;
-const INLINE_IMAGE_LOCATE_RE = /(?:(\r?\n[ \t]*)|([ \t]*))<image-locate\b([^>]*)>([\s\S]*?)<\/image-locate>/gi;
-const PARTIAL_IMAGE_LOCATE_RE = /<image-locate\b[^>]*(?:>[^<]*)?$/i;
-const ATTRIBUTE_RE = /([a-zA-Z][a-zA-Z0-9_-]*)\s*=\s*"([^"]*)"/g;
-
-const parseTagAttributes = (attributeString: string): Record<string, string> => {
-  const attributes: Record<string, string> = {};
-  let match: RegExpExecArray | null;
-  ATTRIBUTE_RE.lastIndex = 0;
-  while ((match = ATTRIBUTE_RE.exec(attributeString)) !== null) {
-    attributes[match[1]] = match[2];
-  }
-  return attributes;
-};
+const IMAGE_LOCATE_PATTERNS = createLocateTagPatterns('image-locate');
 
 const buildImageSeekMarkdownLink = (attrs: Record<string, string>, inner: string): string | null => {
   const fileName = attrs.file?.trim() || attrs.image?.trim() || attrs.doc?.trim();
@@ -71,69 +58,14 @@ const buildImageSeekMarkdownLink = (attrs: Record<string, string>, inner: string
     label = '目标定位';
   }
 
-  return `[${label}](#image-seek?${query.toString()})`;
+  const safeLabel = label.replace(/[[\]]/g, '\\$&');
+  return `[${safeLabel}](#image-seek?${query.toString()})`;
 };
 
 /**
  * Transforms <image-locate> tags into inline interactive `#image-seek` markdown links.
  * Avoids transforming inside code blocks.
  */
-export const linkifyImageLocates = (text: string): string => {
-  if (!text || !text.includes('image-locate')) {
-    return text ? text.replace(PARTIAL_IMAGE_LOCATE_RE, '') : text;
-  }
+export const linkifyImageLocates = (text: string): string =>
+  linkifyLocateTags(text, 'image-locate', IMAGE_LOCATE_PATTERNS, buildImageSeekMarkdownLink);
 
-  return transformMarkdownTextSegments(text, (plainText) => {
-    let processedText = plainText;
-
-    if (processedText.includes('<image-locate')) {
-      const trailingMatch = processedText.match(
-        /^([\s\S]*?\n)\s*\n\s*((?:<image-locate\b[^>]*>[^<]*<\/image-locate>\s*)+)$/i,
-      );
-
-      const bodyPart = trailingMatch ? trailingMatch[1] : processedText;
-      const trailingPart = trailingMatch ? trailingMatch[2] : '';
-
-      let transformedBody = bodyPart.replace(
-        INLINE_IMAGE_LOCATE_RE,
-        (
-          _full,
-          leadingNewline: string | undefined,
-          leadingSpace: string | undefined,
-          attrStr: string,
-          inner: string,
-        ) => {
-          const attrs = parseTagAttributes(attrStr);
-          const link = buildImageSeekMarkdownLink(attrs, inner);
-          if (link) {
-            const prefix = leadingNewline || leadingSpace || ' ';
-            return `${prefix}${link}`;
-          }
-          return '';
-        },
-      );
-
-      transformedBody = transformedBody.replace(/\n\s*(\n\s*)+/g, '\n\n');
-
-      const transformedTrailingButtons: string[] = [];
-      IMAGE_LOCATE_TAG_RE.lastIndex = 0;
-      let trailingMatchItem: RegExpExecArray | null;
-      while ((trailingMatchItem = IMAGE_LOCATE_TAG_RE.exec(trailingPart)) !== null) {
-        const attrs = parseTagAttributes(trailingMatchItem[1]);
-        const link = buildImageSeekMarkdownLink(attrs, trailingMatchItem[2]);
-        if (link) {
-          transformedTrailingButtons.push(link);
-        }
-      }
-
-      if (transformedTrailingButtons.length > 0) {
-        const trailingRow = transformedTrailingButtons.join(' ');
-        processedText = transformedBody.trimEnd() ? `${transformedBody.trimEnd()}\n\n${trailingRow}` : trailingRow;
-      } else {
-        processedText = transformedBody;
-      }
-    }
-
-    return processedText.replace(PARTIAL_IMAGE_LOCATE_RE, '');
-  });
-};

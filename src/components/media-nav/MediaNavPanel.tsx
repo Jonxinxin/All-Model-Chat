@@ -97,6 +97,10 @@ const MediaNavPanelComponent: React.FC = () => {
     isResizingRef.current = false;
   }, []);
 
+  const resetWidth = useCallback(() => {
+    setWidth(480);
+  }, [setWidth]);
+
   const resize = useCallback(
     (mouseEvent: MouseEvent) => {
       if (isResizingRef.current) {
@@ -146,12 +150,34 @@ const MediaNavPanelComponent: React.FC = () => {
       >
         {!isMobile && (
           <div
+            data-testid="medianav-resize-handle"
+            role="separator"
+            aria-label={t('sidePanelDragResize')}
+            aria-orientation="vertical"
+            aria-valuenow={width}
+            aria-valuemin={320}
+            tabIndex={0}
             onMouseDown={startResizing}
-            className={`absolute left-0 top-0 bottom-0 w-1.5 -ml-0.5 z-50 cursor-col-resize flex items-center justify-center group transition-colors hover:bg-[var(--theme-bg-accent)] ${
-              isResizing ? 'bg-[var(--theme-bg-accent)]' : 'bg-transparent'
+            onDoubleClick={resetWidth}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                setWidth(Math.min(width + 20, Math.round(window.innerWidth * 0.9)));
+              } else if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                setWidth(Math.max(width - 20, 320));
+              } else if (e.key === 'Home') {
+                e.preventDefault();
+                resetWidth();
+              }
+            }}
+            className={`absolute left-0 top-0 bottom-0 w-2 -ml-1 z-50 cursor-col-resize flex items-center justify-center group select-none transition-colors hover:bg-[var(--theme-bg-accent)]/20 active:bg-[var(--theme-bg-accent)]/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-border-focus)] ${
+              isResizing ? 'bg-[var(--theme-bg-accent)]/30' : 'bg-transparent'
             }`}
             title={t('sidePanelDragResize')}
-          />
+          >
+            <div className="z-10 h-8 w-1 rounded-full bg-[var(--theme-border-secondary)] transition-all group-hover:scale-y-110 group-hover:bg-[var(--theme-bg-accent)]" />
+          </div>
         )}
 
         <div className="flex items-center justify-between gap-2 px-3 h-12 border-b border-[var(--theme-border-secondary)] bg-[var(--theme-bg-primary)] flex-shrink-0">
@@ -236,6 +262,7 @@ const MediaNavPanelComponent: React.FC = () => {
         <div className="flex-grow min-h-0">
           {activeEntry && isPdfActive ? (
             <LazyPdfViewer
+              key={activeEntry.file.id}
               file={activeEntry.file}
               highlight={highlight}
               targetPage={targetPage}

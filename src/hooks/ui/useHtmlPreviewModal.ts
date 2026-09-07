@@ -39,6 +39,19 @@ type DocumentWithWebkitFullscreen = Document & {
   webkitFullscreenElement?: Element | null;
 };
 
+export type HtmlPreviewViewMode = 'preview' | 'code';
+export type HtmlPreviewDeviceMode = 'desktop' | 'tablet' | 'mobile';
+
+export interface HtmlPreviewDiagnostic {
+  type: string;
+  message?: string;
+  source?: string;
+  line?: number;
+  column?: number;
+  url?: string;
+  tagName?: string;
+}
+
 const MAX_PREVIEW_CONTENT_HEIGHT = 200_000;
 
 export const useHtmlPreviewModal = ({
@@ -60,6 +73,9 @@ export const useHtmlPreviewModal = ({
 
   const [isDirectFullscreenLaunch, setIsDirectFullscreenLaunch] = useState(initialTrueFullscreenRequest);
   const [contentHeight, setContentHeight] = useState(0);
+  const [viewMode, setViewMode] = useState<HtmlPreviewViewMode>('preview');
+  const [deviceMode, setDeviceMode] = useState<HtmlPreviewDeviceMode>('desktop');
+  const [diagnostics, setDiagnostics] = useState<HtmlPreviewDiagnostic[]>([]);
   // Bumped by handleRefresh to remount the iframe (via a key), re-running the
   // preview script from scratch without the hook fighting React's srcDoc prop.
   const [iframeRefreshKey, setIframeRefreshKey] = useState(0);
@@ -89,6 +105,9 @@ export const useHtmlPreviewModal = ({
       setContentHeight(0);
       setIsPreviewReady(false);
       setIsDirectFullscreenLaunch(initialTrueFullscreenRequest);
+      setDiagnostics([]);
+      setViewMode('preview');
+      setDeviceMode('desktop');
     } else {
       const timer = setTimeout(() => setIsActuallyOpen(false), MODAL_EXIT_DELAY_MS);
       return () => clearTimeout(timer);
@@ -161,6 +180,15 @@ export const useHtmlPreviewModal = ({
     }
   }, [isTrueFullscreen, onClose]);
 
+  const handleBridgeDiagnostic = useCallback((payload: unknown) => {
+    if (!payload || typeof payload !== 'object') return;
+    setDiagnostics((previous) => [...previous, payload as HtmlPreviewDiagnostic]);
+  }, []);
+
+  const clearDiagnostics = useCallback(() => {
+    setDiagnostics([]);
+  }, []);
+
   useHtmlPreviewBridge({
     iframeRef,
     targetWindow,
@@ -172,6 +200,7 @@ export const useHtmlPreviewModal = ({
       onResize: handleBridgeResize,
       onEscape: handleBridgeEscape,
       onFollowUp: onLiveArtifactFollowUp,
+      onDiagnostic: handleBridgeDiagnostic,
     },
   });
 
@@ -296,6 +325,7 @@ export const useHtmlPreviewModal = ({
   const handleRefresh = useCallback(() => {
     if (iframeRef.current && htmlContent) {
       setIsPreviewReady(false);
+      setDiagnostics([]);
       // Remount the iframe by bumping the key. The old imperative srcdoc write
       // desynced from React's srcDoc prop (the refresh relied on the prop being
       // unchanged). A remount restarts the preview script cleanly.
@@ -311,6 +341,12 @@ export const useHtmlPreviewModal = ({
     isPreviewReady,
     contentHeight,
     isScreenshotting,
+    viewMode,
+    setViewMode,
+    deviceMode,
+    setDeviceMode,
+    diagnostics,
+    clearDiagnostics,
     handleZoomIn,
     handleZoomOut,
     handleDownload,

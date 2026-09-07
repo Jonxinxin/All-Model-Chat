@@ -1,10 +1,12 @@
 import React from 'react';
 import { X } from 'lucide-react';
 import { useMediaNavStore, type PdfNavHighlight } from '@/stores/mediaNavStore';
+import { getRotatedCoords } from '@/utils/media-nav/seekPdf';
 
 export interface PdfHighlightOverlayProps {
   highlight: PdfNavHighlight | null;
   visible?: boolean;
+  rotation?: number;
   onClose?: () => void;
 }
 
@@ -13,33 +15,20 @@ export interface PdfHighlightOverlayProps {
  * Matches VideoHighlightOverlay's HUD styling, precision corner brackets,
  * and edge-protection flipping logic.
  */
-export const PdfHighlightOverlay: React.FC<PdfHighlightOverlayProps> = ({ highlight, visible = true, onClose }) => {
+export const PdfHighlightOverlay: React.FC<PdfHighlightOverlayProps> = ({
+  highlight,
+  visible = true,
+  rotation = 0,
+  onClose,
+}) => {
   if (!visible || !highlight) return null;
   const { box2d, point, snippet } = highlight;
   if (!box2d && !point) return null;
 
-  let top = 0;
-  let left = 0;
-  let width = 0;
-  let height = 0;
-  let isPoint = false;
+  const coords = getRotatedCoords(box2d, point, rotation);
+  if (!coords) return null;
 
-  if (box2d && box2d.length === 4) {
-    const [ymin, xmin, ymax, xmax] = box2d;
-    const actualYmin = Math.min(ymin, ymax);
-    const actualYmax = Math.max(ymin, ymax);
-    const actualXmin = Math.min(xmin, xmax);
-    const actualXmax = Math.max(xmin, xmax);
-    top = actualYmin / 10;
-    left = actualXmin / 10;
-    height = Math.max((actualYmax - actualYmin) / 10, 0.5);
-    width = Math.max((actualXmax - actualXmin) / 10, 0.5);
-  } else if (point && point.length === 2) {
-    isPoint = true;
-    const [y, x] = point;
-    top = y / 10;
-    left = x / 10;
-  }
+  const { top, left, width, height, isPoint } = coords;
 
   const handleClose = (e: React.MouseEvent) => {
     e.stopPropagation();

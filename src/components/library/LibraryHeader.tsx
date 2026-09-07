@@ -1,7 +1,8 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef } from 'react';
 import { Search, X, ChevronDown, ChevronLeft, Upload, Image as ImageIcon, FileText } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { useLibraryStore } from '@/stores/libraryStore';
+import { useClickOutside } from '@/hooks/useClickOutside';
 
 interface LibraryHeaderProps {
   onUploadFiles: (files: File[]) => void;
@@ -20,18 +21,7 @@ export const LibraryHeader: React.FC<LibraryHeaderProps> = ({ onUploadFiles, onC
   const imageInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!isNewDropdownOpen) {
-      return undefined;
-    }
-    const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setIsNewDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isNewDropdownOpen, setIsNewDropdownOpen]);
+  useClickOutside(dropdownRef, () => setIsNewDropdownOpen(false), isNewDropdownOpen);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {

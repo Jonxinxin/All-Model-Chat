@@ -8,8 +8,7 @@ import { CJK_TEXT_PATTERN } from './markdownPdfFonts';
 import type { MarkdownNode, MarkdownPdfOptions } from './markdownPdfTypes';
 import { normalizeConvertedMarkdown } from '@/utils/normalizeConvertedMarkdown';
 
-type PdfDocument = InstanceType<typeof jsPDF>;
-export type { PdfDocument };
+export type PdfDocument = InstanceType<typeof jsPDF>;
 
 export const createMarkdownPdfBlob = async (markdown: string, options: MarkdownPdfOptions): Promise<Blob> => {
   const source = normalizeConvertedMarkdown(markdown || '');

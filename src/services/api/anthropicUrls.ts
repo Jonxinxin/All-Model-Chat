@@ -1,4 +1,4 @@
-import { getThirdPartyProxyBaseUrl } from '@/runtime/runtimeConfig';
+import { resolveThirdPartyBaseUrl } from '@/runtime/runtimeConfig';
 import { trimTrailingSlashes } from '@/utils/apiProxyUrl';
 
 const DEFAULT_ANTHROPIC_BASE_URL = 'https://api.anthropic.com';
@@ -6,19 +6,8 @@ const DEFAULT_ANTHROPIC_BASE_URL = 'https://api.anthropic.com';
 export const normalizeAnthropicBaseUrl = (baseUrl?: string | null): string =>
   trimTrailingSlashes(baseUrl?.trim() || DEFAULT_ANTHROPIC_BASE_URL);
 
-// When the Docker runtime injects a third-party proxy (/api/openai), Anthropic
-// providers route through the api container too (the proxy handles both the
-// OpenAI-compatible and Anthropic wire protocols via x-third-party-provider).
-const resolveAnthropicBaseUrl = (baseUrl?: string | null): string | null => {
-  const proxyUrl = getThirdPartyProxyBaseUrl();
-  if (proxyUrl) {
-    return proxyUrl;
-  }
-  return baseUrl?.trim() || null;
-};
-
 const buildAnthropicPath = (path: string, baseUrl?: string | null): string => {
-  const resolved = resolveAnthropicBaseUrl(baseUrl);
+  const resolved = resolveThirdPartyBaseUrl(baseUrl);
   if (resolved) {
     return `${trimTrailingSlashes(resolved)}${path}`;
   }

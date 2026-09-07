@@ -1,5 +1,5 @@
 import { DEFAULT_OPENAI_COMPATIBLE_BASE_URL, trimTrailingSlashes } from '@/utils/apiProxyUrl';
-import { getThirdPartyProxyBaseUrl } from '@/runtime/runtimeConfig';
+import { resolveThirdPartyBaseUrl } from '@/runtime/runtimeConfig';
 
 export type OpenAIResponsesBaseUrlWarning = 'responses-endpoint' | 'chat-completions-endpoint' | 'models-endpoint';
 
@@ -32,33 +32,19 @@ const normalizeOpenAIResponsesBaseUrl = (baseUrl?: string | null): string => {
   return raw;
 };
 
-const resolveOpenAIResponsesBaseUrl = (baseUrl?: string | null): string | null => {
-  const proxyUrl = getThirdPartyProxyBaseUrl();
-  if (proxyUrl) {
-    return proxyUrl;
+const resolveOpenAIResponsesEndpoint = (baseUrl: string | null | undefined, endpoint: string): string => {
+  const resolved = resolveThirdPartyBaseUrl(baseUrl);
+  if (resolved && !/^https?:\/\//i.test(resolved)) {
+    return `${trimTrailingSlashes(resolved)}/${endpoint}`;
   }
-  return baseUrl?.trim() || null;
+  return `${normalizeOpenAIResponsesBaseUrl(resolved)}/${endpoint}`;
 };
 
-export const buildOpenAIResponsesUrl = (baseUrl?: string | null): string => {
-  const resolved = resolveOpenAIResponsesBaseUrl(baseUrl);
-  if (resolved) {
-    if (!/^https?:\/\//i.test(resolved)) {
-      return `${trimTrailingSlashes(resolved)}/responses`;
-    }
-  }
-  return `${normalizeOpenAIResponsesBaseUrl(resolved)}/responses`;
-};
+export const buildOpenAIResponsesUrl = (baseUrl?: string | null): string =>
+  resolveOpenAIResponsesEndpoint(baseUrl, 'responses');
 
 export const buildOpenAIResponsesUpstreamUrl = (baseUrl?: string | null): string =>
   `${normalizeOpenAIResponsesBaseUrl(baseUrl)}/responses`;
 
-export const buildOpenAIResponsesModelsUrl = (baseUrl?: string | null): string => {
-  const resolved = resolveOpenAIResponsesBaseUrl(baseUrl);
-  if (resolved) {
-    if (!/^https?:\/\//i.test(resolved)) {
-      return `${trimTrailingSlashes(resolved)}/models`;
-    }
-  }
-  return `${normalizeOpenAIResponsesBaseUrl(resolved)}/models`;
-};
+export const buildOpenAIResponsesModelsUrl = (baseUrl?: string | null): string =>
+  resolveOpenAIResponsesEndpoint(baseUrl, 'models');

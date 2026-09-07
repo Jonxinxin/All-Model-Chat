@@ -2,6 +2,109 @@
 // __PYODIDE_BASE_URL__ is replaced by buildPyodideWorkerScript at runtime.
 export const PYODIDE_WORKER_CODE_TEMPLATE = `
 const PYODIDE_BASE_URL = "__PYODIDE_BASE_URL__";
+
+const JSDELIVR_HOST = 'cdn.jsdelivr.net';
+const JSDELIVR_MIRRORS = [
+  'cdn.jsdelivr.net',
+  'fastly.jsdelivr.net',
+  'gcore.jsdelivr.net',
+  'testingcf.jsdelivr.net',
+];
+
+const originalFetch = typeof self !== 'undefined' && self.fetch ? self.fetch.bind(self) : null;
+
+async function fetchWithTimeout(url, init, timeoutMs = 20000) {
+  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+  try {
+    const res = await originalFetch(url, {
+      ...init,
+      signal: init && init.signal ? init.signal : (controller ? controller.signal : undefined),
+    });
+    if (timer) clearTimeout(timer);
+    return res;
+  } catch (timeoutFetchError) {
+    if (timer) clearTimeout(timer);
+    throw timeoutFetchError;
+  }
+}
+
+async function resilientFetch(input, init) {
+  if (!originalFetch) return fetch(input, init);
+  const urlStr = typeof input === 'string' ? input : (input && input.url ? input.url : '');
+  const isPyodideAsset = urlStr.includes('.whl') || urlStr.includes('pyodide-lock.json') || urlStr.includes('.wasm') || urlStr.includes('.zip');
+
+  if (!isPyodideAsset) {
+    return originalFetch(input, init);
+  }
+
+  // 1. Try local CacheStorage in Worker if supported
+  let cache = null;
+  try {
+    if (typeof self !== 'undefined' && 'caches' in self && self.caches) {
+      cache = await self.caches.open('pyodide-package-cache-v1');
+      const cached = await cache.match(urlStr);
+      if (cached) {
+        return cached;
+      }
+    }
+  } catch (cacheErr) {
+    // Ignore cache read failures
+  }
+
+  // 2. Fetch with CDN mirrors
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(urlStr, self.location ? self.location.href : undefined);
+  } catch (urlParseError) {
+    return originalFetch(input, init);
+  }
+
+  const isJsdelivr = parsedUrl.hostname === JSDELIVR_HOST;
+  if (!isJsdelivr) {
+    // Same-origin or other non-CDN asset roots (the default local deployment):
+    // fetch as-is. Rebuilding the URL against a forced https host would drop
+    // the port and break local dev/Docker origins.
+    return originalFetch(input, init);
+  }
+  const hostsToTry = JSDELIVR_MIRRORS;
+  let lastError = null;
+
+  for (const host of hostsToTry) {
+    const targetUrl = new URL(parsedUrl.pathname + parsedUrl.search, 'https://' + host).href;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const response = await fetchWithTimeout(targetUrl, init, 15000);
+        if (response.ok) {
+          // If we successfully fetched from CDN, persist to CacheStorage in background
+          if (cache) {
+            try {
+              cache.put(urlStr, response.clone());
+            } catch (putErr) {
+              // Ignore cache write failures
+            }
+          }
+          return response;
+        } else if (response.status === 404) {
+          lastError = new Error('HTTP 404 from ' + host);
+          break;
+        } else {
+          lastError = new Error('HTTP ' + response.status + ' from ' + host);
+        }
+      } catch (hostFetchError) {
+        lastError = hostFetchError;
+        await new Promise((r) => setTimeout(r, 300));
+      }
+    }
+  }
+
+  throw lastError || new Error('Failed to fetch Pyodide asset: ' + urlStr);
+}
+
+if (typeof self !== 'undefined' && originalFetch) {
+  self.fetch = resilientFetch;
+}
+
 importScripts(PYODIDE_BASE_URL + "pyodide.js");
 
 let pyodide = null;
@@ -61,8 +164,10 @@ function normalizeErrorMessage(error) {
 }
 
 function sanitizeRelativePath(name) {
-    const clean = String(name || '').replace(/^[/\\]+/, '').replace(/^[a-zA-Z]:[/\\]+/, '');
-    const parts = clean.split(/[/\\]+/).filter((p) => p && p !== '.' && p !== '..');
+    // NOTE: this template is embedded in an outer JS template literal, so every
+    // backslash here must be doubled ([/\\\\]) to survive as [/\\] in the worker.
+    const clean = String(name || '').replace(/^[/\\\\]+/, '').replace(/^[a-zA-Z]:[/\\\\]+/, '');
+    const parts = clean.split(/[/\\\\]+/).filter((p) => p && p !== '.' && p !== '..');
     return parts.join('/') || 'file';
 }
 
@@ -73,11 +178,11 @@ function ensureDir(path) {
         current += '/' + segment;
         try {
             pyodide.FS.mkdir(current);
-        } catch (error) {
-            if (error && error.errno === 20) {
+        } catch (mkdirError) {
+            if (mkdirError && mkdirError.errno === 20) {
                 continue;
             }
-            throw error;
+            throw mkdirError;
         }
     }
 }
@@ -95,7 +200,7 @@ function removePath(path) {
             return;
         }
         pyodide.FS.unlink(path);
-    } catch (error) {
+    } catch (removePathError) {
         // Best-effort cleanup
     }
 }
@@ -106,7 +211,7 @@ function listFilesRecursively(targetDir, subPath = '') {
     let entries = [];
     try {
         entries = pyodide.FS.readdir(dirToRead);
-    } catch (e) {
+    } catch (readdirError) {
         return files;
     }
     for (const entry of entries) {
@@ -120,7 +225,7 @@ function listFilesRecursively(targetDir, subPath = '') {
             } else if (pyodide.FS.isFile(stat.mode)) {
                 files.push(relativePath);
             }
-        } catch (e) {
+        } catch (statError) {
             // best-effort
         }
     }
@@ -133,9 +238,9 @@ async function installDependencies(code) {
     } catch (dependencyError) {
         const message = normalizeErrorMessage(dependencyError);
         if (/No known package|not found|could not find|unknown package/i.test(message)) {
-            throw new Error("A requested dependency is not available in the browser Pyodide environment: " + message);
+            throw new Error("A requested dependency is not available in Pyodide: " + message + ". CRITICAL: Do NOT retry run_local_python. Provide the code or text representation directly.");
         }
-        throw new Error("Dependency download failed, please retry: " + message);
+        throw new Error("Python dependency download failed (network/CDN mirror unreachable): " + message + ". CRITICAL: Do NOT retry run_local_python. Provide the Python code or text representation directly.");
     }
 }
 
@@ -285,7 +390,7 @@ self.onmessage = async (event) => {
       }
       try {
           pyodide.FS.chdir(previousDir);
-      } catch (error) {
+      } catch (restoreDirError) {
           // ignore best-effort restore
       }
       removePath(runDir);

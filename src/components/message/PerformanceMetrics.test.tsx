@@ -32,20 +32,19 @@ describe('PerformanceMetrics', () => {
       renderer.root.render(<PerformanceMetrics message={createMessage()} />);
     });
 
-    // 常态行：总数 + 模型速度 + 总耗时
-    expect(renderer.container.textContent).toContain('200');
-    expect(renderer.container.textContent).toContain('80.0 t/s');
-    expect(renderer.container.textContent).toContain('1.0s');
+    // 常态行：对标 Cherry Studio 的 "200 Tokens · 80.0 Tokens/s"
+    expect(renderer.container.textContent).toContain('200 Tokens');
+    expect(renderer.container.textContent).toContain('80.0 Tokens/s');
   });
 
-  it('keeps the U/C breakdown inside the hover details card', () => {
+  it('keeps the U/C breakdown inside the hover details card without ugly letter prefixes', () => {
     act(() => {
       renderer.root.render(<PerformanceMetrics message={createMessage()} />);
     });
 
-    expect(renderer.container.textContent).toContain('U 80');
-    expect(renderer.container.textContent).toContain('C 40');
-    expect(renderer.container.textContent).toContain('O 80');
+    expect(renderer.container.textContent).toContain('Uncached80 Tokens');
+    expect(renderer.container.textContent).toContain('Cache read40 Tokens');
+    expect(renderer.container.textContent).toContain('Output80 Tokens');
   });
 
   it('shows tool-use and thought buckets in the details card with the stored total', () => {
@@ -61,9 +60,9 @@ describe('PerformanceMetrics', () => {
       );
     });
 
-    expect(renderer.container.textContent).toContain('T 12');
-    expect(renderer.container.textContent).toContain('R 7');
-    expect(renderer.container.textContent).toContain('219');
+    expect(renderer.container.textContent).toContain('Tool use12 Tokens');
+    expect(renderer.container.textContent).toContain('Reasoning7 Tokens');
+    expect(renderer.container.textContent).toContain('219 Tokens');
   });
 
   it('shows TTFT inside the details card', () => {
@@ -135,4 +134,46 @@ describe('PerformanceMetrics', () => {
     expect(popup?.className).toContain('pb-2');
     expect(popup?.className).toContain('invisible');
   });
+
+  it('renders a plain text button for user messages like Cherry Studio UserMessageTokens', () => {
+    act(() => {
+      renderer.root.render(
+        <PerformanceMetrics
+          message={{
+            id: 'user-msg-1',
+            role: 'user',
+            content: 'User query',
+            timestamp: new Date('2026-04-17T00:00:00.000Z'),
+            promptTokens: 150,
+            totalTokens: 150,
+          }}
+        />,
+      );
+    });
+
+    expect(renderer.container.textContent).toContain('150 Tokens');
+    // User message does not have hover popup card
+    expect(renderer.container.querySelector('.group\\/tokens')).toBeNull();
+  });
+
+  it('dismisses the details popup when clicking the button like Cherry Studio', () => {
+    act(() => {
+      renderer.root.render(<PerformanceMetrics message={createMessage()} />);
+    });
+
+    const button = renderer.container.querySelector('button');
+    expect(button).not.toBeNull();
+
+    // Before mousedown, details popup is present in DOM
+    expect(renderer.container.querySelector('.group\\/tokens > div.absolute')).not.toBeNull();
+
+    // Trigger mousedown (left click)
+    act(() => {
+      button?.dispatchEvent(new MouseEvent('mousedown', { button: 0, bubbles: true }));
+    });
+
+    // After mousedown, details popup is dismissed
+    expect(renderer.container.querySelector('.group\\/tokens > div.absolute')).toBeNull();
+  });
 });
+

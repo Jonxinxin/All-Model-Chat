@@ -30,6 +30,24 @@ describe('LibraryPickerModal', () => {
       source: 'uploaded',
       isStandalone: true,
     },
+    {
+      id: 'item-3',
+      name: 'voice.wav',
+      type: 'audio/wav',
+      size: 4096,
+      timestamp: 1700000002000,
+      source: 'uploaded',
+      isStandalone: true,
+    },
+    {
+      id: 'item-4',
+      name: 'clip.mp4',
+      type: 'video/mp4',
+      size: 8192,
+      timestamp: 1700000003000,
+      source: 'generated',
+      isStandalone: true,
+    },
   ];
 
   beforeEach(() => {
@@ -144,5 +162,112 @@ describe('LibraryPickerModal', () => {
 
     expect(onConfirm).toHaveBeenCalledWith([mockItems[1]]);
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('filters items by audio and video tabs', async () => {
+    const onConfirm = vi.fn();
+    const onClose = vi.fn();
+
+    await act(async () => {
+      renderer.root.render(<LibraryPickerModal isOpen onClose={onClose} onConfirm={onConfirm} />);
+      await Promise.resolve();
+    });
+
+    // Verify all 4 items visible initially
+    expect(document.body.textContent).toContain('voice.wav');
+    expect(document.body.textContent).toContain('clip.mp4');
+
+    // Click audio tab
+    const buttons = Array.from(document.body.querySelectorAll('button'));
+    const audioTab = buttons.find((b) => b.textContent?.includes('音频') || b.textContent?.includes('Audio'));
+    expect(audioTab).toBeDefined();
+
+    await act(async () => {
+      audioTab!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      await Promise.resolve();
+    });
+
+    expect(document.body.textContent).toContain('voice.wav');
+    expect(document.body.textContent).not.toContain('diagram.png');
+    expect(document.body.textContent).not.toContain('clip.mp4');
+
+    // Click video tab
+    const videoTab = Array.from(document.body.querySelectorAll('button')).find(
+      (b) => b.textContent?.includes('视频') || b.textContent?.includes('Video'),
+    );
+    expect(videoTab).toBeDefined();
+
+    await act(async () => {
+      videoTab!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      await Promise.resolve();
+    });
+
+    expect(document.body.textContent).toContain('clip.mp4');
+    expect(document.body.textContent).not.toContain('voice.wav');
+    expect(document.body.textContent).not.toContain('diagram.png');
+  });
+
+  it('toggles filter menu and filters by source', async () => {
+    const onConfirm = vi.fn();
+    const onClose = vi.fn();
+
+    await act(async () => {
+      renderer.root.render(<LibraryPickerModal isOpen onClose={onClose} onConfirm={onConfirm} />);
+      await Promise.resolve();
+    });
+
+    // Find filter button (has SlidersHorizontal)
+    const filterBtn = Array.from(document.body.querySelectorAll('button')).find(
+      (b) => b.getAttribute('title')?.includes('排序') || b.getAttribute('aria-label')?.includes('排序') || b.getAttribute('title')?.toLowerCase().includes('sort'),
+    );
+    expect(filterBtn).toBeDefined();
+
+    // Click to open filter menu
+    await act(async () => {
+      filterBtn!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      await Promise.resolve();
+    });
+
+    // Select generated source (AI生成)
+    const generatedBtn = Array.from(document.body.querySelectorAll('button')).find(
+      (b) => b.textContent?.includes('已生成') || b.textContent?.includes('Generated'),
+    );
+    expect(generatedBtn).toBeDefined();
+
+    await act(async () => {
+      generatedBtn!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      await Promise.resolve();
+    });
+
+    // clip.mp4 is generated, others are uploaded
+    expect(document.body.textContent).toContain('clip.mp4');
+    expect(document.body.textContent).not.toContain('diagram.png');
+    expect(document.body.textContent).not.toContain('voice.wav');
+  });
+
+  it('renders upload button and triggers file input', async () => {
+    const onConfirm = vi.fn();
+    const onClose = vi.fn();
+
+    await act(async () => {
+      renderer.root.render(<LibraryPickerModal isOpen onClose={onClose} onConfirm={onConfirm} />);
+      await Promise.resolve();
+    });
+
+    const uploadBtn = Array.from(document.body.querySelectorAll('button')).find(
+      (b) => b.textContent?.includes('上传') || b.textContent?.toLowerCase().includes('upload'),
+    );
+    expect(uploadBtn).toBeDefined();
+
+    const fileInput = document.body.querySelector('input[type="file"]') as HTMLInputElement;
+    expect(fileInput).not.toBeNull();
+
+    const clickSpy = vi.spyOn(fileInput, 'click');
+    await act(async () => {
+      uploadBtn!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      await Promise.resolve();
+    });
+
+    expect(clickSpy).toHaveBeenCalled();
   });
 });

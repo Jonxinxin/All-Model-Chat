@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getErrorMessage } from '@/utils/errorMessage';
-import { RadioTower } from 'lucide-react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { AppSettings } from '@/types';
 import { useI18n } from '@/contexts/I18nContext';
 import { DEFAULT_LIVE_ARTIFACTS_MODEL_ID } from '@/constants/modelConfiguration';
@@ -199,69 +199,50 @@ export const ApiConfigSection: React.FC<ApiConfigSectionProps> = ({
               }}
             />
 
-            <div className="space-y-3 pt-2">
-              <div className="rounded-lg border border-[var(--theme-border-secondary)] bg-[var(--theme-bg-tertiary)]/20 p-3 space-y-3">
-                <div className="flex items-start gap-3">
-                  <RadioTower
-                    size={16}
-                    className="mt-0.5 flex-shrink-0 text-[var(--theme-text-link)]"
-                    strokeWidth={1.5}
-                  />
-                  <div className="min-w-0 flex-1 space-y-1.5">
-                    <p className="text-sm font-medium text-[var(--theme-text-primary)]">
-                      {t('settingsLiveAutomaticTitle')}
-                    </p>
-                    <p className="text-xs leading-relaxed text-[var(--theme-text-secondary)]">
-                      {t('settingsLiveAutomaticHelp')}
-                    </p>
-                    {useApiProxy && (
-                      <p className="text-xs leading-relaxed text-[var(--theme-text-secondary)]">
-                        {t('settingsLiveProxyCompatibilityHelp')}
-                      </p>
-                    )}
-                  </div>
-                </div>
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={() => setShowDedicatedLiveKey((prev) => !prev)}
+                className="inline-flex items-center gap-1.5 text-xs text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)] transition-colors cursor-pointer select-none focus:outline-none py-0.5"
+              >
+                {showDedicatedLiveKey ? (
+                  <ChevronDown size={14} className="text-[var(--theme-text-secondary)] flex-shrink-0" />
+                ) : (
+                  <ChevronRight size={14} className="text-[var(--theme-text-secondary)] flex-shrink-0" />
+                )}
+                <span className="font-medium">{t('settingsLiveApiKey')}</span>
+                {settings.liveApiKey ? (
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
+                ) : (
+                  <span className="text-[10px] text-[var(--theme-text-secondary)]/60">
+                    ({t('settingsLiveDefaultKeyNotice')})
+                  </span>
+                )}
+              </button>
 
-                <div className="pt-2 border-t border-[var(--theme-border-secondary)]/40">
-                  {showDedicatedLiveKey ? (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-semibold uppercase tracking-wider text-[var(--theme-text-secondary)]">
-                          {t('settingsLiveApiKey')}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowDedicatedLiveKey(false);
-                            onUpdate('liveApiKey', null);
-                          }}
-                          className="text-xs text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)] hover:underline"
-                        >
-                          {t('cancel')}
-                        </button>
-                      </div>
-                      <ApiKeyInput
-                        inputId="live-api-key-input"
-                        apiKey={settings.liveApiKey ?? null}
-                        setApiKey={(nextKey) => onUpdate('liveApiKey', nextKey)}
-                        placeholder={t('settingsLiveApiKeyPlaceholder')}
-                        helpText={t('settingsLiveApiKeyHelp')}
-                      />
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-between gap-2 text-xs text-[var(--theme-text-secondary)]">
-                      <span>{t('settingsLiveDefaultKeyNotice')}</span>
+              {showDedicatedLiveKey && (
+                <div className="mt-2.5 pl-3.5 border-l-2 border-[var(--theme-border-secondary)]/40 space-y-2">
+                  <ApiKeyInput
+                    inputId="live-api-key-input"
+                    label={t('settingsLiveApiKey')}
+                    apiKey={settings.liveApiKey ?? null}
+                    setApiKey={(nextKey) => onUpdate('liveApiKey', nextKey)}
+                    placeholder={t('settingsLiveApiKeyPlaceholder')}
+                    helpText={t('settingsLiveApiKeyHelp')}
+                  />
+                  {settings.liveApiKey && (
+                    <div className="flex justify-end">
                       <button
                         type="button"
-                        onClick={() => setShowDedicatedLiveKey(true)}
-                        className="text-xs font-medium text-[var(--theme-text-link)] hover:underline flex-shrink-0"
+                        onClick={() => onUpdate('liveApiKey', null)}
+                        className="text-xs text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-danger)] transition-colors hover:underline"
                       >
-                        {t('settingsLiveUseDedicatedKey')}
+                        {t('delete')}
                       </button>
                     </div>
                   )}
                 </div>
-              </div>
+              )}
             </div>
 
             <ApiConnectionTester

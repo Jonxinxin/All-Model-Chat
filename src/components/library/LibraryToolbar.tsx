@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef } from 'react';
 import {
   SlidersHorizontal,
   LayoutGrid,
@@ -8,17 +8,23 @@ import {
   Trash2,
   Upload,
   Sparkles,
-  Image as ImageIcon,
   FileText,
   FileSpreadsheet,
   Presentation,
-  Eye,
   Check,
+  RotateCcw,
+  ArrowUpDown,
+  Layers,
 } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { useLibraryStore } from '@/stores/libraryStore';
+import { useClickOutside } from '@/hooks/useClickOutside';
 import { interpolate } from '@/i18n/interpolate';
-import type { LibraryCategoryFilter } from '@/types';
+import type {
+  LibraryCategoryFilter,
+  LibraryFileTypeFilter,
+  LibrarySortOption,
+} from '@/types';
 
 interface LibraryToolbarProps {
   selectedCount: number;
@@ -42,34 +48,50 @@ export const LibraryToolbar: React.FC<LibraryToolbarProps> = ({
   const setSourceFilter = useLibraryStore((state) => state.setSourceFilter);
   const fileTypeFilter = useLibraryStore((state) => state.fileTypeFilter);
   const setFileTypeFilter = useLibraryStore((state) => state.setFileTypeFilter);
+  const sortOption = useLibraryStore((state) => state.sortOption);
+  const setSortOption = useLibraryStore((state) => state.setSortOption);
   const isFilterMenuOpen = useLibraryStore((state) => state.isFilterMenuOpen);
   const setIsFilterMenuOpen = useLibraryStore((state) => state.setIsFilterMenuOpen);
 
   const filterMenuRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!isFilterMenuOpen) {
-      return undefined;
-    }
-    const handleClickOutside = (e: MouseEvent) => {
-      if (filterMenuRef.current && !filterMenuRef.current.contains(e.target as Node)) {
-        setIsFilterMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isFilterMenuOpen, setIsFilterMenuOpen]);
+  useClickOutside(filterMenuRef, () => setIsFilterMenuOpen(false), isFilterMenuOpen);
 
   const categories: {
     key: LibraryCategoryFilter;
-    labelKey: 'libraryTabAll' | 'libraryTabImages' | 'libraryTabDocuments';
+    labelKey:
+      | 'libraryTabAll'
+      | 'libraryTabImages'
+      | 'libraryTabDocuments'
+      | 'libraryTabAudio'
+      | 'libraryTabVideo';
   }[] = [
     { key: 'all', labelKey: 'libraryTabAll' },
     { key: 'image', labelKey: 'libraryTabImages' },
     { key: 'document', labelKey: 'libraryTabDocuments' },
+    { key: 'audio', labelKey: 'libraryTabAudio' },
+    { key: 'video', labelKey: 'libraryTabVideo' },
   ];
 
-  const hasAdvancedFilters = sourceFilter !== 'all' || fileTypeFilter !== 'all';
+  const hasAdvancedFilters =
+    sourceFilter !== 'all' ||
+    fileTypeFilter !== 'all' ||
+    sortOption !== 'date_desc';
+
+  const handleResetFilters = () => {
+    setSourceFilter('all');
+    setFileTypeFilter('all');
+    setSortOption('date_desc');
+    setIsFilterMenuOpen(false);
+  };
+
+  const handleSelectSubtype = (type: LibraryFileTypeFilter) => {
+    setFileTypeFilter(type);
+    if (type !== 'all' && (categoryFilter === 'image' || categoryFilter === 'audio' || categoryFilter === 'video')) {
+      setCategoryFilter('document');
+    }
+    setIsFilterMenuOpen(false);
+  };
 
   return (
     <div className="flex items-center justify-between gap-3 px-4 sm:px-8 py-3 border-b border-[var(--theme-border-primary)] flex-shrink-0">
@@ -100,7 +122,7 @@ export const LibraryToolbar: React.FC<LibraryToolbarProps> = ({
           </button>
         </div>
       ) : (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar scroll-smooth">
           {categories.map((cat) => {
             const isActive = categoryFilter === cat.key && fileTypeFilter === 'all';
             return (
@@ -110,7 +132,7 @@ export const LibraryToolbar: React.FC<LibraryToolbarProps> = ({
                   setCategoryFilter(cat.key);
                   setFileTypeFilter('all');
                 }}
-                className={`px-3.5 py-1 text-sm font-medium rounded-full transition-colors ${
+                className={`px-3.5 py-1 text-sm font-medium rounded-full whitespace-nowrap flex-shrink-0 transition-colors ${
                   isActive
                     ? 'bg-[var(--theme-bg-tertiary)] text-[var(--theme-text-primary)]'
                     : 'text-[var(--theme-text-tertiary)] hover:text-[var(--theme-text-primary)]'
@@ -143,13 +165,26 @@ export const LibraryToolbar: React.FC<LibraryToolbarProps> = ({
             </button>
 
             {isFilterMenuOpen && (
-              <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-[var(--theme-bg-primary)] border border-[var(--theme-border-secondary)] shadow-xl p-2 z-50 text-sm animate-in fade-in zoom-in-95 duration-100">
+              <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-[var(--theme-bg-primary)] border border-[var(--theme-border-secondary)] shadow-xl p-2 z-50 text-sm animate-in fade-in zoom-in-95 duration-100 max-h-[calc(100vh-180px)] overflow-y-auto">
                 <div className="px-2.5 py-1 text-xs font-semibold text-[var(--theme-text-tertiary)] uppercase tracking-wider">
                   {t('librarySource')}
                 </div>
                 <button
                   onClick={() => {
-                    setSourceFilter(sourceFilter === 'uploaded' ? 'all' : 'uploaded');
+                    setSourceFilter('all');
+                    setIsFilterMenuOpen(false);
+                  }}
+                  className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors"
+                >
+                  <span className="flex items-center gap-2">
+                    <Layers size={14} className="text-[var(--theme-text-secondary)]" />
+                    <span>{t('librarySourceAll')}</span>
+                  </span>
+                  {sourceFilter === 'all' && <Check size={14} className="text-[var(--theme-accent)]" />}
+                </button>
+                <button
+                  onClick={() => {
+                    setSourceFilter('uploaded');
                     setIsFilterMenuOpen(false);
                   }}
                   className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors"
@@ -162,7 +197,7 @@ export const LibraryToolbar: React.FC<LibraryToolbarProps> = ({
                 </button>
                 <button
                   onClick={() => {
-                    setSourceFilter(sourceFilter === 'generated' ? 'all' : 'generated');
+                    setSourceFilter('generated');
                     setIsFilterMenuOpen(false);
                   }}
                   className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors"
@@ -177,70 +212,20 @@ export const LibraryToolbar: React.FC<LibraryToolbarProps> = ({
                 <div className="my-1.5 border-t border-[var(--theme-border-secondary)]" />
 
                 <div className="px-2.5 py-1 text-xs font-semibold text-[var(--theme-text-tertiary)] uppercase tracking-wider">
-                  {t('libraryFileType')}
+                  {t('libraryDocFormats')}
                 </div>
                 <button
-                  onClick={() => {
-                    setFileTypeFilter('image');
-                    setCategoryFilter('all');
-                    setIsFilterMenuOpen(false);
-                  }}
-                  className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors"
-                >
-                  <span className="flex items-center gap-2">
-                    <ImageIcon size={14} className="text-[var(--theme-text-secondary)]" />
-                    <span>{t('libraryFileTypeImage')}</span>
-                  </span>
-                  {fileTypeFilter === 'image' && <Check size={14} className="text-[var(--theme-accent)]" />}
-                </button>
-                <button
-                  onClick={() => {
-                    setFileTypeFilter('document');
-                    setCategoryFilter('all');
-                    setIsFilterMenuOpen(false);
-                  }}
+                  onClick={() => handleSelectSubtype('all')}
                   className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors"
                 >
                   <span className="flex items-center gap-2">
                     <FileText size={14} className="text-[var(--theme-text-secondary)]" />
-                    <span>{t('libraryFileTypeDocument')}</span>
+                    <span>{t('libraryDocFormatAll')}</span>
                   </span>
-                  {fileTypeFilter === 'document' && <Check size={14} className="text-[var(--theme-accent)]" />}
+                  {fileTypeFilter === 'all' && <Check size={14} className="text-[var(--theme-accent)]" />}
                 </button>
                 <button
-                  onClick={() => {
-                    setFileTypeFilter('spreadsheet');
-                    setCategoryFilter('all');
-                    setIsFilterMenuOpen(false);
-                  }}
-                  className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors"
-                >
-                  <span className="flex items-center gap-2">
-                    <FileSpreadsheet size={14} className="text-[var(--theme-text-secondary)]" />
-                    <span>{t('libraryFileTypeSpreadsheet')}</span>
-                  </span>
-                  {fileTypeFilter === 'spreadsheet' && <Check size={14} className="text-[var(--theme-accent)]" />}
-                </button>
-                <button
-                  onClick={() => {
-                    setFileTypeFilter('presentation');
-                    setCategoryFilter('all');
-                    setIsFilterMenuOpen(false);
-                  }}
-                  className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors"
-                >
-                  <span className="flex items-center gap-2">
-                    <Presentation size={14} className="text-[var(--theme-text-secondary)]" />
-                    <span>{t('libraryFileTypePresentation')}</span>
-                  </span>
-                  {fileTypeFilter === 'presentation' && <Check size={14} className="text-[var(--theme-accent)]" />}
-                </button>
-                <button
-                  onClick={() => {
-                    setFileTypeFilter('pdf');
-                    setCategoryFilter('all');
-                    setIsFilterMenuOpen(false);
-                  }}
+                  onClick={() => handleSelectSubtype('pdf')}
                   className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors"
                 >
                   <span className="flex items-center gap-2">
@@ -249,21 +234,66 @@ export const LibraryToolbar: React.FC<LibraryToolbarProps> = ({
                   </span>
                   {fileTypeFilter === 'pdf' && <Check size={14} className="text-[var(--theme-accent)]" />}
                 </button>
+                <button
+                  onClick={() => handleSelectSubtype('spreadsheet')}
+                  className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors"
+                >
+                  <span className="flex items-center gap-2">
+                    <FileSpreadsheet size={14} className="text-emerald-500" />
+                    <span>{t('libraryFileTypeSpreadsheet')}</span>
+                  </span>
+                  {fileTypeFilter === 'spreadsheet' && <Check size={14} className="text-[var(--theme-accent)]" />}
+                </button>
+                <button
+                  onClick={() => handleSelectSubtype('presentation')}
+                  className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors"
+                >
+                  <span className="flex items-center gap-2">
+                    <Presentation size={14} className="text-amber-500" />
+                    <span>{t('libraryFileTypePresentation')}</span>
+                  </span>
+                  {fileTypeFilter === 'presentation' && <Check size={14} className="text-[var(--theme-accent)]" />}
+                </button>
 
                 <div className="my-1.5 border-t border-[var(--theme-border-secondary)]" />
 
-                <button
-                  onClick={() => {
-                    setSourceFilter('all');
-                    setFileTypeFilter('all');
-                    setCategoryFilter('all');
-                    setIsFilterMenuOpen(false);
-                  }}
-                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors"
-                >
-                  <Eye size={14} className="text-[var(--theme-text-secondary)]" />
-                  <span>{t('libraryShowAllFileTypes')}</span>
-                </button>
+                <div className="px-2.5 py-1 text-xs font-semibold text-[var(--theme-text-tertiary)] uppercase tracking-wider flex items-center gap-1.5">
+                  <ArrowUpDown size={12} />
+                  <span>{t('librarySort')}</span>
+                </div>
+                {([
+                  { key: 'date_desc', labelKey: 'librarySortDateDesc' },
+                  { key: 'date_asc', labelKey: 'librarySortDateAsc' },
+                  { key: 'size_desc', labelKey: 'librarySortSizeDesc' },
+                  { key: 'size_asc', labelKey: 'librarySortSizeAsc' },
+                  { key: 'name_asc', labelKey: 'librarySortNameAsc' },
+                  { key: 'name_desc', labelKey: 'librarySortNameDesc' },
+                ] as { key: LibrarySortOption; labelKey: string }[]).map((sort) => (
+                  <button
+                    key={sort.key}
+                    onClick={() => {
+                      setSortOption(sort.key);
+                      setIsFilterMenuOpen(false);
+                    }}
+                    className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors"
+                  >
+                    <span>{t(sort.labelKey)}</span>
+                    {sortOption === sort.key && <Check size={14} className="text-[var(--theme-accent)]" />}
+                  </button>
+                ))}
+
+                {hasAdvancedFilters && (
+                  <>
+                    <div className="my-1.5 border-t border-[var(--theme-border-secondary)]" />
+                    <button
+                      onClick={handleResetFilters}
+                      className="w-full flex items-center justify-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--theme-text-secondary)] hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                    >
+                      <RotateCcw size={13} />
+                      <span>{t('libraryResetFilters')}</span>
+                    </button>
+                  </>
+                )}
               </div>
             )}
           </div>

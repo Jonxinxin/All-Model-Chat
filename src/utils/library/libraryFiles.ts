@@ -5,6 +5,8 @@ import { fileToBlobUrl } from '@/utils/file/filePreviewUrls';
 export const getLibraryFileType = (type: string, name: string): LibraryFileTypeFilter => {
   const flags = getFileKindFlags({ type, name });
   if (flags.isImage) return 'image';
+  if (flags.isAudio) return 'audio';
+  if (flags.isVideo || flags.isYoutube) return 'video';
   if (flags.isPdf) return 'pdf';
   if (flags.category === 'spreadsheet') return 'spreadsheet';
   if (flags.category === 'presentation') return 'presentation';
@@ -25,7 +27,7 @@ export const isAudioFileType = (type: string, name: string): boolean => {
 };
 
 export const isDocumentFileType = (type: string, name: string): boolean => {
-  return !isImageFileType(type, name);
+  return !isImageFileType(type, name) && !isAudioFileType(type, name) && !isVideoFileType(type, name);
 };
 
 const resolveLibraryDateLocale = (language: string): string => {
@@ -140,6 +142,10 @@ export const filterAndSortLibraryItems = (items: LibraryItem[], filters: Library
     filtered = filtered.filter((item) => isImageFileType(item.type, item.name));
   } else if (filters.category === 'document') {
     filtered = filtered.filter((item) => isDocumentFileType(item.type, item.name));
+  } else if (filters.category === 'audio') {
+    filtered = filtered.filter((item) => isAudioFileType(item.type, item.name));
+  } else if (filters.category === 'video') {
+    filtered = filtered.filter((item) => isVideoFileType(item.type, item.name));
   }
 
   // Source filter
@@ -223,7 +229,16 @@ export const resolveLibraryItemToUploadedFile = async (
   }
 
   let dataUrl = item.dataUrl;
-  if (!dataUrl && blob && isImageFileType(item.type, item.name)) {
+  if (dataUrl?.startsWith('blob:') && !item.rawFile) {
+    dataUrl = undefined;
+  }
+  if (
+    !dataUrl &&
+    blob &&
+    (isImageFileType(item.type, item.name) ||
+      isAudioFileType(item.type, item.name) ||
+      isVideoFileType(item.type, item.name))
+  ) {
     dataUrl = fileToBlobUrl(blob);
   }
 

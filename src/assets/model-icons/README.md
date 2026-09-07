@@ -35,7 +35,7 @@ Provider brand logos rendered as `<img>` in the model picker and the third-party
 
 | Cherry ID                                    | 对应 Model ID 关键词                               | 说明               |
 | -------------------------------------------- | -------------------------------------------------- | ------------------ |
-| `openai`                                     | `openai,gpt,chatgpt,codex,o1,o3,o4,dall-e,whisper` | OpenAI             |
+| `openai`                                     | `openai,gpt,chatgpt,codex,o4,dall-e,whisper`         | OpenAI             |
 | `anthropic`                                  | `claude,anthropic`                                 | Anthropic Claude   |
 | `deepseek`                                   | `deepseek`                                         | DeepSeek           |
 | `qwen`                                       | `qwen,qwq,qvq,wan`                                 | Qwen               |

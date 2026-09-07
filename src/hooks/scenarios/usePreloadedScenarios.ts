@@ -1,5 +1,10 @@
 import { useState, useEffect, type Dispatch, type SetStateAction } from 'react';
-import { type ChatMessage, type SavedScenario, type SavedChatSession, type AppSettings } from '@/types';
+import {
+  type ChatMessage,
+  type SavedScenario,
+  type AppSettings,
+  type SessionsUpdater,
+} from '@/types';
 import { logService } from '@/services/logService';
 import { generateUniqueId } from '@/utils/chat/ids';
 import { generateSessionTitle, createNewSession } from '@/utils/chat/session';
@@ -10,11 +15,6 @@ import {
   getExportableUserScenarios,
   initializeScenarioState,
 } from '@/features/scenarios/scenarioLibrary';
-
-type SessionsUpdater = (
-  updater: (prev: SavedChatSession[]) => SavedChatSession[],
-  options?: { persist?: boolean },
-) => void | Promise<void>;
 
 interface PreloadedScenariosProps {
   appSettings: AppSettings;

@@ -102,7 +102,9 @@ const LazyPdfPage = ({
           <span className="text-sm font-mono font-medium">PAGE {pageNum}</span>
         </div>
       )}
-      {highlight && highlight.pageNumber === pageNum && <PdfHighlightOverlay highlight={highlight} />}
+      {highlight && highlight.pageNumber === pageNum && (
+        <PdfHighlightOverlay highlight={highlight} rotation={rotation} />
+      )}
     </div>
   );
 };

@@ -5,6 +5,7 @@ import { isGemini3Model } from '@/utils/model/modelCapabilities';
 import { normalizeModelId } from '@/utils/model/modelId';
 import { blobToBase64, fileToString } from '@/utils/file/fileEncoding';
 import { getFileKindFlags, isImageMimeType, isTextFile } from '@/utils/file/fileTypeClassification';
+import { normalizeYoutubeUrl } from '@/utils/file/youtubeUrl';
 
 import { usesRemoteFileReference } from './fileTransferStrategy';
 import { formatHistoryFileApiUnavailablePartText } from './geminiFilesApi';
@@ -88,8 +89,9 @@ const buildFilePart = async (
   if (usesRemoteFileReference(file) && file.fileUri) {
     // Remote file references are already available to Gemini by URI.
     if (isYoutube) {
-      // YouTube URLs should be sent without a mimeType.
-      part = { fileData: { fileUri: file.fileUri } };
+      // YouTube URLs should be sent without a mimeType and normalized to canonical format.
+      const canonicalUri = normalizeYoutubeUrl(file.fileUri) ?? file.fileUri;
+      part = { fileData: { fileUri: canonicalUri } };
     } else {
       part = { fileData: { mimeType: file.type, fileUri: file.fileUri } };
     }
@@ -173,6 +175,34 @@ const buildFilePart = async (
 
         if (base64DataForApi) {
           part = { inlineData: { mimeType: file.type, data: base64DataForApi } };
+        }
+      } else if (file.textContent) {
+        part = { text: `[Document: ${file.name}]\n${file.textContent}` };
+      } else if (file.name.toLowerCase().endsWith('.docx')) {
+        try {
+          const { extractDocxText } = await import('@/utils/docxPreview');
+          if (fileSource && fileSource instanceof Blob) {
+            const { text } = await extractDocxText(fileSource as File);
+            enrichedFile.textContent = text;
+            part = { text: `[Document: ${file.name}]\n${text}` };
+          }
+        } catch (error) {
+          logService.error(`Failed to extract text from docx for chat: ${file.name}`, { error });
+          part = { text: `[Attachment: ${file.name}]` };
+        }
+      } else if (file.name.toLowerCase().endsWith('.zip')) {
+        try {
+          const { generateZipContext } = await import('@/utils/import-context/loaders');
+          if (fileSource) {
+            const fileObj = fileSource instanceof File ? fileSource : new File([fileSource], file.name, { type: file.type || 'application/zip' });
+            const contextFile = await generateZipContext(fileObj);
+            const text = await fileToString(contextFile);
+            enrichedFile.textContent = text;
+            part = { text: `[Archive Context: ${file.name}]\n${text}` };
+          }
+        } catch (error) {
+          logService.error(`Failed to generate zip context for chat: ${file.name}`, { error });
+          part = { text: `[Attachment: ${file.name}]` };
         }
       } else {
         part = { text: `[Attachment: ${file.name} (Binary content not supported for direct reading)]` };

@@ -1,9 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { type UploadedFile } from '@/types';
 import { usePdfViewer } from '@/hooks/ui/usePdfViewer';
 import { PdfSidebar } from './pdf-viewer/PdfSidebar';
 import { PdfMainContent } from './pdf-viewer/PdfMainContent';
 import { PdfToolbar } from './pdf-viewer/PdfToolbar';
+import { PdfSelectionBubble } from './pdf-viewer/PdfSelectionBubble';
+import { usePdfHotkeys } from './pdf-viewer/usePdfHotkeys';
 import type { PdfNavHighlight } from '@/stores/mediaNavStore';
 
 interface PdfViewerProps {
@@ -17,6 +19,7 @@ interface PdfViewerProps {
   onCurrentPageChange?: (page: number) => void;
   defaultShowSidebar?: boolean;
   isCompact?: boolean;
+  onQuote?: (text: string) => void;
 }
 
 const PdfViewerContent: React.FC<PdfViewerProps> = ({
@@ -27,7 +30,9 @@ const PdfViewerContent: React.FC<PdfViewerProps> = ({
   onCurrentPageChange,
   defaultShowSidebar = false,
   isCompact = true,
+  onQuote,
 }) => {
+  const viewerWrapperRef = useRef<HTMLDivElement>(null);
   const {
     numPages,
     currentPage,
@@ -59,20 +64,44 @@ const PdfViewerContent: React.FC<PdfViewerProps> = ({
     defaultFitToWidth: true,
   });
 
+  usePdfHotkeys({
+    containerRef: viewerWrapperRef,
+    onPrevPage: previousPage,
+    onNextPage: nextPage,
+    onFirstPage: () => scrollToPage(1),
+    onLastPage: () => scrollToPage(numPages || 1),
+    onZoomIn: handleZoomIn,
+    onZoomOut: handleZoomOut,
+    onRotate: handleRotate,
+    onFitToWidth: handleFitToWidth,
+    onToggleSidebar: toggleSidebar,
+  });
+
   useEffect(() => {
     if (targetPage == null || !numPages) return;
+    // If targetPage is invalid / out of bounds, clamp and consume to prevent stuck queue
+    if (targetPage < 1 || targetPage > numPages) {
+      const clampedPage = Math.max(1, Math.min(numPages, targetPage));
+      scrollToPage(clampedPage, highlight?.pageNumber === targetPage ? highlight : null);
+      onTargetPageConsumed?.();
+      return;
+    }
     // Pages render lazily; keep the request queued until the page exists.
-    if (scrollToPage(targetPage)) {
+    if (scrollToPage(targetPage, highlight?.pageNumber === targetPage ? highlight : null)) {
       onTargetPageConsumed?.();
     }
-  }, [targetPage, numPages, scrollToPage, onTargetPageConsumed]);
+  }, [targetPage, numPages, scrollToPage, onTargetPageConsumed, highlight]);
 
   useEffect(() => {
     onCurrentPageChange?.(currentPage);
   }, [currentPage, onCurrentPageChange]);
 
   return (
-    <div className="w-full h-full relative flex flex-row bg-gray-900 overflow-hidden select-none">
+    <div
+      ref={viewerWrapperRef}
+      tabIndex={0}
+      className="w-full h-full relative flex flex-row bg-gray-900 overflow-hidden focus:outline-none"
+    >
       <PdfSidebar
         fileUrl={file.dataUrl}
         numPages={numPages}
@@ -116,6 +145,8 @@ const PdfViewerContent: React.FC<PdfViewerProps> = ({
           onToggleSidebar={toggleSidebar}
           onFitToWidth={handleFitToWidth}
         />
+
+        <PdfSelectionBubble containerRef={containerRef} onQuote={onQuote} />
       </div>
     </div>
   );

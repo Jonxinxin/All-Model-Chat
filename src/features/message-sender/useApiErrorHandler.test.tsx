@@ -174,4 +174,46 @@ describe('useApiErrorHandler', () => {
     expect(userFile.fileApiKeyFingerprint).toBe(INVALID_FILE_API_KEY_FINGERPRINT);
     expect(userFile.fileApiExpirationTime).toBe(new Date(0).toISOString());
   });
+
+  it('correctly updates and invalidates file references when target session is not at index 0', () => {
+    const updateAndPersistSessions = vi.fn();
+    const { result } = renderHookWithProviders(() => useApiErrorHandler(updateAndPersistSessions), { language: 'zh' });
+    const firstSession = createSession();
+    firstSession.id = 'session-first';
+
+    const targetSession = createSession();
+    targetSession.id = 'session-target';
+    targetSession.messages[0].id = 'gen-target';
+    targetSession.messages.unshift({
+      id: 'user-target',
+      role: 'user',
+      content: 'analyze video',
+      timestamp: new Date('2026-04-20T00:00:00.000Z'),
+      files: [
+        createUploadedFile({
+          id: 'file-target-1',
+          name: 'clip.mp4',
+          fileApiName: 'files/targetfile123',
+          fileUri: 'https://generativelanguage.googleapis.com/v1beta/files/targetfile123',
+          fileApiKeyFingerprint: 'fnv1a-abc',
+          fileApiExpirationTime: new Date(Date.now() + 86400000).toISOString(),
+        }),
+      ],
+    });
+
+    const error = new Error('You do not have permission to access the File targetfile123 or it may not exist.');
+
+    act(() => {
+      result.current.handleApiError(error, 'session-target', 'gen-target');
+    });
+
+    const updater = updateAndPersistSessions.mock.calls[0]?.[0];
+    const finalState = updater([firstSession, targetSession]);
+
+    expect(finalState[0].id).toBe('session-first');
+    expect(finalState[1].id).toBe('session-target');
+    const targetUserFile = finalState[1].messages[0].files![0];
+    expect(targetUserFile.fileApiKeyFingerprint).toBe(INVALID_FILE_API_KEY_FINGERPRINT);
+    expect(targetUserFile.fileApiExpirationTime).toBe(new Date(0).toISOString());
+  });
 });

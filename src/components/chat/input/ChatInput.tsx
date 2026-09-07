@@ -54,6 +54,10 @@ const ChatInputContent: React.FC = () => {
         setShowCloudFilesModal={modalsState.setShowCloudFilesModal}
         onAddFilesFromCloud={chatInput.onAddFilesFromCloud}
         onAddFileById={chatInput.onAddFileById}
+        showFolderZipModal={modalsState.showFolderZipModal}
+        setShowFolderZipModal={modalsState.setShowFolderZipModal}
+        onSelectFolderImport={modalsState.handleSelectFolderImport}
+        onSelectZipImport={modalsState.handleSelectZipImport}
         rawAppSettings={chatInput.appSettings}
         currentChatSettings={chatInput.currentChatSettings}
         isImageGenerationModel={capabilities.isImageGenerationModel}
@@ -71,6 +75,7 @@ const ChatInputContent: React.FC = () => {
         isGemini3={capabilities.isGemini3}
         isPreviewEditable={localFileState.isPreviewEditable}
         onSaveTextFile={localFileState.handleSavePreviewTextFile}
+        onConvertToContext={localFileState.handleConvertZipToContext}
         onSaveFileConfig={handlers.handleSaveFileConfig}
         previewNavigation={{
           handlePrevImage: localFileState.handlePrevImage,

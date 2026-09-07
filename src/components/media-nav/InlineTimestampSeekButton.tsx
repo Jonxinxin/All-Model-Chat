@@ -2,6 +2,7 @@ import React from 'react';
 import { Play } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { seekSessionVideo } from '@/utils/media-nav/seekVideo';
+import { extractTextFromNode } from '@/utils/reactNodeText';
 
 import { useChatStore } from '@/stores/chatStore';
 import { useMediaNavStore } from '@/stores/mediaNavStore';
@@ -66,7 +67,7 @@ export const InlineTimestampSeekButton: React.FC<InlineTimestampSeekButtonProps>
     });
   };
 
-  const labelText = typeof children === 'string' ? children : '';
+  const labelText = extractTextFromNode(children);
   const actionTitle = isAudio ? t('audioLocateButton') : t('videoLocateButton');
   const buttonTitle = labelText ? `${actionTitle}: ${labelText}` : actionTitle;
 

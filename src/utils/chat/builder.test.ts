@@ -116,6 +116,17 @@ describe('buildContentParts', () => {
     expect(contentParts[0]).toEqual({ fileData: { fileUri: 'https://youtube.com/watch?v=abc' } });
   });
 
+  it('normalizes non-canonical YouTube fileUri to canonical watch URL format', async () => {
+    const file = makeFile({
+      type: 'video/youtube-link',
+      fileUri: 'youtube.com/watch?v=MkaZ4OrbQn8&source_ve_path=OTY3MTQ&embeds_referring_euri=https%3A%2F%2Flinux.do%2F',
+    });
+    const { contentParts } = await buildContentParts('Summarize', [file]);
+    expect(contentParts[0]).toEqual({
+      fileData: { fileUri: 'https://www.youtube.com/watch?v=MkaZ4OrbQn8' },
+    });
+  });
+
   it('preserves per-part media resolution for YouTube video parts on Gemini 3', async () => {
     const file = makeFile({
       type: 'video/youtube-link',

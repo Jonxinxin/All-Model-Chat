@@ -174,4 +174,17 @@ describe('linkifyTimestamps', () => {
       '[05:10 · 结尾总结](#video-seek?start=310&video=interview.mp3&snippet=%E7%BB%93%E5%B0%BE%E6%80%BB%E7%BB%93)',
     );
   });
+
+  it('handles self-closing <video-locate /> tags', () => {
+    const input = '关键动作在 <video-locate start="00:45" point="100,200" /> 处。';
+    const output = linkifyTimestamps(input);
+    expect(output).not.toContain('<video-locate');
+    expect(output).toContain('[00:45](#video-seek?start=45&point=100%2C200)');
+  });
+
+  it('escapes square brackets inside video-locate snippet', () => {
+    const input = '<video-locate start="01:00">片段 [核心看点]</video-locate>';
+    const output = linkifyTimestamps(input);
+    expect(output).toContain('[01:00 · 片段 \\[核心看点\\]](#video-seek?start=60');
+  });
 });

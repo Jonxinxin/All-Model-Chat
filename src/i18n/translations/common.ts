@@ -5,6 +5,7 @@ export const commonTranslations = {
   add: { en: 'Add', zh: '添加', ja: '追加', ko: '추가', es: 'Añadir', fr: 'Ajouter', de: 'Hinzufügen' },
   back: { en: 'Back', zh: '返回', ja: '戻る', ko: '뒤로', es: 'Atrás', fr: 'Retour', de: 'Zurück' },
   delete: { en: 'Delete', zh: '删除', ja: '削除', ko: '삭제', es: 'Eliminar', fr: 'Supprimer', de: 'Löschen' },
+  clear: { en: 'Clear', zh: '清除', ja: 'クリア', ko: '지우기', es: 'Borrar', fr: 'Effacer', de: 'Löschen' },
   edit: { en: 'Edit', zh: '编辑', ja: '編集', ko: '편집', es: 'Editar', fr: 'Modifier', de: 'Bearbeiten' },
   expand: { en: 'Expand', zh: '展开', ja: '展開', ko: '확장', es: 'Expandir', fr: 'Développer', de: 'Erweitern' },
   collapse: {

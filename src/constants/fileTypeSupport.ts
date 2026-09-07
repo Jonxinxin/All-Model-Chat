@@ -92,6 +92,8 @@ export const SUPPORTED_UPLOAD_MIME_TYPES = [
   ...SUPPORTED_VIDEO_MIME_TYPES,
   ...SUPPORTED_SPREADSHEET_MIME_TYPES,
   ...SUPPORTED_DOC_MIME_TYPES,
+  ...SUPPORTED_PRESENTATION_MIME_TYPES,
+  ...SUPPORTED_ARCHIVE_MIME_TYPES,
 ];
 
 export const TEXT_BASED_EXTENSIONS = [
@@ -196,6 +198,18 @@ export const EXTENSION_TO_MIME: Record<string, string> = {
   '.svg': 'image/svg+xml',
   '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   '.doc': 'application/msword',
+  // Spreadsheets
+  '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  '.xls': 'application/vnd.ms-excel',
+  // Presentations
+  '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  '.ppt': 'application/vnd.ms-powerpoint',
+  // Archives
+  '.zip': 'application/zip',
+  '.tar': 'application/x-tar',
+  '.gz': 'application/gzip',
+  '.tgz': 'application/gzip',
+  '.7z': 'application/x-7z-compressed',
   // Code/Text Extensions
   '.json': 'application/json',
   '.js': 'text/javascript',

@@ -3,7 +3,7 @@ import { useI18n } from '@/contexts/I18nContext';
 import { type SafetySetting, HarmCategory, HarmBlockThreshold } from '@/types';
 import { Shield, Info } from 'lucide-react';
 import { DEFAULT_SAFETY_SETTINGS } from '@/constants/safetySettings';
-import { SETTINGS_RANGE_SLIDER_CLASS } from '@/constants/designTokens';
+import { Slider } from '@/components/shared/Slider';
 
 interface SafetySectionProps {
   safetySettings: SafetySetting[] | undefined;
@@ -148,17 +148,13 @@ export const SafetySection: React.FC<SafetySectionProps> = ({
                 </span>
               </div>
 
-              <input
-                type="range"
-                min="0"
-                max="4"
-                step="1"
+              <Slider
+                min={0}
+                max={4}
+                step={1}
                 value={sliderValue}
-                onChange={(e) => handleSliderChange(category, parseInt(e.target.value, 10))}
-                onPointerDown={(e) => e.stopPropagation()}
-                onTouchStart={(e) => e.stopPropagation()}
-                style={{ touchAction: 'none' }}
-                className={SETTINGS_RANGE_SLIDER_CLASS}
+                onChange={(val) => handleSliderChange(category, Math.round(val))}
+                ariaLabel={t(CATEGORY_TRANSLATION_KEYS[category])}
               />
             </div>
           );

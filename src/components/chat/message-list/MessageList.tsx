@@ -13,7 +13,6 @@ import { MessageListFooter } from './MessageListFooter';
 import { MessageListModals } from './MessageListModals';
 import { isGemini3Model } from '@/utils/model/modelCapabilities';
 import { getMcpToolPairs, getVisibleChatMessages } from '@/utils/chat/visibility';
-import { McpToolCallGroup } from '@/components/mcp/McpToolCallGroup';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { useChatStore } from '@/stores/chatStore';
 import { useUIStore } from '@/stores/uiStore';
@@ -166,8 +165,9 @@ const MessageListComponent: React.FC = () => {
             onConfigureFile={message.role === 'user' ? handleConfigureFile : undefined}
             isGemini3={isGemini3}
             userMessageCollapse={userMessageCollapse}
+            mcpPair={pair}
+            isTurnActive={isLoading}
           />
-          {pair ? <McpToolCallGroup calls={pair.calls} responses={pair.responses} turnActive={isLoading} /> : null}
         </div>
       );
     },

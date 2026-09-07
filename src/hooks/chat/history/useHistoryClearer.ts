@@ -45,6 +45,10 @@ export const useHistoryClearer = ({
       const sessionIds = savedSessions.map((session) => session.id);
       removeSessionScopedLocalStorageEntries(sessionIds);
       useChatDraftStore.getState().clearSessionDrafts(sessionIds);
+      sessionIds.forEach((id) => {
+        delete useChatStore.getState()._fileDrafts.current[id];
+        void dbService.deleteDraftFiles(id);
+      });
       logService.info(`Cleaned up session-scoped LocalStorage entries for ${savedSessions.length} sessions.`);
     } catch (cleanupError) {
       logService.error('Failed to clean up localStorage:', cleanupError);

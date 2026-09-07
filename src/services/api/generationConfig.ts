@@ -9,6 +9,7 @@ import { loadDeepSearchSystemPrompt, loadLocalPythonSystemPrompt } from '@/featu
 import {
   MediaResolution,
   type ChatSettings,
+  type GeoLocationCoordinates,
   type ImageOutputMode,
   type SafetySetting,
   type ThinkingLevel,
@@ -80,6 +81,7 @@ type GenerationConfigSettings = Pick<
   | 'thinkingLevel'
   | 'isDeepSearchEnabled'
   | 'isGoogleMapsEnabled'
+  | 'googleMapsLocation'
   | 'safetySettings'
   | 'mediaResolution'
   | 'isLocalPythonEnabled'
@@ -94,6 +96,7 @@ interface BuildGenerationConfigOptions {
   imageSize?: string;
   isLocalPythonEnabled?: boolean;
   imageOutputMode?: ImageOutputMode;
+  googleMapsLocation?: GeoLocationCoordinates;
 }
 
 type InternalBuildGenerationConfigOptions = {
@@ -104,6 +107,7 @@ type InternalBuildGenerationConfigOptions = {
   thinkingBudget: number;
   isGoogleSearchEnabled?: boolean;
   isGoogleMapsEnabled?: boolean;
+  googleMapsLocation?: GeoLocationCoordinates;
   isCodeExecutionEnabled?: boolean;
   isUrlContextEnabled?: boolean;
   thinkingLevel?: ThinkingLevel;
@@ -158,6 +162,7 @@ const toInternalBuildGenerationConfigOptions = (
     thinkingBudget: settings.thinkingBudget,
     isGoogleSearchEnabled: settings.isGoogleSearchEnabled,
     isGoogleMapsEnabled: settings.isGoogleMapsEnabled,
+    googleMapsLocation: options.googleMapsLocation ?? settings.googleMapsLocation,
     isCodeExecutionEnabled: settings.isCodeExecutionEnabled,
     isUrlContextEnabled: settings.isUrlContextEnabled,
     thinkingLevel: settings.thinkingLevel,
@@ -179,6 +184,7 @@ async function buildGenerationConfigFromOptions({
   thinkingBudget,
   isGoogleSearchEnabled,
   isGoogleMapsEnabled,
+  googleMapsLocation,
   isCodeExecutionEnabled,
   isUrlContextEnabled,
   thinkingLevel,
@@ -315,11 +321,44 @@ async function buildGenerationConfigFromOptions({
   }
 
   const tools: NonNullable<GenerationConfig['tools']> = [];
-  if (!isTranscribe && !isGemma && (isGoogleSearchEnabled || isDeepSearchEnabled)) {
+  const hasSearch = !isTranscribe && !isGemma && (isGoogleSearchEnabled || isDeepSearchEnabled);
+  const hasMaps = !isTranscribe && !isGemma && isGoogleMapsEnabled;
+  const canCombineSearchMaps = isGemini3 || isGeminiRoboticsModel(modelId);
+
+  if (hasSearch) {
     tools.push(googleSearchTool);
   }
-  if (!isTranscribe && !isGemma && isGoogleMapsEnabled) {
-    tools.push(buildGoogleMapsTool());
+  if (hasMaps) {
+    if (!hasSearch || canCombineSearchMaps) {
+      tools.push(buildGoogleMapsTool());
+      if (
+        googleMapsLocation &&
+        typeof googleMapsLocation.latitude === 'number' &&
+        typeof googleMapsLocation.longitude === 'number' &&
+        Number.isFinite(googleMapsLocation.latitude) &&
+        Number.isFinite(googleMapsLocation.longitude) &&
+        googleMapsLocation.latitude >= -90 &&
+        googleMapsLocation.latitude <= 90 &&
+        googleMapsLocation.longitude >= -180 &&
+        googleMapsLocation.longitude <= 180
+      ) {
+        generationConfig.toolConfig = {
+          ...(generationConfig.toolConfig ?? {}),
+          retrievalConfig: {
+            ...(generationConfig.toolConfig?.retrievalConfig ?? {}),
+            latLng: {
+              latitude: googleMapsLocation.latitude,
+              longitude: googleMapsLocation.longitude,
+            },
+          },
+        };
+      }
+    } else {
+      logService.warn(
+        'Skipping Google Maps tool because combining search grounding with maps grounding is only supported for Gemini 3.5+ models.',
+        { modelId },
+      );
+    }
   }
   if (!isTranscribe && !isGemma && isServerCodeExecutionMode({ isCodeExecutionEnabled, isLocalPythonEnabled })) {
     tools.push({ codeExecution: {} });

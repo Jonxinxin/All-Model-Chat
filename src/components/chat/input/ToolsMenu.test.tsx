@@ -188,4 +188,101 @@ describe('ToolsMenu', () => {
 
     expect(onToggleGoogleSearch).toHaveBeenCalledTimes(1);
   });
+
+  it('renders Google Maps badge with location name and opens location modal on click', () => {
+    const onToggleMaps = vi.fn();
+    const onUpdateLocation = vi.fn();
+
+    act(() => {
+      renderer.root.render(
+        <ToolsMenu
+          currentModelId="gemini-3.8-flash"
+          toolStates={{
+            ...createChatToolToggleStatesFromFlags({ googleMaps: true }),
+            googleMaps: {
+              isEnabled: true,
+              onToggle: onToggleMaps,
+            },
+          }}
+          toolUtilityActions={toolUtilityActions}
+          disabled={false}
+          googleMapsLocation={{
+            latitude: 39.9042,
+            longitude: 116.4074,
+            name: 'Beijing',
+          }}
+          onUpdateGoogleMapsLocation={onUpdateLocation}
+        />,
+      );
+    });
+
+    expect(document.body.textContent).toContain('Maps · Beijing');
+
+    const configButton = document.body.querySelector<HTMLButtonElement>(
+      'button[aria-label="Configure Maps location"]',
+    );
+    expect(configButton).not.toBeNull();
+
+    act(() => {
+      configButton?.click();
+    });
+
+    expect(document.body.textContent).toContain('Maps Location Context');
+    expect(document.body.textContent).toContain('Popular Cities');
+
+    const removeButton = document.body.querySelector<HTMLButtonElement>(
+      'button[aria-label="Disable Maps Grounding"]',
+    );
+    expect(removeButton).not.toBeNull();
+    act(() => {
+      removeButton?.click();
+    });
+    expect(onToggleMaps).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders URL Context badge and opens URL Context modal on click', () => {
+    const onToggleUrl = vi.fn();
+    const onInsertUrls = vi.fn();
+
+    act(() => {
+      renderer.root.render(
+        <ToolsMenu
+          currentModelId="gemini-3.8-flash"
+          toolStates={{
+            ...createChatToolToggleStatesFromFlags({ urlContext: true }),
+            urlContext: {
+              isEnabled: true,
+              onToggle: onToggleUrl,
+            },
+          }}
+          toolUtilityActions={toolUtilityActions}
+          disabled={false}
+          onInsertUrls={onInsertUrls}
+        />,
+      );
+    });
+
+    expect(document.body.textContent).toContain('URL');
+
+    const configButton = document.body.querySelector<HTMLButtonElement>(
+      'button[aria-label="Configure URL Context"]',
+    );
+    expect(configButton).not.toBeNull();
+
+    act(() => {
+      configButton?.click();
+    });
+
+    expect(document.body.textContent).toContain('URL Context');
+    expect(document.body.textContent).toContain('Capabilities & Limits');
+
+    const removeButton = document.body.querySelector<HTMLButtonElement>(
+      'button[aria-label="Disable URL Context"]',
+    );
+    expect(removeButton).not.toBeNull();
+    act(() => {
+      removeButton?.click();
+    });
+    expect(onToggleUrl).toHaveBeenCalledTimes(1);
+  });
 });

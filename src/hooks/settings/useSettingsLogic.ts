@@ -5,7 +5,7 @@ import { logService } from '@/services/logService';
 import { resolveModelSwitchSettings } from '@/utils/model/modelSwitchSettings';
 import { type translations } from '@/i18n/translations';
 import { useSettingsUiStore, type SettingsTabDescriptor } from '@/stores/settingsUiStore';
-import { SETTINGS_TAB_IDS, SETTINGS_TAB_LABEL_KEYS } from '@/constants/settingsTabs';
+import { SETTINGS_TABS, SETTINGS_TAB_LABEL_KEYS } from '@/constants/settingsTabs';
 
 interface UseSettingsLogicProps {
   isOpen: boolean;
@@ -202,7 +202,7 @@ export const useSettingsLogic = ({
   };
 
   const tabs = useMemo<SettingsTabDescriptor[]>(
-    () => SETTINGS_TAB_IDS.map((id) => ({ id, labelKey: SETTINGS_TAB_LABEL_KEYS[id] })),
+    () => SETTINGS_TABS.map((id) => ({ id, labelKey: SETTINGS_TAB_LABEL_KEYS[id] })),
     [],
   );
 

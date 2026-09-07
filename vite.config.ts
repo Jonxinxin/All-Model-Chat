@@ -87,6 +87,7 @@ export default defineConfig(async ({ mode }) => {
     resolve: {
       alias: {
         '@': path.resolve('./src'),
+        '@panzoom/panzoom': path.resolve('./node_modules/@panzoom/panzoom/dist/panzoom.es.js'),
       },
     },
     build: {

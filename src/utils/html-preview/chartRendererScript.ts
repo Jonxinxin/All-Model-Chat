@@ -471,11 +471,9 @@ export const CHART_RENDERER_SCRIPT = `
     const svg = el('svg', {
       viewBox: '0 0 ' + W + ' ' + h,
       width: '100%',
-      height: 'auto',
-      display: 'block',
       role: 'img',
       'aria-label': spec.title || 'chart',
-      style: 'font-family:' + FONT,
+      style: 'font-family:' + FONT + ';display:block;height:auto;',
     });
     if (spec.title) svg.appendChild(el('title', {}, spec.title));
     return { svg, h };

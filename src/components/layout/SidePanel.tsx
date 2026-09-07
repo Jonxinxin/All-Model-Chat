@@ -48,6 +48,26 @@ interface SidePanelProps {
   themeId: string;
 }
 
+const DEFAULT_SIDEPANEL_WIDTH = 600;
+const MIN_SIDEPANEL_WIDTH = 320;
+const SIDEPANEL_STORAGE_KEY = 'amc-sidepanel-width';
+
+const getInitialSidePanelWidth = (): number => {
+  if (typeof window === 'undefined') return DEFAULT_SIDEPANEL_WIDTH;
+  try {
+    const saved = localStorage.getItem(SIDEPANEL_STORAGE_KEY);
+    if (saved) {
+      const parsed = parseInt(saved, 10);
+      if (Number.isFinite(parsed) && parsed >= MIN_SIDEPANEL_WIDTH && parsed < window.innerWidth * 0.9) {
+        return parsed;
+      }
+    }
+  } catch {
+    // Ignore storage errors
+  }
+  return DEFAULT_SIDEPANEL_WIDTH;
+};
+
 export const SidePanel: React.FC<SidePanelProps> = ({ content, onClose, themeId }) => {
   const { t } = useI18n();
   const [localCode, setLocalCode] = useState(content?.content || '');
@@ -61,7 +81,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({ content, onClose, themeId 
     enabled: content?.type === 'html',
   });
 
-  const [width, setWidth] = useState(600);
+  const [width, setWidth] = useState<number>(getInitialSidePanelWidth);
   const [isResizing, setIsResizing] = useState(false);
   const isResizingRef = useRef(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -86,11 +106,25 @@ export const SidePanel: React.FC<SidePanelProps> = ({ content, onClose, themeId 
     isResizingRef.current = false;
   }, []);
 
+  const resetWidth = useCallback(() => {
+    setWidth(DEFAULT_SIDEPANEL_WIDTH);
+    try {
+      localStorage.removeItem(SIDEPANEL_STORAGE_KEY);
+    } catch {
+      // Ignore
+    }
+  }, []);
+
   const resize = useCallback((mouseEvent: MouseEvent) => {
     if (isResizingRef.current) {
       const newWidth = window.innerWidth - mouseEvent.clientX;
-      if (newWidth > 300 && newWidth < window.innerWidth * 0.9) {
+      if (newWidth >= MIN_SIDEPANEL_WIDTH && newWidth < window.innerWidth * 0.9) {
         setWidth(newWidth);
+        try {
+          localStorage.setItem(SIDEPANEL_STORAGE_KEY, String(Math.round(newWidth)));
+        } catch {
+          // Ignore
+        }
       }
     }
   }, []);
@@ -233,14 +267,44 @@ export const SidePanel: React.FC<SidePanelProps> = ({ content, onClose, themeId 
       >
         {!isMobile && (
           <div
+            data-testid="sidepanel-resize-handle"
+            role="separator"
+            aria-label={t('sidePanelDragResize')}
+            aria-orientation="vertical"
+            aria-valuenow={width}
+            aria-valuemin={MIN_SIDEPANEL_WIDTH}
+            tabIndex={0}
             onMouseDown={startResizing}
+            onDoubleClick={resetWidth}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                setWidth((w) => {
+                  const next = Math.min(w + 20, Math.round(window.innerWidth * 0.9));
+                  try { localStorage.setItem(SIDEPANEL_STORAGE_KEY, String(next)); } catch {}
+                  return next;
+                });
+              } else if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                setWidth((w) => {
+                  const next = Math.max(w - 20, MIN_SIDEPANEL_WIDTH);
+                  try { localStorage.setItem(SIDEPANEL_STORAGE_KEY, String(next)); } catch {}
+                  return next;
+                });
+              } else if (e.key === 'Home') {
+                e.preventDefault();
+                resetWidth();
+              }
+            }}
             className={`
-                            absolute left-0 top-0 bottom-0 w-1.5 -ml-0.5 z-50 cursor-col-resize 
-                            flex items-center justify-center group transition-colors hover:bg-[var(--theme-bg-accent)]
-                            ${isResizing ? 'bg-[var(--theme-bg-accent)]' : 'bg-transparent'}
-                        `}
+              absolute left-0 top-0 bottom-0 w-2 -ml-1 z-50 cursor-col-resize 
+              flex items-center justify-center group select-none transition-colors hover:bg-[var(--theme-bg-accent)]/20 active:bg-[var(--theme-bg-accent)]/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-border-focus)]
+              ${isResizing ? 'bg-[var(--theme-bg-accent)]/30' : 'bg-transparent'}
+            `}
             title={t('sidePanelDragResize')}
-          />
+          >
+            <div className="z-10 h-8 w-1 rounded-full bg-[var(--theme-border-secondary)] transition-all group-hover:scale-y-110 group-hover:bg-[var(--theme-bg-accent)]" />
+          </div>
         )}
 
         <div className="flex items-center justify-between px-4 h-14 border-b border-[var(--theme-border-secondary)] bg-[var(--theme-bg-primary)] flex-shrink-0">

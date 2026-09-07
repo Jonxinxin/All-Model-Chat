@@ -1,23 +1,8 @@
 import { useChatStore } from '@/stores/chatStore';
 import { useMediaNavStore } from '@/stores/mediaNavStore';
-import { collectSessionAudioFiles, isAudioFile } from './sessionMediaFiles';
+import { collectSessionAudioFiles, isAudioFile, resolveNamedFile } from './sessionMediaFiles';
 import { parseLocateMarkers } from './locateMarker';
 import { applyMediaNavKindToSettings } from './mediaNavSettings';
-
-const resolveNamedFile = (files: { id: string; name: string }[], locateName?: string, activeFileId?: string | null) => {
-  if (locateName) {
-    return (
-      files.find((file) => file.name === locateName) ??
-      files.find((file) => file.name.toLowerCase().includes(locateName.toLowerCase())) ??
-      files[0]
-    );
-  }
-  if (activeFileId) {
-    const current = files.find((file) => file.id === activeFileId);
-    if (current) return current;
-  }
-  return files[0];
-};
 
 export interface SeekSessionAudioParams {
   startSeconds: number;

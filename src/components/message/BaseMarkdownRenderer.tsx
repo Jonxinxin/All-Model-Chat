@@ -9,7 +9,7 @@ import { CodeExecutionBlock } from './blocks/CodeExecutionBlock';
 import { DeferredDiagramBlock } from './blocks/DeferredDiagramBlock';
 import { type UploadedFile, type SideViewContent } from '@/types';
 import type { OpenHtmlPreviewHandler } from '@/utils/html-preview/previewPrivilege';
-import { extractTextFromNode } from '@/utils/reactNodeText';
+import { extractTextFromNode, findCodeElement } from '@/utils/reactNodeText';
 import { InlineCode } from './code/InlineCode';
 import { transformMarkdownTextSegments } from '@/utils/markdownSegments';
 import { stripGemmaThoughtMarkup, wrapReasoningMarkup } from '@/utils/chat/reasoning';
@@ -66,12 +66,6 @@ type MarkdownPreProps = React.ComponentPropsWithoutRef<'pre'> & {
       };
     };
   };
-};
-type CodeElementProps = {
-  className?: string;
-  children?: React.ReactNode;
-  onClick?: React.MouseEventHandler<HTMLElement>;
-  title?: string;
 };
 
 interface BaseMarkdownRendererProps extends MarkdownRendererProps {
@@ -230,23 +224,44 @@ export const BaseMarkdownRenderer: React.FC<BaseMarkdownRendererProps> = React.m
             let annotation:
               { point?: [number, number]; box2d?: [number, number, number, number]; snippet?: string } | undefined;
             if (pointParam || boxParam || snippetParam) {
-              const pointParts = pointParam
-                ? pointParam
-                    .replace(/[()[\]]/g, '')
-                    .split(',')
-                    .map((v) => Number.parseFloat(v.trim()))
-                    .filter(Number.isFinite)
-                : [];
-              const boxParts = boxParam
-                ? boxParam
-                    .replace(/[()[\]]/g, '')
-                    .split(',')
-                    .map((v) => Number.parseFloat(v.trim()))
-                    .filter(Number.isFinite)
-                : [];
+              let point: [number, number] | undefined;
+              if (pointParam) {
+                const pointParts = pointParam
+                  .replace(/[()[\]]/g, '')
+                  .split(/[,;\s]+/)
+                  .map((v) => Number.parseFloat(v.trim()))
+                  .filter(Number.isFinite);
+                if (pointParts.length === 2) {
+                  const isZeroToOne =
+                    pointParts.every((v) => v >= 0 && v <= 1.0) && pointParts.some((v) => v > 0 && v < 1.0);
+                  const scale = isZeroToOne ? 1000 : 1;
+                  point = [Math.round(pointParts[0] * scale), Math.round(pointParts[1] * scale)];
+                }
+              }
+
+              let box2d: [number, number, number, number] | undefined;
+              if (boxParam) {
+                const boxParts = boxParam
+                  .replace(/[()[\]]/g, '')
+                  .split(/[,;\s]+/)
+                  .map((v) => Number.parseFloat(v.trim()))
+                  .filter(Number.isFinite);
+                if (boxParts.length === 4) {
+                  const isZeroToOne =
+                    boxParts.every((v) => v >= 0 && v <= 1.0) && boxParts.some((v) => v > 0 && v < 1.0);
+                  const scale = isZeroToOne ? 1000 : 1;
+                  box2d = [
+                    Math.round(boxParts[0] * scale),
+                    Math.round(boxParts[1] * scale),
+                    Math.round(boxParts[2] * scale),
+                    Math.round(boxParts[3] * scale),
+                  ];
+                }
+              }
+
               annotation = {
-                point: pointParts.length === 2 ? (pointParts as [number, number]) : undefined,
-                box2d: boxParts.length === 4 ? (boxParts as [number, number, number, number]) : undefined,
+                point,
+                box2d,
                 snippet: snippetParam,
               };
             }
@@ -278,11 +293,18 @@ export const BaseMarkdownRenderer: React.FC<BaseMarkdownRendererProps> = React.m
             if (boxParam) {
               const boxParts = boxParam
                 .replace(/[()[\]]/g, '')
-                .split(',')
-                .map((v) => Number.parseInt(v.trim(), 10))
+                .split(/[,;\s]+/)
+                .map((v) => Number.parseFloat(v.trim()))
                 .filter(Number.isFinite);
               if (boxParts.length === 4) {
-                box2d = boxParts as [number, number, number, number];
+                const isZeroToOne = boxParts.every((v) => v >= 0 && v <= 1.0) && boxParts.some((v) => v > 0 && v < 1.0);
+                const scale = isZeroToOne ? 1000 : 1;
+                box2d = [
+                  Math.round(boxParts[0] * scale),
+                  Math.round(boxParts[1] * scale),
+                  Math.round(boxParts[2] * scale),
+                  Math.round(boxParts[3] * scale),
+                ];
               }
             }
 
@@ -290,11 +312,13 @@ export const BaseMarkdownRenderer: React.FC<BaseMarkdownRendererProps> = React.m
             if (pointParam) {
               const pointParts = pointParam
                 .replace(/[()[\]]/g, '')
-                .split(',')
-                .map((v) => Number.parseInt(v.trim(), 10))
+                .split(/[,;\s]+/)
+                .map((v) => Number.parseFloat(v.trim()))
                 .filter(Number.isFinite);
               if (pointParts.length === 2) {
-                point = pointParts as [number, number];
+                const isZeroToOne = pointParts.every((v) => v >= 0 && v <= 1.0) && pointParts.some((v) => v > 0 && v < 1.0);
+                const scale = isZeroToOne ? 1000 : 1;
+                point = [Math.round(pointParts[0] * scale), Math.round(pointParts[1] * scale)];
               }
             }
 
@@ -327,11 +351,18 @@ export const BaseMarkdownRenderer: React.FC<BaseMarkdownRendererProps> = React.m
             if (boxParam) {
               const boxParts = boxParam
                 .replace(/[()[\]]/g, '')
-                .split(',')
-                .map((v) => Number.parseInt(v.trim(), 10))
+                .split(/[,;\s]+/)
+                .map((v) => Number.parseFloat(v.trim()))
                 .filter(Number.isFinite);
               if (boxParts.length === 4) {
-                box2d = boxParts as [number, number, number, number];
+                const isZeroToOne = boxParts.every((v) => v >= 0 && v <= 1.0) && boxParts.some((v) => v > 0 && v < 1.0);
+                const scale = isZeroToOne ? 1000 : 1;
+                box2d = [
+                  Math.round(boxParts[0] * scale),
+                  Math.round(boxParts[1] * scale),
+                  Math.round(boxParts[2] * scale),
+                  Math.round(boxParts[3] * scale),
+                ];
               }
             }
 
@@ -339,11 +370,13 @@ export const BaseMarkdownRenderer: React.FC<BaseMarkdownRendererProps> = React.m
             if (pointParam) {
               const pointParts = pointParam
                 .replace(/[()[\]]/g, '')
-                .split(',')
-                .map((v) => Number.parseInt(v.trim(), 10))
+                .split(/[,;\s]+/)
+                .map((v) => Number.parseFloat(v.trim()))
                 .filter(Number.isFinite);
               if (pointParts.length === 2) {
-                point = pointParts as [number, number];
+                const isZeroToOne = pointParts.every((v) => v >= 0 && v <= 1.0) && pointParts.some((v) => v > 0 && v < 1.0);
+                const scale = isZeroToOne ? 1000 : 1;
+                point = [Math.round(pointParts[0] * scale), Math.round(pointParts[1] * scale)];
               }
             }
 
@@ -398,14 +431,7 @@ export const BaseMarkdownRenderer: React.FC<BaseMarkdownRendererProps> = React.m
         pre: (props: MarkdownPreProps) => {
           const { children, node, ...rest } = props;
 
-          const codeElement = React.Children.toArray(children).find(
-            (child): child is React.ReactElement<CodeElementProps> => {
-              return (
-                React.isValidElement<CodeElementProps>(child) &&
-                (child.type === 'code' || Boolean(child.props.className?.includes('language-')))
-              );
-            },
-          );
+          const codeElement = findCodeElement(children);
 
           const codeClassName = codeElement?.props.className || '';
           const codeContent = codeElement?.props.children;

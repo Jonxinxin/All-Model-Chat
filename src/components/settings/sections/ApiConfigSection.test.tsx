@@ -306,10 +306,20 @@ describe('ApiConfigSection', () => {
       apiKey: 'browser-key',
     });
 
-    expect(renderer.container.textContent).toContain('Live connects from this browser');
-    expect(renderer.container.textContent).toContain('uses your browser API key directly');
+    expect(renderer.container.textContent).toContain('Live API Dedicated Key (Optional)');
+    expect(renderer.container.textContent).toContain('Currently using the general Gemini API key above by default.');
     expect(renderer.container.textContent).not.toContain('/api/live-token');
     expect(renderer.container.textContent).not.toContain('Advanced Live Settings');
     expect(renderer.container.querySelector('#live-token-endpoint-input')).toBeNull();
+
+    // Clicking expands the dedicated key input
+    const toggleButton = findButton('Live API Dedicated Key');
+    expect(toggleButton).toBeDefined();
+
+    act(() => {
+      toggleButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(renderer.container.querySelector('#live-api-key-input')).not.toBeNull();
   });
 });

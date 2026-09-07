@@ -41,9 +41,8 @@ describe('TokenDetailsCard', () => {
     });
 
     const text = renderer.container.textContent ?? '';
-    expect(text).toContain('219');
-    expect(text).toContain('42.1 t/s');
-    expect(text).toContain('30.5 t/s');
+    expect(text).toContain('42.1 Tokens/s');
+    expect(text).toContain('30.5 Tokens/s');
     expect(text).toContain('0.32s');
     expect(text).toContain('2.5s');
     expect(text).toContain('5,000');
@@ -58,6 +57,63 @@ describe('TokenDetailsCard', () => {
 
     const text = renderer.container.textContent ?? '';
     expect(text).not.toContain('0.32s');
-    expect(text).not.toContain('t/s');
+    expect(text).not.toContain('Tokens/s');
+  });
+
+  it('renders model info header, primary metrics, and cost like Cherry Studio', () => {
+    act(() => {
+      renderer.root.render(
+        <TokenDetailsCard
+          message={message}
+          modelId="gemini-3.6-flash"
+          modelName="Gemini 3.6 Flash"
+          providerName="Google"
+          modelTps={50.0}
+        />,
+      );
+    });
+
+    const text = renderer.container.textContent ?? '';
+    expect(text).toContain('Gemini 3.6 Flash');
+    expect(text).toContain('Google');
+    expect(text).toContain('Input');
+    expect(text).toContain('Output');
+    expect(text).toContain('50.0 Tokens/s');
+
+    // Cost row should be rendered
+    const costRow = renderer.container.querySelector('[data-testid="message-cost"]');
+    expect(costRow).not.toBeNull();
+    expect(costRow?.textContent).toContain('Cost');
+    expect(costRow?.textContent).toContain('Locally estimated');
+  });
+
+  it('expands and collapses runtime breakdown when clicking More details', () => {
+    act(() => {
+      renderer.root.render(
+        <TokenDetailsCard
+          message={{ ...message, thinkingTimeMs: 500 }}
+          elapsedSeconds={3.0}
+          ttftSeconds={0.8}
+        />,
+      );
+    });
+
+    // Before clicking, breakdown should be collapsed
+    expect(renderer.container.querySelector('[data-testid="message-performance-breakdown"]')).toBeNull();
+
+    // Click "More details" button
+    const toggleButton = renderer.container.querySelector('button');
+    expect(toggleButton).not.toBeNull();
+    act(() => {
+      toggleButton?.click();
+    });
+
+    // Breakdown should now be visible
+    const breakdown = renderer.container.querySelector('[data-testid="message-performance-breakdown"]');
+    expect(breakdown).not.toBeNull();
+    const text = breakdown?.textContent ?? '';
+    expect(text).toContain('Waiting');
+    expect(text).toContain('Reasoning');
+    expect(text).toContain('Text generation');
   });
 });

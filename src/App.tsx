@@ -10,6 +10,7 @@ import { PwaUpdateBanner } from './components/pwa/PwaUpdateBanner';
 import { ToastViewport } from './components/shared/toast/ToastViewport';
 import { McpToolApprovalDialog } from './components/mcp/McpToolApprovalDialog';
 import { McpShareInstallGate } from './components/mcp/McpShareInstallGate';
+import { GlobalCommandPalette } from './components/command/GlobalCommandPalette';
 
 const App: React.FC = () => {
   return (
@@ -28,7 +29,14 @@ const AppContent: React.FC = () => {
 
   // 把文件拖放提升到 App 根：侧边栏/侧面板等区域也能接收文件拖入。
   // 仅处理 Files 类型，避免影响侧边栏的会话拖拽排序和文本选区拖拽。
-  const isFileDrag = (event: React.DragEvent<HTMLElement>) => event.dataTransfer.types.includes('Files');
+  const isFileDrag = (event: React.DragEvent<HTMLElement>) => {
+    const types = event.dataTransfer?.types;
+    if (!types) return false;
+    for (let i = 0; i < types.length; i++) {
+      if (types[i] === 'Files' || types[i].toLowerCase() === 'files') return true;
+    }
+    return false;
+  };
   const isModalEvent = (event: React.DragEvent<HTMLElement>) =>
     event.target instanceof Element && !!event.target.closest('[data-modal-backdrop="true"]');
 
@@ -88,6 +96,11 @@ const AppContent: React.FC = () => {
       <ToastViewport />
       <McpToolApprovalDialog />
       <McpShareInstallGate />
+      <GlobalCommandPalette
+        onNewChat={chatState.startNewChat}
+        onOpenExportModal={() => app.setIsExportModalOpen(true)}
+        onClearCurrentChat={chatState.handleClearCurrentChat}
+      />
     </div>
   );
 };

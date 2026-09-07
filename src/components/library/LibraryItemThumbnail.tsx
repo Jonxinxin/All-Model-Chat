@@ -1,11 +1,20 @@
-import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
-import { FileText, FileSpreadsheet, Presentation, Music, Video, Image as ImageIcon, FileCode } from 'lucide-react';
+import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FileSpreadsheet, Presentation, Music, Video, Image as ImageIcon, FileCode, Table, Play } from 'lucide-react';
 import type { LibraryItem } from '@/types';
+import { useVisibleThumbnailGate } from '@/hooks/ui/useVisibleThumbnailGate';
 import { isImageFileType, isVideoFileType, isAudioFileType, getLibraryFileType } from '@/utils/library/libraryFiles';
 import { isTextFile, isMarkdownFile } from '@/utils/file/fileTypeClassification';
+import { getFileDisplayMeta } from '@/utils/file/fileDisplayStyles';
 import { fileToBlobUrl, cleanupFilePreviewUrl } from '@/utils/file/filePreviewUrls';
 import { dbService } from '@/services/db/dbService';
 import { readPdfThumbnailCache, getPdfThumbnailCacheKey } from '@/components/chat/input/files/pdfThumbnailCache';
+import { extractYoutubeVideoId } from '@/utils/file/youtubeUrl';
+import {
+  generateDeterministicWaveform as generateWaveform,
+  decodeAudioWaveform as decodeWaveform,
+  readAudioWaveformCache as readWaveformCache,
+  writeAudioWaveformCache as writeWaveformCache,
+} from '@/utils/media/audioWaveform';
 
 const LazyPdfFileThumbnail = lazy(() =>
   import('@/components/chat/input/files/PdfFileThumbnail').then((module) => ({
@@ -64,6 +73,78 @@ const writeThumbnailBlobCache = (id: string, url: string) => {
     if (oldestUrl) {
       cleanupFilePreviewUrl({ dataUrl: oldestUrl });
     }
+  }
+};
+
+// Bounded LRU cache for extracted spreadsheet grid cells
+const SPREADSHEET_GRID_CACHE_LIMIT = 128;
+const spreadsheetGridCache = new Map<string, string[][]>();
+
+const readSpreadsheetCache = (id: string): string[][] | undefined => {
+  const cached = spreadsheetGridCache.get(id);
+  if (!cached) return undefined;
+  spreadsheetGridCache.delete(id);
+  spreadsheetGridCache.set(id, cached);
+  return cached;
+};
+
+const writeSpreadsheetCache = (id: string, rows: string[][]) => {
+  spreadsheetGridCache.delete(id);
+  spreadsheetGridCache.set(id, rows);
+  while (spreadsheetGridCache.size > SPREADSHEET_GRID_CACHE_LIMIT) {
+    const oldestKey = spreadsheetGridCache.keys().next().value;
+    if (oldestKey === undefined) break;
+    spreadsheetGridCache.delete(oldestKey);
+  }
+};
+
+const parseDelimitedText = (text: string, maxRows = 5, maxCols = 4): string[][] => {
+  const lines = text
+    .slice(0, 4096)
+    .split(/\r?\n/)
+    .filter((l) => l.trim().length > 0)
+    .slice(0, maxRows);
+  if (lines.length === 0) return [];
+  const delimiter = lines[0].includes('\t') ? '\t' : ',';
+  return lines.map((line) => {
+    const cells: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === delimiter && !inQuotes) {
+        cells.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    cells.push(current.trim());
+    return cells.slice(0, maxCols);
+  });
+};
+
+const parseExcelBlob = async (blob: Blob, maxRows = 5, maxCols = 4): Promise<string[][]> => {
+  if (blob.size > 8 * 1024 * 1024) return [];
+  try {
+    const XLSX = await import('xlsx');
+    const buffer = await blob.arrayBuffer();
+    const wb = XLSX.read(buffer, { type: 'array', sheetRows: maxRows });
+    if (!wb.SheetNames || wb.SheetNames.length === 0) return [];
+    const sheet = wb.Sheets[wb.SheetNames[0]];
+    if (!sheet) return [];
+    const rawRows = XLSX.utils.sheet_to_json<(string | number | boolean | null)[]>(sheet, {
+      header: 1,
+      defval: '',
+      blankrows: false,
+    });
+    return rawRows.slice(0, maxRows).map((row) =>
+      (Array.isArray(row) ? row : []).slice(0, maxCols).map((cell) => (cell !== null && cell !== undefined ? String(cell) : ''))
+    );
+  } catch {
+    return [];
   }
 };
 
@@ -142,44 +223,13 @@ const renderHighlightedCodeLine = (text: string, ext: string) => {
   );
 };
 
-const useVisibleThumbnailGate = (enabled: boolean) => {
-  const containerRef = useRef<HTMLElement | null>(null);
-  const [isVisible, setIsVisible] = useState(() => !enabled || typeof IntersectionObserver === 'undefined');
-
-  useEffect(() => {
-    if (!enabled || isVisible) {
-      return undefined;
-    }
-
-    const element = containerRef.current;
-    if (!element || typeof IntersectionObserver === 'undefined') {
-      queueMicrotask(() => setIsVisible(true));
-      return undefined;
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: '120px' },
-    );
-
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [enabled, isVisible]);
-
-  return { containerRef, isVisible };
-};
-
 const LibraryItemThumbnailComponent: React.FC<LibraryItemThumbnailProps> = ({ item, size = 'sm', className = '' }) => {
   const isImage = isImageFileType(item.type, item.name);
   const isVideo = isVideoFileType(item.type, item.name);
   const isAudio = isAudioFileType(item.type, item.name);
   const fileType = getLibraryFileType(item.type, item.name);
   const isPdf = fileType === 'pdf';
+  const isSpreadsheet = fileType === 'spreadsheet';
   const isSvg = item.name.toLowerCase().endsWith('.svg') || item.type === 'image/svg+xml';
   const isTextCandidate = isTextSnippetCandidate(item);
   const canPreview = isImage || isVideo || isPdf;
@@ -204,6 +254,59 @@ const LibraryItemThumbnailComponent: React.FC<LibraryItemThumbnailProps> = ({ it
 
   const [blobUrl, setBlobUrl] = useState<string | null>(initialBlobUrl);
   const [hasError, setHasError] = useState(false);
+  const [videoPoster, setVideoPoster] = useState<string | null>(() => readThumbnailBlobCache(`poster:${item.id}`) ?? null);
+  const recoveryAttemptedRef = useRef(false);
+
+  const youtubeVideoId = useMemo(() => {
+    return (
+      extractYoutubeVideoId(item.fileUri) ||
+      extractYoutubeVideoId(item.name) ||
+      (item.dataUrl ? extractYoutubeVideoId(item.dataUrl) : null)
+    );
+  }, [item.fileUri, item.name, item.dataUrl]);
+  const [youtubeError, setYoutubeError] = useState(false);
+
+  const handleImageError = useCallback(async () => {
+    if (!recoveryAttemptedRef.current) {
+      recoveryAttemptedRef.current = true;
+      try {
+        const blob = await dbService.fetchLibraryFileBlob(item);
+        if (blob) {
+          let finalBlob = blob;
+          if (isSvg && finalBlob.type !== 'image/svg+xml') {
+            finalBlob = new Blob([finalBlob], { type: 'image/svg+xml' });
+          }
+          const createdUrl = fileToBlobUrl(finalBlob);
+          writeThumbnailBlobCache(item.id, createdUrl);
+          setBlobUrl(createdUrl);
+          setHasError(false);
+          return;
+        }
+      } catch {
+        // ignore
+      }
+    }
+    setHasError(true);
+  }, [item, isSvg]);
+
+  const handleVideoError = useCallback(async () => {
+    if (!recoveryAttemptedRef.current) {
+      recoveryAttemptedRef.current = true;
+      try {
+        const blob = await dbService.fetchLibraryFileBlob(item);
+        if (blob) {
+          const createdUrl = fileToBlobUrl(blob);
+          writeThumbnailBlobCache(item.id, createdUrl);
+          setBlobUrl(createdUrl);
+          setHasError(false);
+          return;
+        }
+      } catch {
+        // ignore
+      }
+    }
+    setHasError(true);
+  }, [item]);
 
   const [textLines, setTextLines] = useState<string[]>(() => {
     const cached = readSnippetCache(item.id);
@@ -216,15 +319,42 @@ const LibraryItemThumbnailComponent: React.FC<LibraryItemThumbnailProps> = ({ it
     return [];
   });
 
+  const [waveformBars, setWaveformBars] = useState<number[]>(() => {
+    if (!isAudio) return [];
+    const cached = readWaveformCache(item.id);
+    if (cached) return cached;
+    const initial = generateWaveform(`${item.id}:${item.name}:${item.size}`);
+    writeWaveformCache(item.id, initial);
+    return initial;
+  });
+
+  const [spreadsheetRows, setSpreadsheetRows] = useState<string[][]>(() => {
+    if (!isSpreadsheet) return [];
+    const cached = readSpreadsheetCache(item.id);
+    if (cached) return cached;
+    if (item.textContent) {
+      const parsed = parseDelimitedText(item.textContent, 5, 4);
+      if (parsed.length > 0) {
+        writeSpreadsheetCache(item.id, parsed);
+        return parsed;
+      }
+    }
+    return [];
+  });
+
   const hasImmediateSnippet = textLines.length > 0;
   const hasImmediateBlob = !!blobUrl;
+  const hasImmediateSpreadsheet = spreadsheetRows.length > 0;
+  const hasImmediateWaveform = waveformBars.length > 0;
 
   // Viewport gating: only gate items that require async I/O
   const needsGate =
     (isPdf && !hasCachedPdf) ||
     (isImage && !hasImmediateBlob) ||
-    (isVideo && !hasImmediateBlob) ||
-    (isTextCandidate && !hasImmediateSnippet);
+    (isVideo && !hasImmediateBlob && !youtubeVideoId) ||
+    (isTextCandidate && !hasImmediateSnippet) ||
+    (isSpreadsheet && !hasImmediateSpreadsheet) ||
+    (isAudio && !hasImmediateWaveform);
 
   const { containerRef, isVisible } = useVisibleThumbnailGate(needsGate);
 
@@ -312,6 +442,105 @@ const LibraryItemThumbnailComponent: React.FC<LibraryItemThumbnailProps> = ({ it
     };
   }, [item, canPreview, isPdf, isVisible, cachedPdfImage, isSvg]);
 
+  // Audio waveform loader: attempts real decoding via Web Audio API when in viewport
+  useEffect(() => {
+    if (!isAudio || !isVisible) return;
+    const cached = readWaveformCache(item.id);
+    if (cached && cached.length > 0) {
+      setWaveformBars(cached);
+    }
+
+    let active = true;
+    const loadWaveform = async () => {
+      try {
+        let blob = item.rawFile;
+        if (!blob && item.dataUrl?.startsWith('blob:')) {
+          try {
+            const res = await fetch(item.dataUrl);
+            blob = await res.blob();
+          } catch {
+            // dead blob URL fallback
+          }
+        }
+        if (!blob) {
+          blob = await dbService.fetchLibraryFileBlob(item);
+        }
+        if (active && blob) {
+          const peaks = await decodeWaveform(blob, 28);
+          if (active && peaks && peaks.length > 0) {
+            writeWaveformCache(item.id, peaks);
+            setWaveformBars(peaks);
+          }
+        }
+      } catch {
+        // keep deterministic waveform
+      }
+    };
+
+    void loadWaveform();
+    return () => {
+      active = false;
+    };
+  }, [item, isAudio, isVisible]);
+
+  // Spreadsheet grid loader: parses CSV or Excel into mini matrix when in viewport
+  useEffect(() => {
+    if (!isSpreadsheet || !isVisible) return;
+    const cached = readSpreadsheetCache(item.id);
+    if (cached && cached.length > 0) {
+      setSpreadsheetRows(cached);
+      return;
+    }
+    if (item.textContent) {
+      const parsed = parseDelimitedText(item.textContent, 5, 4);
+      if (parsed.length > 0) {
+        writeSpreadsheetCache(item.id, parsed);
+        setSpreadsheetRows(parsed);
+        return;
+      }
+    }
+
+    let active = true;
+    const loadSpreadsheet = async () => {
+      try {
+        let blob = item.rawFile;
+        if (!blob && item.dataUrl?.startsWith('blob:')) {
+          try {
+            const res = await fetch(item.dataUrl);
+            blob = await res.blob();
+          } catch {
+            // dead blob URL fallback
+          }
+        }
+        if (!blob) {
+          blob = await dbService.fetchLibraryFileBlob(item);
+        }
+        if (!active || !blob) return;
+
+        const lowerName = item.name.toLowerCase();
+        let rows: string[][] = [];
+        if (lowerName.endsWith('.csv') || lowerName.endsWith('.tsv') || item.type.includes('csv')) {
+          const text = await blob.slice(0, 4096).text();
+          rows = parseDelimitedText(text, 5, 4);
+        } else {
+          rows = await parseExcelBlob(blob, 5, 4);
+        }
+
+        if (active && rows.length > 0) {
+          writeSpreadsheetCache(item.id, rows);
+          setSpreadsheetRows(rows);
+        }
+      } catch {
+        // keep fallback
+      }
+    };
+
+    void loadSpreadsheet();
+    return () => {
+      active = false;
+    };
+  }, [item, isSpreadsheet, isVisible]);
+
   const ext = item.name.includes('.') ? item.name.slice(item.name.lastIndexOf('.') + 1).toUpperCase() : '';
 
   const sizeContainerClasses =
@@ -343,7 +572,7 @@ const LibraryItemThumbnailComponent: React.FC<LibraryItemThumbnailProps> = ({ it
           <img
             src={blobUrl}
             alt={item.name}
-            onError={() => setHasError(true)}
+            onError={handleImageError}
             className="w-full h-full object-contain pointer-events-none"
             loading="lazy"
           />
@@ -358,10 +587,57 @@ const LibraryItemThumbnailComponent: React.FC<LibraryItemThumbnailProps> = ({ it
       <img
         src={blobUrl}
         alt={item.name}
-        onError={() => setHasError(true)}
+        onError={handleImageError}
         className={`${imgSizeClasses} object-cover border border-[var(--theme-border-secondary)] bg-[var(--theme-bg-tertiary)] flex-shrink-0 ${className}`}
         loading="lazy"
       />
+    );
+  }
+
+  if (youtubeVideoId && !youtubeError) {
+    const ytSizeClasses =
+      size === 'sm'
+        ? 'w-10 h-10 rounded-lg'
+        : size === 'md'
+          ? 'w-16 h-16 rounded-xl'
+          : size === 'lg'
+            ? 'w-full h-40 rounded-t-2xl'
+            : 'w-full h-full';
+
+    const containerClassName = className.replace(/\bobject-(contain|cover|fill|none|scale-down)\b/g, '').trim();
+    const thumbnailUrl =
+      size === 'sm'
+        ? `https://img.youtube.com/vi/${youtubeVideoId}/mqdefault.jpg`
+        : `https://img.youtube.com/vi/${youtubeVideoId}/hqdefault.jpg`;
+
+    return (
+      <div
+        ref={containerRef}
+        data-thumbnail-kind="youtube"
+        className={`relative ${ytSizeClasses} overflow-hidden bg-black flex-shrink-0 flex items-center justify-center border border-[var(--theme-border-secondary)] ${containerClassName}`}
+      >
+        <img
+          src={thumbnailUrl}
+          alt={item.name}
+          onError={() => setYoutubeError(true)}
+          className={`w-full h-full object-cover pointer-events-none ${className}`}
+          loading="lazy"
+        />
+        <div className="absolute inset-0 flex items-center justify-center bg-black/25 pointer-events-none">
+          <div
+            className={`flex items-center justify-center rounded-full bg-red-600 text-white shadow-md transition-transform group-hover:scale-110 duration-200 ${
+              size === 'sm' ? 'w-4 h-4' : size === 'md' ? 'w-6 h-6' : 'w-10 h-10'
+            }`}
+          >
+            <Play size={size === 'sm' ? 8 : size === 'md' ? 12 : 20} fill="currentColor" className="ml-0.5" />
+          </div>
+        </div>
+        {size !== 'sm' && (
+          <div className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded bg-red-600/85 backdrop-blur-xs flex items-center gap-1 pointer-events-none text-white text-[10px] font-bold tracking-wider shadow-xs">
+            YOUTUBE
+          </div>
+        )}
+      </div>
     );
   }
 
@@ -377,14 +653,56 @@ const LibraryItemThumbnailComponent: React.FC<LibraryItemThumbnailProps> = ({ it
 
     const containerClassName = className.replace(/\bobject-(contain|cover|fill|none|scale-down)\b/g, '').trim();
 
+    if (videoPoster) {
+      return (
+        <div
+          ref={containerRef}
+          className={`relative ${videoSizeClasses} overflow-hidden bg-black/90 flex-shrink-0 flex items-center justify-center border border-[var(--theme-border-secondary)] ${containerClassName}`}
+        >
+          <img
+            src={videoPoster}
+            alt={item.name}
+            className={`w-full h-full object-cover pointer-events-none ${className}`}
+            loading="lazy"
+          />
+          <div
+            className={`absolute ${
+              size === 'sm' ? 'bottom-0.5 left-0.5 p-0.5' : 'bottom-2 left-2 px-1.5 py-0.5'
+            } rounded bg-black/60 backdrop-blur-xs flex items-center gap-1 pointer-events-none text-white shadow-xs`}
+          >
+            <Video size={size === 'sm' ? 9 : 12} strokeWidth={2} />
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div
-        ref={containerRef as React.RefObject<HTMLDivElement>}
+        ref={containerRef}
         className={`relative ${videoSizeClasses} overflow-hidden bg-black/90 flex-shrink-0 flex items-center justify-center border border-[var(--theme-border-secondary)] ${containerClassName}`}
       >
         <video
-          src={`${blobUrl}#t=0.1`}
-          onError={() => setHasError(true)}
+          src={blobUrl.includes('#') ? blobUrl : `${blobUrl}#t=0.1`}
+          onError={handleVideoError}
+          onLoadedData={(e) => {
+            const video = e.currentTarget;
+            try {
+              if (video.videoWidth > 0 && video.videoHeight > 0) {
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.min(video.videoWidth, 320);
+                canvas.height = Math.round((canvas.width / video.videoWidth) * video.videoHeight);
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                  const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                  writeThumbnailBlobCache(`poster:${item.id}`, dataUrl);
+                  setVideoPoster(dataUrl);
+                }
+              }
+            } catch {
+              // ignore
+            }
+          }}
           onLoadedMetadata={(e) => {
             try {
               const dur = e.currentTarget.duration;
@@ -479,19 +797,18 @@ const LibraryItemThumbnailComponent: React.FC<LibraryItemThumbnailProps> = ({ it
         <div
           className={`relative ${textSnippetSizeClasses} overflow-hidden bg-[#181825] text-[#cdd6f4] flex-shrink-0 flex flex-col border border-[var(--theme-border-secondary)] font-mono select-none ${containerClassName}`}
         >
-          {/* Editor Header Bar */}
           <div className="flex items-center justify-between px-3 py-1.5 bg-[#11111b] border-b border-white/5 shrink-0">
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-[#f38ba8]/80" />
-              <div className="w-2 h-2 rounded-full bg-[#f9e2af]/80" />
-              <div className="w-2 h-2 rounded-full bg-[#a6e3a1]/80" />
+            <div className="flex items-center gap-1.5 min-w-0">
+              <FileCode size={12} className="text-white/40 shrink-0" />
+              <span className="text-[10px] text-white/70 font-sans font-medium truncate max-w-[150px]">
+                {item.name}
+              </span>
             </div>
-            <span className="font-semibold tracking-wider text-[9px] text-white/50 uppercase">
+            <span className="font-semibold tracking-wider text-[9px] text-white/50 uppercase shrink-0">
               {displayExt}
             </span>
           </div>
 
-          {/* Snippet Lines */}
           <div className="p-2.5 sm:p-3 flex-1 overflow-hidden flex flex-col justify-start gap-1 font-mono text-[10px] leading-[1.55]">
             {textLines.map((line, idx) => (
               <div key={idx} className="flex items-start gap-2 min-w-0">
@@ -505,7 +822,6 @@ const LibraryItemThumbnailComponent: React.FC<LibraryItemThumbnailProps> = ({ it
             ))}
           </div>
 
-          {/* Language / format pill badge in bottom left */}
           <div className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-xs flex items-center gap-1 pointer-events-none text-white/90 text-[10px] font-bold tracking-wider shadow-xs uppercase">
             {displayExt}
           </div>
@@ -552,7 +868,7 @@ const LibraryItemThumbnailComponent: React.FC<LibraryItemThumbnailProps> = ({ it
   if (fileType === 'pdf') {
     return (
       <div
-        ref={containerRef as React.RefObject<HTMLDivElement>}
+        ref={containerRef}
         className={`${sizeContainerClasses} flex flex-col items-center justify-center bg-red-500/10 text-red-500 border border-red-500/20 font-semibold flex-shrink-0 ${className}`}
       >
         <span className="text-[10px] font-bold tracking-wider leading-none">PDF</span>
@@ -560,21 +876,143 @@ const LibraryItemThumbnailComponent: React.FC<LibraryItemThumbnailProps> = ({ it
     );
   }
 
-  if (fileType === 'spreadsheet') {
-    return (
-      <div
-        ref={containerRef as React.RefObject<HTMLDivElement>}
-        className={`${sizeContainerClasses} flex flex-col items-center justify-center bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 font-semibold flex-shrink-0 ${className}`}
-      >
-        <FileSpreadsheet size={size === 'sm' ? 18 : 26} strokeWidth={2} />
-      </div>
-    );
+  if (isSpreadsheet) {
+    const spreadsheetSizeClasses =
+      size === 'sm'
+        ? 'w-10 h-10 rounded-lg'
+        : size === 'md'
+          ? 'w-16 h-16 rounded-xl'
+          : size === 'lg'
+            ? 'w-full h-40 rounded-t-2xl'
+            : 'w-full h-full';
+
+    const containerClassName = className.replace(/\bobject-(contain|cover|fill|none|scale-down)\b/g, '').trim();
+    const displayExt = ext || 'XLSX';
+
+    const numCols = 4;
+    const colLabels = ['A', 'B', 'C', 'D'];
+    const rowsToDisplay =
+      spreadsheetRows.length > 0
+        ? spreadsheetRows.slice(0, 5)
+        : [
+            ['Item', 'Qty', 'Price', 'Status'],
+            ['Alpha', '12', '$240', 'Active'],
+            ['Beta', '4', '$85', 'Pending'],
+            ['Gamma', '89', '$1,290', 'Done'],
+          ];
+
+    if (size === 'full' || size === 'lg') {
+      return (
+        <div
+          ref={containerRef}
+          className={`relative ${spreadsheetSizeClasses} overflow-hidden bg-[#071911] text-[#a7f3d0] flex-shrink-0 flex flex-col border border-[var(--theme-border-secondary)] font-mono select-none ${containerClassName}`}
+        >
+          <div className="flex items-center justify-between px-3 py-1.5 bg-[#04120c] border-b border-emerald-500/20 shrink-0">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Table size={12} className="text-emerald-400 shrink-0" />
+              <span className="text-[10px] text-emerald-200/90 font-sans font-medium truncate max-w-[150px]">
+                {item.name}
+              </span>
+            </div>
+            <span className="font-semibold tracking-wider text-[9px] text-emerald-400/80 uppercase shrink-0">
+              {displayExt}
+            </span>
+          </div>
+
+          <div className="p-2 flex-1 overflow-hidden flex flex-col relative font-mono text-[9px]">
+            <div className="grid grid-cols-5 gap-0.5 mb-0.5">
+              <div className="text-center py-0.5 text-[8px] text-emerald-500/50 bg-emerald-950/70 rounded-xs font-bold">#</div>
+              {colLabels.slice(0, numCols).map((col) => (
+                <div
+                  key={col}
+                  className="text-center py-0.5 text-[8px] text-emerald-300 font-bold bg-emerald-950/70 rounded-xs uppercase"
+                >
+                  {col}
+                </div>
+              ))}
+            </div>
+
+            <div className="flex flex-col gap-0.5 flex-1 overflow-hidden">
+              {rowsToDisplay.map((row, rIdx) => (
+                <div key={rIdx} className="grid grid-cols-5 gap-0.5 items-center">
+                  <div className="text-center py-0.5 text-[8px] text-emerald-500/40 bg-emerald-950/30 rounded-xs select-none">
+                    {rIdx + 1}
+                  </div>
+                  {Array.from({ length: numCols }).map((_, cIdx) => {
+                    const val = row[cIdx] !== undefined ? String(row[cIdx]) : '';
+                    return (
+                      <div
+                        key={cIdx}
+                        className={`truncate px-1 py-0.5 text-[8.5px] rounded-xs ${
+                          rIdx === 0 && spreadsheetRows.length > 0
+                            ? 'font-bold text-emerald-200 bg-emerald-900/40'
+                            : 'text-emerald-100/80 bg-emerald-950/20'
+                        }`}
+                      >
+                        {val || '\u00A0'}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+
+            <div className="absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-[#071911] to-transparent pointer-events-none" />
+          </div>
+
+          <div className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded bg-emerald-800/80 backdrop-blur-xs flex items-center gap-1 pointer-events-none text-white text-[10px] font-bold tracking-wider shadow-xs uppercase">
+            {displayExt}
+          </div>
+        </div>
+      );
+    }
+
+    if (size === 'md') {
+      return (
+        <div
+          ref={containerRef}
+          className={`relative ${spreadsheetSizeClasses} overflow-hidden bg-[#071911] text-[#a7f3d0] flex-shrink-0 flex flex-col justify-between p-2 border border-emerald-500/30 font-mono select-none ${containerClassName}`}
+        >
+          <div className="flex flex-col gap-1 overflow-hidden text-[7px] leading-tight">
+            {rowsToDisplay.slice(0, 3).map((row, idx) => (
+              <div key={idx} className="flex gap-1 truncate text-emerald-200/80">
+                <span className="w-2.5 text-emerald-500/50">{idx + 1}</span>
+                <span className="truncate">{row.filter(Boolean).slice(0, 2).join(' · ') || '...'}</span>
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center justify-between pt-1 border-t border-emerald-500/20">
+            <Table size={10} className="text-emerald-400" />
+            <span className="text-[9px] font-bold text-emerald-400 tracking-wider uppercase">
+              {displayExt.slice(0, 4)}
+            </span>
+          </div>
+        </div>
+      );
+    }
+
+    if (size === 'sm') {
+      return (
+        <div
+          ref={containerRef}
+          className="w-10 h-10 rounded-lg flex flex-col items-center justify-center bg-[#071911] text-emerald-400 border border-emerald-500/30 font-semibold flex-shrink-0 font-mono shadow-xs"
+        >
+          {displayExt && displayExt.length <= 4 ? (
+            <span className="text-[10px] font-bold tracking-wider leading-none text-emerald-400 uppercase font-mono">
+              {displayExt}
+            </span>
+          ) : (
+            <FileSpreadsheet size={18} strokeWidth={2} className="text-emerald-400" />
+          )}
+        </div>
+      );
+    }
   }
 
   if (fileType === 'presentation') {
     return (
       <div
-        ref={containerRef as React.RefObject<HTMLDivElement>}
+        ref={containerRef}
         className={`${sizeContainerClasses} flex flex-col items-center justify-center bg-amber-500/10 text-amber-600 border border-amber-500/20 font-semibold flex-shrink-0 ${className}`}
       >
         <Presentation size={size === 'sm' ? 18 : 26} strokeWidth={2} />
@@ -585,7 +1023,7 @@ const LibraryItemThumbnailComponent: React.FC<LibraryItemThumbnailProps> = ({ it
   if (isVideo) {
     return (
       <div
-        ref={containerRef as React.RefObject<HTMLDivElement>}
+        ref={containerRef}
         className={`${sizeContainerClasses} flex flex-col items-center justify-center bg-indigo-500/10 text-indigo-500 border border-indigo-500/20 font-semibold flex-shrink-0 ${className}`}
       >
         <Video size={size === 'sm' ? 18 : 26} strokeWidth={2} />
@@ -594,20 +1032,105 @@ const LibraryItemThumbnailComponent: React.FC<LibraryItemThumbnailProps> = ({ it
   }
 
   if (isAudio) {
-    return (
-      <div
-        ref={containerRef as React.RefObject<HTMLDivElement>}
-        className={`${sizeContainerClasses} flex flex-col items-center justify-center bg-purple-500/10 text-purple-500 border border-purple-500/20 font-semibold flex-shrink-0 ${className}`}
-      >
-        <Music size={size === 'sm' ? 18 : 26} strokeWidth={2} />
-      </div>
-    );
+    const audioSizeClasses =
+      size === 'sm'
+        ? 'w-10 h-10 rounded-lg'
+        : size === 'md'
+          ? 'w-16 h-16 rounded-xl'
+          : size === 'lg'
+            ? 'w-full h-40 rounded-t-2xl'
+            : 'w-full h-full';
+
+    const containerClassName = className.replace(/\bobject-(contain|cover|fill|none|scale-down)\b/g, '').trim();
+    const displayExt = ext || 'AUDIO';
+    const bars = waveformBars.length > 0 ? waveformBars : generateWaveform(`${item.id}:${item.name}`);
+
+    if (size === 'full' || size === 'lg') {
+      return (
+        <div
+          ref={containerRef}
+          className={`relative ${audioSizeClasses} overflow-hidden bg-neutral-50/90 dark:bg-neutral-900/80 text-[var(--theme-text-primary)] flex-shrink-0 flex flex-col justify-center items-center border border-[var(--theme-border-secondary)] select-none transition-colors duration-200 group/audio ${containerClassName}`}
+        >
+          <div className="absolute top-2.5 right-2.5 z-10">
+            <span className="font-mono text-[9px] font-semibold tracking-wider px-2 py-0.5 rounded-md uppercase bg-neutral-200/70 dark:bg-neutral-800/80 text-neutral-600 dark:text-neutral-400 border border-neutral-300/50 dark:border-neutral-700/50 shadow-xs pointer-events-none">
+              {displayExt}
+            </span>
+          </div>
+
+          <span className="sr-only">{item.name}</span>
+
+          <div className="relative w-full h-full flex flex-col items-center justify-center px-6 py-4">
+            <div className="absolute inset-x-8 top-1/2 -translate-y-1/2 h-px bg-neutral-200/80 dark:bg-neutral-800 pointer-events-none" />
+
+            <div className="flex items-center justify-center gap-[3px] h-20 w-full max-w-[260px] px-2 overflow-hidden z-10">
+              {bars.slice(0, 36).map((height, i) => (
+                <span
+                  key={i}
+                  className="w-[3px] rounded-full bg-neutral-400/80 dark:bg-neutral-500/80 group-hover/audio:bg-neutral-800 dark:group-hover/audio:bg-neutral-200 transition-all duration-200 shrink-0"
+                  style={{
+                    height: `${Math.max(12, Math.round(height * 100))}%`,
+                    minHeight: '6px',
+                  }}
+                />
+              ))}
+            </div>
+
+            <div className="absolute inset-0 m-auto w-10 h-10 rounded-full bg-neutral-900/85 dark:bg-white/90 text-white dark:text-neutral-900 shadow-md flex items-center justify-center opacity-0 group-hover/audio:opacity-100 group-hover/audio:scale-100 scale-90 transition-all duration-200 pointer-events-none z-20 backdrop-blur-xs">
+              <Play size={15} fill="currentColor" className="ml-0.5" />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (size === 'md') {
+      return (
+        <div
+          ref={containerRef}
+          className={`relative ${audioSizeClasses} overflow-hidden bg-neutral-100 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 flex-shrink-0 flex flex-col justify-between p-2 border border-neutral-200 dark:border-neutral-800 select-none ${containerClassName}`}
+        >
+          <div className="flex items-center justify-center pt-0.5">
+            <Music size={14} className="text-neutral-600 dark:text-neutral-400" />
+          </div>
+          <div className="flex items-center justify-center gap-[2px] h-5 w-full overflow-hidden">
+            {bars.slice(0, 10).map((height, i) => (
+              <span
+                key={i}
+                className="w-[2px] rounded-full bg-neutral-400 dark:bg-neutral-500"
+                style={{ height: `${Math.max(20, Math.round(height * 100))}%` }}
+              />
+            ))}
+          </div>
+          <div className="flex justify-center">
+            <span className="text-[8px] font-mono font-semibold text-neutral-500 dark:text-neutral-400 tracking-wider uppercase">
+              {displayExt.slice(0, 4)}
+            </span>
+          </div>
+        </div>
+      );
+    }
+
+    if (size === 'sm') {
+      return (
+        <div
+          ref={containerRef}
+          className="w-10 h-10 rounded-lg flex items-center justify-center bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-800 shadow-xs flex-shrink-0"
+        >
+          <div className="flex items-end justify-center gap-[2px] h-4">
+            <span className="w-[2.5px] h-2.5 rounded-full bg-neutral-400 dark:bg-neutral-500" />
+            <span className="w-[2.5px] h-4 rounded-full bg-neutral-700 dark:bg-neutral-300" />
+            <span className="w-[2.5px] h-3 rounded-full bg-neutral-500 dark:bg-neutral-400" />
+            <span className="w-[2.5px] h-1.5 rounded-full bg-neutral-400/80 dark:bg-neutral-600" />
+          </div>
+        </div>
+      );
+    }
   }
 
   if (isImage) {
     return (
       <div
-        ref={containerRef as React.RefObject<HTMLDivElement>}
+        ref={containerRef}
         className={`${sizeContainerClasses} flex flex-col items-center justify-center bg-blue-500/10 text-blue-500 border border-blue-500/20 font-semibold flex-shrink-0 ${className}`}
       >
         <ImageIcon size={size === 'sm' ? 18 : 26} strokeWidth={2} />
@@ -615,15 +1138,18 @@ const LibraryItemThumbnailComponent: React.FC<LibraryItemThumbnailProps> = ({ it
     );
   }
 
+  const { Icon: FallbackIcon, colorClass, bgClass } = getFileDisplayMeta({ name: item.name, type: item.type });
+  const isYoutubeCategory = Boolean(youtubeVideoId) || item.type === 'video/youtube-link';
+
   return (
     <div
-      ref={containerRef as React.RefObject<HTMLDivElement>}
-      className={`${sizeContainerClasses} flex flex-col items-center justify-center bg-[var(--theme-bg-tertiary)] text-[var(--theme-text-secondary)] border border-[var(--theme-border-secondary)] font-semibold flex-shrink-0 ${className}`}
+      ref={containerRef}
+      className={`${sizeContainerClasses} flex flex-col items-center justify-center ${bgClass} ${colorClass} border border-current/20 font-semibold flex-shrink-0 ${className}`}
     >
-      {ext && ext.length <= 4 ? (
+      {!isYoutubeCategory && ext && ext.length <= 4 ? (
         <span className="text-[10px] font-bold tracking-wider leading-none uppercase">{ext}</span>
       ) : (
-        <FileText size={size === 'sm' ? 18 : 26} strokeWidth={2} />
+        <FallbackIcon size={size === 'sm' ? 18 : 26} strokeWidth={2} />
       )}
     </div>
   );
@@ -639,5 +1165,8 @@ export const LibraryItemThumbnail = React.memo<LibraryItemThumbnailProps>(
     prev.item.type === next.item.type &&
     prev.item.size === next.item.size &&
     prev.item.dataUrl === next.item.dataUrl &&
+    prev.item.fileUri === next.item.fileUri &&
+    prev.item.rawFile === next.item.rawFile &&
+    prev.item.sessionId === next.item.sessionId &&
     prev.item.textContent === next.item.textContent,
 );

@@ -45,9 +45,7 @@ export enum MediaResolution {
 }
 
 export type ImageOutputMode = 'IMAGE_TEXT' | 'IMAGE_ONLY';
-/** All valid API modes — used for both type checking and runtime validation. */
-export const API_MODES = ['gemini-native', 'third-party'] as const;
-export type ApiMode = (typeof API_MODES)[number];
+export type ApiMode = 'gemini-native' | 'third-party';
 
 /** The built-in Gemini provider id used in session routing. */
 export const GEMINI_PROVIDER_ID = 'gemini-native';
@@ -170,6 +168,12 @@ export interface FilesApiConfig {
   text: boolean;
 }
 
+export interface GeoLocationCoordinates {
+  latitude: number;
+  longitude: number;
+  name?: string;
+}
+
 export interface ChatSettings {
   modelId: string;
   /** Which provider this session's modelId belongs to. Absent = gemini-native. */
@@ -185,6 +189,8 @@ export interface ChatSettings {
   lockedApiKey?: string | null;
   isGoogleSearchEnabled?: boolean;
   isGoogleMapsEnabled?: boolean;
+  /** Optional location coordinates for Google Maps Grounding retrievalConfig. */
+  googleMapsLocation?: GeoLocationCoordinates;
   isCodeExecutionEnabled?: boolean;
   isLocalPythonEnabled?: boolean;
   isUrlContextEnabled?: boolean;

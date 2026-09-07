@@ -182,4 +182,84 @@ describe('libraryRecords service', () => {
     expect(historicalFiles[1].sessionTitle).toBe('Session Two');
     expect(historicalFiles[1].source).toBe('generated');
   });
+
+  it('decodes base64 dataUrl when rawFile is missing in fetchLibraryFileBlob', async () => {
+    // 'aGVsbG8=' is base64 for 'hello'
+    const item: LibraryItem = {
+      id: 'file-b64',
+      name: 'inline.png',
+      type: 'image/png',
+      size: 5,
+      timestamp: 1,
+      source: 'uploaded',
+      dataUrl: 'data:image/png;base64,aGVsbG8=',
+    };
+
+    const blob = await fetchLibraryFileBlob(item);
+    expect(blob).toBeInstanceOf(Blob);
+    expect(blob?.type).toBe('image/png');
+    const text = await blob?.text();
+    expect(text).toBe('hello');
+  });
+
+  it('retrieves blob from historical session in SESSIONS_STORE when not in FILES_STORE', async () => {
+    const sessionBlob = new Blob(['session content'], { type: 'image/jpeg' });
+    mockStore['session-hist-1'] = {
+      id: 'session-hist-1',
+      title: 'Historical',
+      messages: [
+        {
+          id: 'msg-h1',
+          files: [
+            {
+              id: 'f-hist-1',
+              name: 'hist.jpg',
+              type: 'image/jpeg',
+              rawFile: sessionBlob,
+            },
+          ],
+        },
+      ],
+    };
+
+    const item: LibraryItem = {
+      id: 'f-hist-1',
+      name: 'hist.jpg',
+      type: 'image/jpeg',
+      size: 15,
+      timestamp: 1,
+      sessionId: 'session-hist-1',
+      source: 'uploaded',
+    };
+
+    const blob = await fetchLibraryFileBlob(item);
+    expect(blob).toBe(sessionBlob);
+  });
+
+  it('retrieves blob from standalone storage when not in FILES_STORE', async () => {
+    const standaloneBlob = new Blob(['standalone content'], { type: 'image/png' });
+    mockStore['amc_library_standalone_files_v1'] = [
+      {
+        id: 'lib-solo',
+        name: 'solo.png',
+        type: 'image/png',
+        size: 18,
+        rawFile: standaloneBlob,
+        isStandalone: true,
+      },
+    ];
+
+    const item: LibraryItem = {
+      id: 'lib-solo',
+      name: 'solo.png',
+      type: 'image/png',
+      size: 18,
+      timestamp: 1,
+      isStandalone: true,
+      source: 'uploaded',
+    };
+
+    const blob = await fetchLibraryFileBlob(item);
+    expect(blob).toBe(standaloneBlob);
+  });
 });

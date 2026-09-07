@@ -299,7 +299,7 @@ const MODEL_ID_KEYWORD_RULES: Array<{ keywords: string[]; logoKey: string }> = [
   { keywords: ['spark'], logoKey: 'spark' },
   // 讯飞星火提供商
   { keywords: ['xinghuo', 'xirang', 'xunfei'], logoKey: 'xinghuo' },
-  { keywords: ['openai', 'gpt', 'chatgpt', 'codex', 'o1', 'o3', 'o4', 'dall-e', 'whisper'], logoKey: 'openai' },
+  { keywords: ['openai', 'gpt', 'chatgpt', 'codex', 'o4', 'dall-e', 'whisper'], logoKey: 'openai' },
   { keywords: ['openrouter'], logoKey: 'openrouter' },
 ];
 

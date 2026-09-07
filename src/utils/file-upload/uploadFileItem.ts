@@ -18,10 +18,8 @@ import {
   getUploadLifecycleForGeminiState,
   shouldUseFileApi,
 } from './fileUploadPolicy';
-import { getTranslator } from '@/i18n/translations';
+import { getTranslator, type Translator } from '@/i18n/translations';
 import { interpolate, formatI18nErrorMessage } from '@/i18n/interpolate';
-
-type Translator = ReturnType<typeof getTranslator>;
 
 const UPLOAD_SPEED_UPDATE_INTERVAL_MS = 500;
 const PERCENT_MULTIPLIER = 100;

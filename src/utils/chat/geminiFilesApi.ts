@@ -1,4 +1,4 @@
-import type { ChatMessage, SavedChatSession, UploadedFile } from '@/types';
+import type { ChatMessage, ContentPart, SavedChatSession, UploadedFile } from '@/types';
 import { getErrorMessage } from '@/utils/errorMessage';
 import { usesRemoteFileReference } from './fileTransferStrategy';
 
@@ -125,7 +125,7 @@ export const formatHistoryFileApiUnavailablePartText = (fileName: string): strin
 export const INVALID_FILE_API_KEY_FINGERPRINT = 'invalidated';
 
 const FILES_API_PERMISSION_DENIED_PATTERN =
-  /You do not have permission to access the File|(?:\b403\b|PERMISSION_DENIED).*?\bFile\b|\bFile\b.*?(?:\b403\b|PERMISSION_DENIED)/i;
+  /You do not have permission to access the File|(?:\b403\b|\b404\b|PERMISSION_DENIED|NOT_FOUND).*?\bFile\b|\bFile\b.*?(?:\b403\b|\b404\b|PERMISSION_DENIED|NOT_FOUND|expired|deleted|not found|not exist)/i;
 
 export const isFilesApiPermissionDeniedError = (error: unknown): boolean =>
   FILES_API_PERMISSION_DENIED_PATTERN.test(getErrorMessage(error));
@@ -133,7 +133,9 @@ export const isFilesApiPermissionDeniedError = (error: unknown): boolean =>
 export const extractFilesApiIdentifierFromError = (error: unknown): string | null => {
   const message = getErrorMessage(error);
   const match =
-    message.match(/permission to access the File\s+([a-zA-Z0-9_-]+)/i) || message.match(/files\/([a-zA-Z0-9_-]+)/i);
+    message.match(/permission to access the File\s+([a-zA-Z0-9_-]+)/i) ||
+    message.match(/files\/([a-zA-Z0-9_-]+)/i) ||
+    message.match(/File\s+([a-zA-Z0-9_-]+)/i);
   return match ? match[1] : null;
 };
 
@@ -164,30 +166,60 @@ export const invalidateSessionFilesApiReferences = (session: SavedChatSession, e
     );
   };
 
+  const partMatches = (part: ContentPart, targetId?: string | null): boolean => {
+    const fileUri = part.fileData?.fileUri;
+    if (!fileUri) return false;
+    const fileApiName = getGeminiFilesApiNameFromUri(fileUri);
+    if (!fileApiName) return false;
+    if (!targetId) return true;
+    return fileUri.includes(targetId) || fileApiName.includes(targetId);
+  };
+
   const hasSpecificMatch = targetIdentifier
-    ? session.messages.some((msg) => msg.files?.some((file) => fileMatches(file, targetIdentifier)))
+    ? session.messages.some(
+        (msg) =>
+          msg.files?.some((file) => fileMatches(file, targetIdentifier)) ||
+          msg.apiParts?.some((part) => partMatches(part, targetIdentifier)),
+      )
     : false;
 
   const targetToUse = hasSpecificMatch ? targetIdentifier : null;
 
   let sessionChanged = false;
   const nextMessages = session.messages.map((message) => {
-    if (!message.files?.length) {
-      return message;
+    let messageChanged = false;
+    let nextFiles = message.files;
+    let nextApiParts = message.apiParts;
+
+    if (message.files?.length) {
+      nextFiles = message.files.map((file) => {
+        if (fileMatches(file, targetToUse)) {
+          messageChanged = true;
+          return invalidateFilesApiReference(file);
+        }
+        return file;
+      });
     }
 
-    let messageChanged = false;
-    const nextFiles = message.files.map((file) => {
-      if (fileMatches(file, targetToUse)) {
-        messageChanged = true;
-        return invalidateFilesApiReference(file);
-      }
-      return file;
-    });
+    if (message.apiParts?.length) {
+      nextApiParts = message.apiParts.map((part) => {
+        if (partMatches(part, targetToUse)) {
+          messageChanged = true;
+          const matchingFile = message.files?.find((f) => fileMatches(f, targetToUse));
+          const fileName = matchingFile?.name || (targetIdentifier ? `File ${targetIdentifier}` : 'file');
+          return { text: formatHistoryFileApiUnavailablePartText(fileName) };
+        }
+        return part;
+      });
+    }
 
     if (messageChanged) {
       sessionChanged = true;
-      return { ...message, files: nextFiles };
+      return {
+        ...message,
+        ...(nextFiles !== undefined ? { files: nextFiles } : {}),
+        ...(nextApiParts !== undefined ? { apiParts: nextApiParts } : {}),
+      };
     }
     return message;
   });

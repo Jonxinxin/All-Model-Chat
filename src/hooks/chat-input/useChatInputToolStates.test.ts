@@ -91,6 +91,67 @@ describe('getNextSettingsForToolToggle — search tools mutual exclusion', () =>
   });
 });
 
+describe('getNextSettingsForToolToggle — search and maps combination on Gemini 3 models', () => {
+  const gemini3Settings = (overrides: Partial<ChatSettings> = {}): ChatSettings =>
+    createChatSettings({ modelId: 'gemini-3.8-flash', ...overrides });
+
+  it('enabling googleSearch preserves googleMaps', () => {
+    const next = getNextSettingsForToolToggle(
+      gemini3Settings({ isGoogleSearchEnabled: false, isGoogleMapsEnabled: true, isDeepSearchEnabled: false }),
+      'googleSearch',
+    );
+    expect(next.isGoogleSearchEnabled).toBe(true);
+    expect(next.isGoogleMapsEnabled).toBe(true);
+  });
+
+  it('enabling googleSearch still disables deepSearch', () => {
+    const next = getNextSettingsForToolToggle(
+      gemini3Settings({ isGoogleSearchEnabled: false, isDeepSearchEnabled: true, isGoogleMapsEnabled: true }),
+      'googleSearch',
+    );
+    expect(next.isGoogleSearchEnabled).toBe(true);
+    expect(next.isDeepSearchEnabled).toBe(false);
+    expect(next.isGoogleMapsEnabled).toBe(true);
+  });
+
+  it('enabling deepSearch preserves googleMaps', () => {
+    const next = getNextSettingsForToolToggle(
+      gemini3Settings({ isDeepSearchEnabled: false, isGoogleMapsEnabled: true, isGoogleSearchEnabled: false }),
+      'deepSearch',
+    );
+    expect(next.isDeepSearchEnabled).toBe(true);
+    expect(next.isGoogleMapsEnabled).toBe(true);
+  });
+
+  it('enabling deepSearch disables googleSearch', () => {
+    const next = getNextSettingsForToolToggle(
+      gemini3Settings({ isDeepSearchEnabled: false, isGoogleSearchEnabled: true, isGoogleMapsEnabled: true }),
+      'deepSearch',
+    );
+    expect(next.isDeepSearchEnabled).toBe(true);
+    expect(next.isGoogleSearchEnabled).toBe(false);
+    expect(next.isGoogleMapsEnabled).toBe(true);
+  });
+
+  it('enabling googleMaps preserves googleSearch on Gemini 3', () => {
+    const next = getNextSettingsForToolToggle(
+      gemini3Settings({ isGoogleMapsEnabled: false, isGoogleSearchEnabled: true, isDeepSearchEnabled: false }),
+      'googleMaps',
+    );
+    expect(next.isGoogleMapsEnabled).toBe(true);
+    expect(next.isGoogleSearchEnabled).toBe(true);
+  });
+
+  it('enabling googleMaps preserves deepSearch on Gemini 3', () => {
+    const next = getNextSettingsForToolToggle(
+      gemini3Settings({ isGoogleMapsEnabled: false, isDeepSearchEnabled: true, isGoogleSearchEnabled: false }),
+      'googleMaps',
+    );
+    expect(next.isGoogleMapsEnabled).toBe(true);
+    expect(next.isDeepSearchEnabled).toBe(true);
+  });
+});
+
 // Regression: the tool gates must mirror the ACTIVE SESSION's routing key
 // (providerId), not a global appSettings mode. When a chat switch leaves a
 // global mode stale, a global-based gate would hide badges on sessions that

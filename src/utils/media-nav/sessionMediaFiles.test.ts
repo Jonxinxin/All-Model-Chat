@@ -12,6 +12,7 @@ import {
   partsContainImage,
   partsContainPdf,
   partsContainVideo,
+  resolveNamedFile,
 } from './sessionMediaFiles';
 
 const makeFile = (overrides: Partial<UploadedFile> = {}): UploadedFile => ({
@@ -102,3 +103,51 @@ describe('partsContain', () => {
     expect(partsContainImage(undefined)).toBe(false);
   });
 });
+
+describe('resolveNamedFile', () => {
+  const files = [
+    makeFile({ id: 'f1', name: '2024 Financial Report.pdf' }),
+    makeFile({ id: 'f2', name: 'diagram_architecture.png', type: 'image/png' }),
+    makeFile({ id: 'f3', name: 'keynote_presentation.mp4', type: 'video/mp4' }),
+  ];
+
+  it('returns undefined on empty file list', () => {
+    expect(resolveNamedFile([])).toBeUndefined();
+  });
+
+  it('resolves exact match', () => {
+    expect(resolveNamedFile(files, '2024 Financial Report.pdf')?.id).toBe('f1');
+  });
+
+  it('resolves case-insensitively', () => {
+    expect(resolveNamedFile(files, 'DIAGRAM_ARCHITECTURE.PNG')?.id).toBe('f2');
+  });
+
+  it('resolves when path prefixes are present in the locator name', () => {
+    expect(resolveNamedFile(files, '/workspace/docs/2024 Financial Report.pdf')?.id).toBe('f1');
+    expect(resolveNamedFile(files, 'C:\\Users\\admin\\keynote_presentation.mp4')?.id).toBe('f3');
+  });
+
+  it('resolves when file extension is omitted in locateName', () => {
+    expect(resolveNamedFile(files, 'diagram_architecture')?.id).toBe('f2');
+  });
+
+  it('resolves when file list has no extension but locateName includes it', () => {
+    const filesNoExt = [makeFile({ id: 'no-ext', name: 'annual_summary' })];
+    expect(resolveNamedFile(filesNoExt, 'annual_summary.pdf')?.id).toBe('no-ext');
+  });
+
+  it('resolves by substring match', () => {
+    expect(resolveNamedFile(files, 'Financial Report')?.id).toBe('f1');
+    expect(resolveNamedFile(files, 'keynote')?.id).toBe('f3');
+  });
+
+  it('falls back to activeFileId when no locateName is provided', () => {
+    expect(resolveNamedFile(files, undefined, 'f2')?.id).toBe('f2');
+  });
+
+  it('falls back to first file when locator does not match and no activeFileId', () => {
+    expect(resolveNamedFile(files, 'non-existent-doc.pdf')?.id).toBe('f1');
+  });
+});
+

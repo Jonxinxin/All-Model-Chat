@@ -8,6 +8,8 @@ import type {
   OpenAIResponsesInputItem,
   OpenAIResponsesRequestBody,
 } from './openaiResponsesTypes';
+import { collapseOnlyTextContent, hasNonEmptyMessageContent } from './chatMessageContent';
+import { isOpenAIGpt5FamilyModel, isOpenAIReasoningModel } from '@/utils/model/modelCapabilities';
 
 const OPENAI_RESPONSES_FILE_DATA_ERROR = 'OpenAI Responses mode cannot send Gemini Files API file references.';
 
@@ -81,22 +83,11 @@ const partToOpenAIResponsesContentItems = (part: Part): OpenAIResponsesContentPa
   return [];
 };
 
-const partsToOpenAIResponsesContent = (parts: Part[]): string | OpenAIResponsesContentPart[] => {
-  const contentItems = parts.flatMap(partToOpenAIResponsesContentItems);
-  const hasOnlyText = contentItems.every((item) => item.type === 'input_text');
-
-  if (hasOnlyText) {
-    return contentItems
-      .map((item) => (item.type === 'input_text' ? item.text : ''))
-      .filter(Boolean)
-      .join('\n');
-  }
-
-  return contentItems;
-};
-
-const hasContent = (content: string | OpenAIResponsesContentPart[]) =>
-  typeof content === 'string' ? content.trim().length > 0 : content.length > 0;
+const partsToOpenAIResponsesContent = (parts: Part[]): string | OpenAIResponsesContentPart[] =>
+  collapseOnlyTextContent(
+    parts.flatMap(partToOpenAIResponsesContentItems),
+    (item) => (item.type === 'input_text' ? item.text : null),
+  );
 
 const buildOpenAIResponsesInput = (
   history: ChatHistoryItem[],
@@ -107,7 +98,7 @@ const buildOpenAIResponsesInput = (
 
   for (const item of history) {
     const content = partsToOpenAIResponsesContent(item.parts);
-    if (!hasContent(content)) {
+    if (!hasNonEmptyMessageContent(content)) {
       continue;
     }
 
@@ -118,7 +109,7 @@ const buildOpenAIResponsesInput = (
   }
 
   const currentContent = partsToOpenAIResponsesContent(parts);
-  if (hasContent(currentContent)) {
+  if (hasNonEmptyMessageContent(currentContent)) {
     input.push({
       role: role === 'model' ? 'assistant' : 'user',
       content: currentContent,
@@ -157,7 +148,7 @@ export const buildOpenAIResponsesRequestBody = (
     body.max_output_tokens = config.maxOutputTokens;
   }
 
-  if (config.thinkingLevel) {
+  if (config.thinkingLevel && (isOpenAIReasoningModel(modelId) || isOpenAIGpt5FamilyModel(modelId))) {
     body.reasoning = {
       effort: mapThinkingLevelToOpenAIReasoningEffort(config.thinkingLevel),
     };

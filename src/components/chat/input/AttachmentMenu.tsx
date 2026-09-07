@@ -1,8 +1,8 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { Paperclip, FolderOpen, Library } from 'lucide-react';
+import { Paperclip, FolderOpen, Library, FileArchive } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
-import type { AttachmentAction } from '@/types';
+import { type AttachmentAction, GEMINI_PROVIDER_ID } from '@/types';
 import {
   IconUpload,
   IconGallery,
@@ -11,12 +11,12 @@ import {
   IconMicrophone,
   IconCloud,
   IconFileEdit,
-  IconZip,
   IconYoutube,
 } from '@/components/icons';
 import { CHAT_INPUT_BUTTON_CLASS } from '@/constants/buttonClasses';
 import { MENU_ITEM_BUTTON_CLASS, MENU_ITEM_DEFAULT_STATE_CLASS } from '@/constants/menuClasses';
 import { usePortaledMenu } from '@/hooks/ui/usePortaledMenu';
+import { useIsMobile } from '@/hooks/useDevice';
 import { useChatInputActionsContext } from './ChatInputContext';
 import { isGemmaModel } from '@/utils/model/modelCapabilities';
 
@@ -31,12 +31,15 @@ export const AttachmentMenu: React.FC = () => {
     isTranscribeModel,
     canAddYouTubeVideo,
     currentModelId,
+    providerId,
   } = useChatInputActionsContext();
   const { t } = useI18n();
+  const isMobile = useIsMobile();
   const { isOpen, menuPosition, containerRef, buttonRef, menuRef, targetWindow, closeMenu, toggleMenu } =
     usePortaledMenu({ constrainHeight: true });
   const isAttachmentDisabled = disabled;
   const isGemma = isGemmaModel(currentModelId);
+  const isGeminiNative = providerId === undefined || providerId === GEMINI_PROVIDER_ID;
 
   const handleAction = (action: AttachmentAction) => {
     closeMenu();
@@ -47,16 +50,27 @@ export const AttachmentMenu: React.FC = () => {
   // frequently used items go at the bottom, closest to the input area.
   const menuItems = [
     { labelKey: 'attachMenuCreateText', icon: <IconFileEdit size={menuIconSize} />, action: 'text' },
-    ...(canAddYouTubeVideo
+    ...(isGeminiNative && canAddYouTubeVideo
       ? [{ labelKey: 'attachMenuAddByUrl', icon: <IconYoutube size={menuIconSize} />, action: 'url' } as const]
       : []),
-    { labelKey: 'attachMenuAddById', icon: <IconCloud size={menuIconSize} />, action: 'id' },
-    { labelKey: 'attachMenuImportFolder', icon: <FolderOpen size={menuIconSize} />, action: 'folder' },
-    { labelKey: 'attachMenuImportZip', icon: <IconZip size={menuIconSize} />, action: 'zip' },
+    ...(isGeminiNative
+      ? [{ labelKey: 'attachMenuAddById', icon: <IconCloud size={menuIconSize} />, action: 'id' } as const]
+      : []),
+    ...(!isMobile
+      ? ([
+          { labelKey: 'attachMenuImportFolder', icon: <FolderOpen size={menuIconSize} />, action: 'folder' },
+          { labelKey: 'attachMenuScreenshot', icon: <IconScreenshot size={menuIconSize} />, action: 'screenshot' },
+        ] as const)
+      : ([
+          { labelKey: 'attachMenuImportZip', icon: <FileArchive size={menuIconSize} />, action: 'zip' },
+        ] as const)),
     { labelKey: 'attachMenuRecordAudio', icon: <IconMicrophone size={menuIconSize} />, action: 'recorder' },
-    { labelKey: 'attachMenuScreenshot', icon: <IconScreenshot size={menuIconSize} />, action: 'screenshot' },
-    { labelKey: 'attachMenuTakePhoto', icon: <IconCamera size={menuIconSize} />, action: 'camera' },
-    { labelKey: 'attachMenuGallery', icon: <IconGallery size={menuIconSize} />, action: 'gallery' },
+    ...(isMobile
+      ? ([
+          { labelKey: 'attachMenuTakePhoto', icon: <IconCamera size={menuIconSize} />, action: 'camera' },
+          { labelKey: 'attachMenuGallery', icon: <IconGallery size={menuIconSize} />, action: 'gallery' },
+        ] as const)
+      : []),
     { labelKey: 'attachMenuLibrary', icon: <Library size={menuIconSize} />, action: 'library' },
     { labelKey: 'attachMenuUpload', icon: <IconUpload size={menuIconSize} />, action: 'upload' },
   ] as const;

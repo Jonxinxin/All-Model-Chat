@@ -78,3 +78,62 @@ export const partsContainAudio = (parts: ContentPart[] | undefined): boolean =>
 /** True when any API part carries an image payload (inline or Files-API reference). */
 export const partsContainImage = (parts: ContentPart[] | undefined): boolean =>
   !!parts?.some((part) => isImageMimeType(partMimeType(part)));
+
+/**
+ * Resolves a target file from a list given an optional locator file name
+ * (from locate markers or seek URLs) and an optional active file id.
+ * Handles path prefixes, case insensitivity, missing extensions, and bidirectional substring matches.
+ */
+export const resolveNamedFile = <T extends { id: string; name: string }>(
+  files: T[],
+  locateName?: string,
+  activeFileId?: string | null,
+): T | undefined => {
+  if (files.length === 0) return undefined;
+
+  if (locateName) {
+    const raw = locateName.trim();
+    const base = raw.split('/').pop()?.split('\\').pop() ?? raw;
+    const lowerRaw = raw.toLowerCase();
+    const lowerBase = base.toLowerCase();
+    const baseWithoutExt = lowerBase.replace(/\.[^/.]+$/, '');
+
+    // 1. Exact match (raw or base name)
+    const exact = files.find((file) => file.name === raw || file.name === base);
+    if (exact) return exact;
+
+    // 2. Case-insensitive exact match
+    const caseExact = files.find((file) => {
+      const lowerName = file.name.toLowerCase();
+      return lowerName === lowerRaw || lowerName === lowerBase;
+    });
+    if (caseExact) return caseExact;
+
+    // 3. Name without extension match
+    const noExtMatch = files.find((file) => {
+      const nameWithoutExt = file.name.toLowerCase().replace(/\.[^/.]+$/, '');
+      return nameWithoutExt === baseWithoutExt;
+    });
+    if (noExtMatch) return noExtMatch;
+
+    // 4. Substring / bidirectional match
+    const subMatch = files.find((file) => {
+      const lowerName = file.name.toLowerCase();
+      const nameWithoutExt = lowerName.replace(/\.[^/.]+$/, '');
+      return (
+        lowerName.includes(lowerBase) ||
+        lowerBase.includes(lowerName) ||
+        (baseWithoutExt.length >= 3 &&
+          (nameWithoutExt.includes(baseWithoutExt) || baseWithoutExt.includes(nameWithoutExt)))
+      );
+    });
+    if (subMatch) return subMatch;
+  }
+
+  if (activeFileId) {
+    const current = files.find((file) => file.id === activeFileId);
+    if (current) return current;
+  }
+
+  return files[0];
+};

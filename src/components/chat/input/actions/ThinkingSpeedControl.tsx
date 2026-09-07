@@ -6,8 +6,6 @@ import { useChatInputContext } from '@/components/chat/input/ChatInputContext';
 import { usePortaledMenu } from '@/hooks/ui/usePortaledMenu';
 import { getCachedModelCapabilities } from '@/stores/modelCapabilitiesStore';
 import { isReasoningModel } from '@/utils/model/modelCapabilities';
-import { useSettingsStore } from '@/stores/settingsStore';
-import { resolveChatApiRoute } from '@/utils/chatApiRoute';
 import type { ThinkingLevel } from '@/types';
 
 const LEVEL_LABEL_KEYS: Record<ThinkingLevel, string> = {
@@ -105,14 +103,7 @@ export const ThinkingSpeedControl: React.FC = () => {
 
   const caps = getCachedModelCapabilities(modelId);
   const isGemma = caps.isGemmaModel;
-  const appSettings = useSettingsStore((state) => state.appSettings);
-  const route = resolveChatApiRoute(appSettings, currentChatSettings);
-  const isThirdPartyResponses = route.apiMode === 'third-party' && route.provider?.protocol === 'openai-responses';
-  const isThirdPartyAnthropic = route.apiMode === 'third-party' && route.provider?.protocol === 'anthropic';
-  const isReasoning =
-    isThirdPartyResponses ||
-    isThirdPartyAnthropic ||
-    isReasoningModel(modelId);
+  const isReasoning = isReasoningModel(modelId);
   const supportsThinkingLevel = caps.supportsThinkingLevel || isGemma || isReasoning;
   const activeCapabilities = caps;
 

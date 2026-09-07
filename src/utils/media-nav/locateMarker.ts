@@ -1,4 +1,5 @@
 import { parseTimestamp } from './timestamp';
+import { parseTagAttributes } from './tagAttributes';
 import type { ImageNavHighlight, PdfNavHighlight } from '@/stores/mediaNavStore';
 
 /** A parsed `<pdf-locate>` marker emitted by the model. */
@@ -58,32 +59,27 @@ export interface ParsedLocateContent {
 
 const LOCATE_MARKER_TAGS = ['pdf-locate', 'video-locate', 'audio-locate', 'image-locate'] as const;
 
-const buildCompleteMarkerRe = (tag: string) => new RegExp(`<${tag}\\b([^>]*)>([\\s\\S]*?)</${tag}>`, 'g');
+const buildCompleteMarkerRe = (tag: string) => new RegExp(`<${tag}\\b([^>]*?)(?:\\/>|>([\\s\\S]*?)<\\/${tag}>)`, 'g');
 const buildPartialMarkerRe = (tag: string) => new RegExp(`<${tag}\\b[^>]*(?:>[\\s\\S]*)?$`);
 const COMPLETE_MARKER_RES = LOCATE_MARKER_TAGS.map((tag) => [tag, buildCompleteMarkerRe(tag)] as const);
 const PARTIAL_MARKER_RES = LOCATE_MARKER_TAGS.map((tag) => buildPartialMarkerRe(tag));
-
-const ATTRIBUTE_RE = /([a-zA-Z][a-zA-Z0-9_-]*)\s*=\s*"([^"]*)"/g;
-
-const parseAttributes = (attributeString: string) => {
-  const attributes: Record<string, string> = {};
-  let match: RegExpExecArray | null;
-  ATTRIBUTE_RE.lastIndex = 0;
-  while ((match = ATTRIBUTE_RE.exec(attributeString)) !== null) {
-    attributes[match[1]] = match[2];
-  }
-  return attributes;
-};
 
 const parseBox2d = (raw: string | undefined): [number, number, number, number] | undefined => {
   if (!raw) return undefined;
   const clean = raw.replace(/[()[\]]/g, '');
   const parts = clean
     .split(/[,;\s]+/)
-    .map((value) => Number.parseInt(value.trim(), 10))
+    .map((value) => Number.parseFloat(value.trim()))
     .filter((value) => Number.isFinite(value));
   if (parts.length !== 4) return undefined;
-  return [parts[0], parts[1], parts[2], parts[3]];
+  const isZeroToOne = parts.every((v) => v >= 0 && v <= 1.0) && parts.some((v) => v > 0 && v < 1.0);
+  const scale = isZeroToOne ? 1000 : 1;
+  return [
+    Math.round(parts[0] * scale),
+    Math.round(parts[1] * scale),
+    Math.round(parts[2] * scale),
+    Math.round(parts[3] * scale),
+  ];
 };
 
 const parsePageNumber = (raw: string | undefined): number | undefined => {
@@ -119,10 +115,12 @@ const parsePoint = (raw: string | undefined): [number, number] | undefined => {
   const clean = raw.replace(/[()[\]]/g, '');
   const parts = clean
     .split(/[,;\s]+/)
-    .map((value) => Number.parseInt(value.trim(), 10))
+    .map((value) => Number.parseFloat(value.trim()))
     .filter((value) => Number.isFinite(value));
   if (parts.length !== 2) return undefined;
-  return [parts[0], parts[1]];
+  const isZeroToOne = parts.every((v) => v >= 0 && v <= 1.0) && parts.some((v) => v > 0 && v < 1.0);
+  const scale = isZeroToOne ? 1000 : 1;
+  return [Math.round(parts[0] * scale), Math.round(parts[1] * scale)];
 };
 
 const parseVideoMarker = (attributes: Record<string, string>, inner: string): VideoLocate | undefined => {
@@ -186,9 +184,9 @@ export const parseLocateMarkers = (content: string): ParsedLocateContent => {
   const imageLocates: ImageLocate[] = [];
   let cleanContent = content;
   for (const [tag, markerRe] of COMPLETE_MARKER_RES) {
-    cleanContent = cleanContent.replace(markerRe, (_full, attributeString: string, inner: string) => {
-      const attributes = parseAttributes(attributeString);
-      const parsed = parseMarkerByTag(tag, attributes, inner);
+    cleanContent = cleanContent.replace(markerRe, (_full, attributeString: string, inner?: string) => {
+      const attributes = parseTagAttributes(attributeString);
+      const parsed = parseMarkerByTag(tag, attributes, inner || '');
       if (parsed.pdf) pdfLocates.push(parsed.pdf);
       if (parsed.video) videoLocates.push(parsed.video);
       if (parsed.audio) audioLocates.push(parsed.audio);

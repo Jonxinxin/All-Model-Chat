@@ -152,3 +152,5 @@ export const getTranslator =
     // 旧实现把 fallback 放在 en 之前，会掩盖缺译（en 存在时仍返回 fallback）。
     return translationSet[key]?.[lang] ?? translationSet[key]?.en ?? fallback ?? key;
   };
+
+export type Translator = ReturnType<typeof getTranslator>;

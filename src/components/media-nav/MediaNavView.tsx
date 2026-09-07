@@ -56,6 +56,11 @@ const MediaNavViewComponent: React.FC<MediaNavViewProps> = ({ file, kind }) => {
   useEffect(() => {
     if (kind === 'audio' && audioRef.current && audioRef.current.readyState >= 1) {
       setIsMetadataReady(true);
+    } else if (kind === 'video') {
+      const videoEl = playerRef.current?.getVideoElement();
+      if (videoEl && videoEl.readyState >= 1) {
+        setIsMetadataReady(true);
+      }
     }
   }, [kind, file.id]);
 
@@ -158,6 +163,7 @@ const MediaNavViewComponent: React.FC<MediaNavViewProps> = ({ file, kind }) => {
           annotation={annotation}
           annotationTargetTime={annotationTargetTime}
           isAnnotationVisible={isAnnotationVisible}
+          onAnnotationVisibilityChange={setIsAnnotationVisible}
           onAnnotationDismiss={() => setIsAnnotationVisible(false)}
           onLoadedMetadata={() => setIsMetadataReady(true)}
         />

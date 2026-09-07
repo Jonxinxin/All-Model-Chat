@@ -19,17 +19,13 @@ import {
   Check,
   Copy,
   Trash2,
-  Film,
-  Music,
-  FileText,
-  Image as ImageIcon,
-  File as GenericFileIcon,
   Loader2,
   AlertCircle,
   CheckCheck,
   Clock,
   Plus,
 } from 'lucide-react';
+import { getFileDisplayMeta } from '@/utils/file/fileDisplayStyles';
 
 export type CloudFileCategoryFilter = 'all' | 'video' | 'audio' | 'document' | 'image';
 
@@ -53,22 +49,9 @@ const getRemainingHours = (expirationTime?: string | number): number | null => {
   return Math.ceil(diffMs / (1000 * 60 * 60));
 };
 
-const getFileIcon = (mimeType?: string) => {
-  if (!mimeType) return <GenericFileIcon size={18} className="text-gray-400 flex-shrink-0" />;
-  if (mimeType.startsWith('video/')) return <Film size={18} className="text-purple-400 flex-shrink-0" />;
-  if (mimeType.startsWith('audio/')) return <Music size={18} className="text-amber-400 flex-shrink-0" />;
-  if (mimeType.startsWith('image/')) return <ImageIcon size={18} className="text-blue-400 flex-shrink-0" />;
-  if (
-    mimeType.startsWith('text/') ||
-    mimeType === 'application/pdf' ||
-    mimeType.includes('officedocument') ||
-    mimeType.includes('msword') ||
-    mimeType.includes('json') ||
-    mimeType.includes('csv')
-  ) {
-    return <FileText size={18} className="text-emerald-400 flex-shrink-0" />;
-  }
-  return <GenericFileIcon size={18} className="text-gray-400 flex-shrink-0" />;
+const getFileIcon = (mimeType?: string, displayName?: string) => {
+  const { Icon: FileIcon, colorClass } = getFileDisplayMeta({ type: mimeType, name: displayName });
+  return <FileIcon size={18} className={`${colorClass} flex-shrink-0`} strokeWidth={1.75} />;
 };
 
 export const CloudFilesModal: React.FC<CloudFilesModalProps> = ({
@@ -152,9 +135,9 @@ export const CloudFilesModal: React.FC<CloudFilesModalProps> = ({
         } while (nextToken && allFiles.length < 500);
 
         setFiles(allFiles);
-      } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : String(err);
-        logService.error('Failed to fetch cloud files from Gemini Files API:', err);
+      } catch (fetchError) {
+        const errorMsg = fetchError instanceof Error ? fetchError.message : String(fetchError);
+        logService.error('Failed to fetch cloud files from Gemini Files API:', fetchError);
         setFetchError(errorMsg);
       } finally {
         setIsLoading(false);
@@ -268,8 +251,8 @@ export const CloudFilesModal: React.FC<CloudFilesModalProps> = ({
         }
         setDirectInputId('');
         await loadFiles(true);
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
+      } catch (directAddError) {
+        const msg = directAddError instanceof Error ? directAddError.message : String(directAddError);
         setDirectAddError(msg);
       } finally {
         setIsAddingDirect(false);
@@ -292,8 +275,8 @@ export const CloudFilesModal: React.FC<CloudFilesModalProps> = ({
         return next;
       });
       setFileToDelete(null);
-    } catch (err) {
-      logService.error('Failed to delete cloud file:', err);
+    } catch (deleteError) {
+      logService.error('Failed to delete cloud file:', deleteError);
     } finally {
       setIsDeleting(false);
     }
@@ -308,8 +291,8 @@ export const CloudFilesModal: React.FC<CloudFilesModalProps> = ({
       for (const name of toDelete) {
         try {
           await deleteFileApi(activeApiKey, name);
-        } catch (err) {
-          logService.error(`Failed to delete file ${name} during batch deletion:`, err);
+        } catch (batchDeleteError) {
+          logService.error(`Failed to delete file ${name} during batch deletion:`, batchDeleteError);
         }
       }
       setFiles((prev) => prev.filter((f) => !f.name || !selectedFileNames.has(f.name)));
@@ -346,7 +329,6 @@ export const CloudFilesModal: React.FC<CloudFilesModalProps> = ({
         noPadding
         ariaLabel={t('cloudFilesModalTitle')}
       >
-        {/* Header */}
         <div className="flex flex-col gap-3 px-5 py-4 border-b border-[var(--theme-border-secondary)] bg-[var(--theme-bg-secondary)]/40 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -383,7 +365,6 @@ export const CloudFilesModal: React.FC<CloudFilesModalProps> = ({
             </div>
           </div>
 
-          {/* 20 GB Storage Quota Bar */}
           <div className="bg-[var(--theme-bg-tertiary)]/40 p-2.5 rounded-xl border border-[var(--theme-border-secondary)]">
             <div className="flex items-center justify-between text-xs">
               <span className="text-[var(--theme-text-secondary)] font-medium">
@@ -408,7 +389,6 @@ export const CloudFilesModal: React.FC<CloudFilesModalProps> = ({
           </div>
         </div>
 
-        {/* Quick Add Bar by ID or GCS URI */}
         <div className="px-5 py-3 border-b border-[var(--theme-border-secondary)] bg-[var(--theme-bg-primary)] flex-shrink-0">
           <form onSubmit={handleDirectAdd} className="flex items-center gap-2">
             <div className="relative flex-1">
@@ -453,7 +433,6 @@ export const CloudFilesModal: React.FC<CloudFilesModalProps> = ({
           )}
         </div>
 
-        {/* Filter Toolbar */}
         <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-2.5 border-b border-[var(--theme-border-secondary)] bg-[var(--theme-bg-primary)] flex-shrink-0">
           <div className="relative flex-1 min-w-[180px]">
             <Search
@@ -479,7 +458,6 @@ export const CloudFilesModal: React.FC<CloudFilesModalProps> = ({
             )}
           </div>
 
-          {/* Category Chips */}
           <div className="flex items-center gap-1 bg-[var(--theme-bg-secondary)] p-1 rounded-xl border border-[var(--theme-border-secondary)] text-xs font-medium">
             <button
               type="button"
@@ -539,7 +517,6 @@ export const CloudFilesModal: React.FC<CloudFilesModalProps> = ({
           </div>
         </div>
 
-        {/* Main List */}
         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-5">
           {isLoading ? (
             <div className="h-full flex flex-col items-center justify-center py-20 text-[var(--theme-text-tertiary)] gap-3">
@@ -685,7 +662,7 @@ export const CloudFilesModal: React.FC<CloudFilesModalProps> = ({
                         </td>
                         <td className="py-2.5 px-3 max-w-[240px] sm:max-w-xs">
                           <div className="flex items-center gap-2.5">
-                            {getFileIcon(file.mimeType)}
+                            {getFileIcon(file.mimeType, file.displayName || file.name)}
                             <div className="flex-1 min-w-0">
                               <p className="font-medium text-[var(--theme-text-primary)] truncate">
                                 {file.displayName || file.name}
@@ -777,7 +754,6 @@ export const CloudFilesModal: React.FC<CloudFilesModalProps> = ({
           )}
         </div>
 
-        {/* Footer */}
         <div className="flex items-center justify-between px-5 py-3.5 border-t border-[var(--theme-border-secondary)] bg-[var(--theme-bg-secondary)]/40 flex-shrink-0">
           <div className="flex items-center gap-3">
             <span className="text-xs text-[var(--theme-text-secondary)]">
@@ -819,7 +795,6 @@ export const CloudFilesModal: React.FC<CloudFilesModalProps> = ({
         </div>
       </Modal>
 
-      {/* Single File Delete Confirmation */}
       {fileToDelete && (
         <ConfirmationModal
           isOpen={!!fileToDelete}
@@ -832,7 +807,6 @@ export const CloudFilesModal: React.FC<CloudFilesModalProps> = ({
         />
       )}
 
-      {/* Batch Delete Confirmation */}
       {isBatchDeleteModalOpen && (
         <ConfirmationModal
           isOpen={isBatchDeleteModalOpen}

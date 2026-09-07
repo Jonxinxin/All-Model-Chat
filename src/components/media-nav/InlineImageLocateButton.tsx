@@ -2,6 +2,7 @@ import React from 'react';
 import { ScanSearch } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { seekSessionImage } from '@/utils/media-nav/seekImage';
+import { extractTextFromNode } from '@/utils/reactNodeText';
 
 interface InlineImageLocateButtonProps {
   fileName?: string;
@@ -52,7 +53,7 @@ export const InlineImageLocateButton: React.FC<InlineImageLocateButtonProps> = (
     });
   };
 
-  const labelText = typeof children === 'string' ? children : '';
+  const labelText = extractTextFromNode(children);
   const buttonTitle = labelText ? `${t('imageNavLocateButton')}: ${labelText}` : t('imageNavLocateButton');
 
   return (

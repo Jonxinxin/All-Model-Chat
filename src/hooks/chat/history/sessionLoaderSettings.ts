@@ -1,7 +1,10 @@
 import { DEFAULT_CHAT_SETTINGS } from '@/constants/settingsDefaults';
 import { sanitizeSessionModel as sanitizeSessionModelWithFallback, sortSessionsInPlace } from '@/stores/sessionModels';
+import type { SetActiveSessionOptions } from '@/stores/chatStore';
 import type { LastActiveSessionSnapshot } from '@/utils/chat/lastActiveSession';
 import type { AppSettings, ChatSettings, SavedChatSession } from '@/types';
+
+export type SessionLoaderHistoryOptions = Pick<SetActiveSessionOptions, 'history'>;
 
 export const sortSessionsByPinnedAndTimestamp = (sessions: SavedChatSession[]) => sortSessionsInPlace([...sessions]);
 

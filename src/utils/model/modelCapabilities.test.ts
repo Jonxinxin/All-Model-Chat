@@ -12,6 +12,7 @@ import {
   isTranscribeModel,
   normalizeThinkingLevelForModel,
   shouldStripThinkingFromContext,
+  supportsSearchMapsCombination,
 } from './modelCapabilities';
 
 describe('raw mode support', () => {
@@ -69,6 +70,32 @@ describe('isGemini3Model', () => {
   });
 });
 
+describe('supportsSearchMapsCombination', () => {
+  it('returns true for Gemini 3 models', () => {
+    expect(supportsSearchMapsCombination('gemini-3.8-flash')).toBe(true);
+    expect(supportsSearchMapsCombination('gemini-3.7-flash')).toBe(true);
+    expect(supportsSearchMapsCombination('gemini-3.6-flash')).toBe(true);
+    expect(supportsSearchMapsCombination('gemini-3.5-flash-lite')).toBe(true);
+    expect(supportsSearchMapsCombination('gemini-3.1-pro-preview')).toBe(true);
+    expect(supportsSearchMapsCombination('gemini-3-flash-preview')).toBe(true);
+  });
+
+  it('returns true for Gemini Robotics models', () => {
+    expect(supportsSearchMapsCombination('gemini-robotics-er-2-preview')).toBe(true);
+  });
+
+  it('returns false for Gemini 2.5 and older models', () => {
+    expect(supportsSearchMapsCombination('gemini-2.5-flash')).toBe(false);
+    expect(supportsSearchMapsCombination('gemini-2.5-pro')).toBe(false);
+  });
+
+  it('returns false for Gemma and empty model IDs', () => {
+    expect(supportsSearchMapsCombination('gemma-3-27b-it')).toBe(false);
+    expect(supportsSearchMapsCombination('')).toBe(false);
+    expect(supportsSearchMapsCombination(null)).toBe(false);
+  });
+});
+
 describe('getModelCapabilities', () => {
   it('treats flash live preview models as live audio models', () => {
     expect(getModelCapabilities('gemini-3.1-flash-live-preview').isNativeAudioModel).toBe(true);
@@ -97,8 +124,10 @@ describe('getModelCapabilities', () => {
 
   it('marks third-party reasoning models as supporting thinking levels', () => {
     expect(getModelCapabilities('gpt-5.6-sol').supportsThinkingLevel).toBe(true);
-    expect(getModelCapabilities('o1').supportsThinkingLevel).toBe(true);
-    expect(getModelCapabilities('o3-mini').supportsThinkingLevel).toBe(true);
+    expect(getModelCapabilities('o4').supportsThinkingLevel).toBe(true);
+    expect(getModelCapabilities('o4-mini').supportsThinkingLevel).toBe(true);
+    expect(getModelCapabilities('o1').supportsThinkingLevel).toBe(false);
+    expect(getModelCapabilities('o3-mini').supportsThinkingLevel).toBe(false);
     expect(getModelCapabilities('muse-spark-1.3-contributor').supportsThinkingLevel).toBe(true);
     expect(getModelCapabilities('kimi-k3').supportsThinkingLevel).toBe(true);
     expect(getModelCapabilities('claude-sonnet-5').supportsThinkingLevel).toBe(true);
@@ -141,8 +170,10 @@ describe('getModelCapabilities', () => {
     });
 
     it('unifies reasoning model detection with isReasoningModel', () => {
-      expect(isReasoningModel('o1')).toBe(true);
-      expect(isReasoningModel('o3-mini')).toBe(true);
+      expect(isReasoningModel('o4')).toBe(true);
+      expect(isReasoningModel('o4-mini')).toBe(true);
+      expect(isReasoningModel('o1')).toBe(false);
+      expect(isReasoningModel('o3-mini')).toBe(false);
       expect(isReasoningModel('gpt-5.6-sol')).toBe(true);
       expect(isReasoningModel('deepseek-reasoner')).toBe(true);
       expect(isReasoningModel('qwq-32b')).toBe(true);

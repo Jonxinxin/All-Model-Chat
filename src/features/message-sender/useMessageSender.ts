@@ -212,6 +212,7 @@ export const useMessageSender = (props: MessageSenderProps) => {
                 files: filesToUse,
                 apiKey: keyToUse,
                 abortSignal: newAbortController.signal,
+                allowDegrade: Boolean(effectiveEditingId),
                 onFileUpdate: (fileId, patch) => {
                   if (effectiveEditingId && activeSessionId) {
                     updateAndPersistSessions((prev) =>

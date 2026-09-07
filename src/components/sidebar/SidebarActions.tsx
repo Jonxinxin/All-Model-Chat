@@ -120,10 +120,13 @@ export const SidebarActions: React.FC<SidebarActionsProps> = ({
     }
   };
 
-  const handleLibraryClick = () => {
-    setActiveView('library');
-    if (window.innerWidth < DESKTOP_BREAKPOINT_PX) {
-      onCloseSidebar?.();
+  const handleLibraryClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (e.button === 0 && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+      e.preventDefault();
+      setActiveView('library');
+      if (window.innerWidth < DESKTOP_BREAKPOINT_PX) {
+        onCloseSidebar?.();
+      }
     }
   };
 
@@ -142,7 +145,8 @@ export const SidebarActions: React.FC<SidebarActionsProps> = ({
         </a>
       </div>
       <div>
-        <button
+        <a
+          href="/library"
           onClick={handleLibraryClick}
           className={`${SIDEBAR_ACTION_ROW_CLASS} ${activeView === 'library' ? 'bg-[var(--theme-bg-tertiary)]' : ''}`}
           aria-label={t('libraryTitle')}
@@ -151,7 +155,7 @@ export const SidebarActions: React.FC<SidebarActionsProps> = ({
           <span className="min-w-0 flex-1 truncate font-medium text-[var(--theme-text-primary)]">
             {t('libraryTitle')}
           </span>
-        </button>
+        </a>
       </div>
       <div>
         {isSearching ? (

@@ -32,7 +32,7 @@ const isVisionSupportedModel = (modelId: string): boolean => {
   const lower = modelId.toLowerCase();
   if (lower.includes('tts') || lower.includes('transcribe')) return false;
   if (lower.includes('gemini')) return true;
-  if (lower.includes('gpt-4o') || lower.includes('gpt-4-turbo') || lower.includes('gpt-5') || lower.includes('o1')) {
+  if (lower.includes('gpt-4o') || lower.includes('gpt-4-turbo') || lower.includes('gpt-5') || lower.includes('o4')) {
     return true;
   }
   if (
@@ -90,7 +90,7 @@ const resolveProviderDisplayName = (model: ModelOption): string => {
 
   const id = model.id.toLowerCase();
   if (id.includes('gemini') || id.includes('gemma') || id.includes('robotics')) return 'Google Gemini';
-  if (id.includes('gpt-') || id.startsWith('o1') || id.startsWith('o3')) return 'OpenAI';
+  if (id.includes('gpt-') || id.startsWith('o4')) return 'OpenAI';
   if (id.includes('claude')) return 'Anthropic';
   if (id.includes('deepseek')) return 'DeepSeek';
   if (id.includes('qwen') || id.includes('qwq')) return 'Alibaba Qwen';
@@ -127,7 +127,7 @@ const resolveContextWindow = (modelId: string): { contextWindow: string; maxOutp
   }
 
   // OpenAI family
-  if (lower.includes('o1') || lower.includes('o3') || lower.includes('gpt-5')) {
+  if (lower.includes('gpt-5') || lower.includes('o4')) {
     return { contextWindow: '200,000 (200K)', maxOutput: '100,000 (100K)' };
   }
   if (lower.includes('gpt-4o') || lower.includes('gpt-4-turbo')) {
@@ -194,8 +194,8 @@ const resolveModelDescription = (modelId: string): string | undefined => {
   if (lower.includes('llama-3.3-70b')) {
     return 'Flagship open architecture model delivering top-tier conversational depth and tool use.';
   }
-  if (lower.includes('o3-mini') || lower.includes('o1')) {
-    return 'OpenAI specialized reasoning model with deliberative chain-of-thought processing.';
+  if (lower.includes('o4')) {
+    return 'OpenAI next-generation reasoning model with deliberative chain-of-thought processing.';
   }
   return undefined;
 };
