@@ -22,24 +22,26 @@
 ### Task 1: Vite 静态构建配置与代码分包隔离
 
 **Files:**
+
 - Modify: `vite/staticAssets.ts`
 - Modify: `vite.config.ts`
 - Modify: `vite/chunks.ts`
 - Test: `src/test/architecture/viteConfig.test.ts`
 
 **Interfaces:**
+
 - Produces: `ECHARTS_COPY_SOURCE` in `vite/staticAssets.ts`
 - Target build artifact: `dist/vendor/echarts.min.js`
 
-- [ ] **Step 1: Write failing test in architecture suite**
+- [x] **Step 1: Write failing test in architecture suite**
 
 检查 `src/test/architecture/viteConfig.test.ts`，添加对 `ECHARTS_COPY_SOURCE` 和 `echarts-vendor` manualChunk 的断言。
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm test src/test/architecture/viteConfig.test.ts`
 
-- [ ] **Step 3: Implement Vite config changes**
+- [x] **Step 3: Implement Vite config changes**
 
 1. 在 `vite/staticAssets.ts` 中导出 `export const ECHARTS_COPY_SOURCE = 'node_modules/echarts/dist/echarts.min.js';`。
 2. 在 `vite.config.ts` 的 `viteStaticCopy` targets 中增加：
@@ -51,11 +53,11 @@ Run: `pnpm test src/test/architecture/viteConfig.test.ts`
    ```
 3. 在 `vite/chunks.ts` 中将 `echarts` 和 `zrender` 加入 `getManualChunk` 分包规则，输出至 `echarts-vendor`。
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pnpm test src/test/architecture/viteConfig.test.ts`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add vite/staticAssets.ts vite.config.ts vite/chunks.ts src/test/architecture/viteConfig.test.ts
@@ -67,41 +69,45 @@ git commit -m "feat(viz): configure vite static copy and vendor chunk for echart
 ### Task 2: ECharts 沙箱渲染器与主题自适应
 
 **Files:**
+
 - Create: `src/utils/html-preview/echartsRendererScript.ts`
 - Create: `src/utils/html-preview/echartsRendererScript.test.ts`
 - Modify: `src/utils/html-preview/previewBridgeScript.ts`
 
 **Interfaces:**
+
 - Produces: `ECHARTS_RENDERER_SCRIPT` string constant.
 - Consumes: Theme variables `--amc-live-artifact-*` in DOM.
 - Attributes handled: `[data-amc-chart]` (and `[data-amc-echarts]`).
 
-- [ ] **Step 1: Write unit tests for ECharts renderer logic**
+- [x] **Step 1: Write unit tests for ECharts renderer logic**
 
 在 `src/utils/html-preview/echartsRendererScript.test.ts` 中测试：
+
 1. 正常 ECharts Option JSON 解析并设置尺寸（默认 `height: 280px`）。
 2. 旧版 DSL (`{type:"bar", x:[...], series:[...]}`) 自动兼容转译为标准 ECharts Option。
 3. 未完成的流式 JSON 自动标记 `data-amc-chart-pending="1"` 且不崩溃。
 4. 主题颜色映射函数将 CSS 变量转换为 ECharts Theme 配置对象。
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm test src/utils/html-preview/echartsRendererScript.test.ts`
 
-- [ ] **Step 3: Implement `echartsRendererScript.ts`**
+- [x] **Step 3: Implement `echartsRendererScript.ts`**
 
 编写内联脚本，包含：
+
 1. 主题注册：`buildThemeFromCssVars(root)` -> `echarts.registerTheme('amc-live-artifact', ...)`，配置 `bar.itemStyle.borderRadius: [4, 4, 0, 0]`，虚线网格，柔和 Tooltip。
 2. 历史兼容适配器 `normalizeChartOption(raw)`。
 3. MutationObserver 监听 `[data-amc-chart]`，在 `window.echarts` 就绪时以 SVG 模式执行 `echarts.init(node, 'amc-live-artifact', { renderer: 'svg' })`。
 4. ResizeObserver / window resize 自动重绘。
 5. 在 `src/utils/html-preview/previewBridgeScript.ts` 中引入并嵌入 `${ECHARTS_RENDERER_SCRIPT}` 替换旧的 `${CHART_RENDERER_SCRIPT}`。
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pnpm test src/utils/html-preview/echartsRendererScript.test.ts`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/utils/html-preview/echartsRendererScript.ts src/utils/html-preview/echartsRendererScript.test.ts src/utils/html-preview/previewBridgeScript.ts
@@ -113,34 +119,37 @@ git commit -m "feat(viz): implement sandboxed echarts renderer with theme adapta
 ### Task 3: 脚本离线注入与 PNG 导出静态快照
 
 **Files:**
+
 - Modify: `src/utils/html-preview/previewDocument.ts`
 - Modify: `src/utils/html-preview/previewDocument.test.ts`
 - Modify: `src/utils/html-preview/chartRendererSync.test.ts`
 
 **Interfaces:**
+
 - Produces: `hydrateChartsIntoDocument(doc, options)` using ECharts SVG renderer.
 - Manages: `<script src="/vendor/echarts.min.js">` (or Blob URL injection) inside `buildHtmlPreviewSrcDoc`.
 
-- [ ] **Step 1: Write test for ECharts injection and snapshot hydration**
+- [x] **Step 1: Write test for ECharts injection and snapshot hydration**
 
 更新 `src/utils/html-preview/previewDocument.test.ts` 和 `chartRendererSync.test.ts`，验证：
+
 1. 包含 `data-amc-chart` 的内容会自动注入 ECharts 脚本标签；
 2. `hydrateChartsIntoDocument` 能在离线 DOM 中正确初始化 ECharts 并生成对应 `<svg>` 结构供快照截屏。
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm test src/utils/html-preview/previewDocument.test.ts src/utils/html-preview/chartRendererSync.test.ts`
 
-- [ ] **Step 3: Implement injection & export hydration in `previewDocument.ts`**
+- [x] **Step 3: Implement injection & export hydration in `previewDocument.ts`**
 
 1. 在 `previewDocument.ts` 中识别 `data-amc-chart` / `data-amc-echarts`，在 Iframe `<head>` 注入本地脚本标签 `<script src="/vendor/echarts.min.js"></script>`（并保证 CSP 允许本地路径与 blob）。
 2. 在 `hydrateChartsIntoDocument` 中调用 `echarts.init(node, theme, { renderer: 'svg' })`，将图表渲染为真实的静态 SVG，完成后 dispose，完美衔接 html2canvas。
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `pnpm test src/utils/html-preview/previewDocument.test.ts src/utils/html-preview/chartRendererSync.test.ts`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/utils/html-preview/previewDocument.ts src/utils/html-preview/previewDocument.test.ts src/utils/html-preview/chartRendererSync.test.ts
@@ -152,25 +161,30 @@ git commit -m "feat(viz): support offline script injection and synchronous svg s
 ### Task 4: Prompt 协议重构与业务规约升级
 
 **Files:**
+
 - Modify: `src/features/prompts/liveArtifacts.ts`
 - Modify: `src/features/prompts/promptRegistry.test.ts`
 
 **Interfaces:**
+
 - Updates `LIVE_ARTIFACTS_INLINE_SYSTEM_PROMPT_ZH` and `LIVE_ARTIFACTS_INLINE_SYSTEM_PROMPT_EN`.
 
-- [ ] **Step 1: Update prompt unit test expectations**
+- [x] **Step 1: Update prompt unit test expectations**
 
 更新 `src/features/prompts/promptRegistry.test.ts` 中涉及 `data-amc-chart` 的断言，改为对 ECharts option 和新规约的检查。
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm test src/features/prompts/promptRegistry.test.ts`
 
-- [ ] **Step 3: Update `liveArtifacts.ts` system prompts**
+- [x] **Step 3: Update `liveArtifacts.ts` system prompts**
 
 1. 中英文 Prompt 的图表章节改为基于标准 ECharts Option 的规范，给出简洁范例：
    ```html
-   <div data-amc-chart='{"tooltip":{"trigger":"axis"},"xAxis":{"type":"category","data":["Q1","Q2"]},"yAxis":{"type":"value"},"series":[{"type":"bar","data":[100,200]}]}' style="height:280px;"></div>
+   <div
+     data-amc-chart='{"tooltip":{"trigger":"axis"},"xAxis":{"type":"category","data":["Q1","Q2"]},"yAxis":{"type":"value"},"series":[{"type":"bar","data":[100,200]}]}'
+     style="height:280px;"
+   ></div>
    ```
 2. 规范约束：
    - 跨数量级（>10x）数据强制使用对数轴（`yAxis: { type: "log" }`）或双 Y 轴；
@@ -178,11 +192,11 @@ Run: `pnpm test src/features/prompts/promptRegistry.test.ts`
    - 指标卡（Metrics）必须包含「指标名 (label) + 核心数值 (value) + 辅助说明 (subtext)」完整三要素；
    - 杜绝同构数据三重重复。
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pnpm test src/features/prompts/promptRegistry.test.ts`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/features/prompts/liveArtifacts.ts src/features/prompts/promptRegistry.test.ts
@@ -194,21 +208,22 @@ git commit -m "feat(viz): update live artifacts system prompt for echarts and vi
 ### Task 5: 综合验证与 Docker 重新部署
 
 **Files:**
+
 - Test all: `pnpm typecheck` & `pnpm test`
 - Deploy: `pnpm run build:docker` & `docker compose up -d --build`
 
-- [ ] **Step 1: Run typecheck**
-Run: `pnpm typecheck`
+- [x] **Step 1: Run typecheck**
+      Run: `pnpm typecheck`
 
-- [ ] **Step 2: Run full test suite related to previews and prompts**
-Run: `pnpm test src/utils/html-preview src/features/prompts`
+- [x] **Step 2: Run full test suite related to previews and prompts**
+      Run: `pnpm test src/utils/html-preview src/features/prompts`
 
-- [ ] **Step 3: Build docker artifacts**
-Run: `pnpm run build:docker`
-Verify: `dist/vendor/echarts.min.js` exists.
+- [x] **Step 3: Build docker artifacts**
+      Run: `pnpm run build:docker`
+      Verify: `dist/vendor/echarts.min.js` exists.
 
-- [ ] **Step 4: Redeploy docker containers**
-Run: `docker compose up -d --build`
+- [x] **Step 4: Redeploy docker containers**
+      Run: `docker compose up -d --build`
 
-- [ ] **Step 5: Verify runtime health**
-Run: `docker compose ps` and `curl -I http://localhost:8082`
+- [x] **Step 5: Verify runtime health**
+      Run: `docker compose ps` and `curl -I http://localhost:8082`
