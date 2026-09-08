@@ -85,6 +85,7 @@ export interface ChatInputRuntimeState {
   isBBoxModeActive: boolean;
   onToggleGuide: () => void;
   isGuideModeActive: boolean;
+  isLiveArtifactsPromptActive?: boolean;
   onToggleQuadImages: () => void;
   themeId: string;
 }

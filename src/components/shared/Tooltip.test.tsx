@@ -22,4 +22,15 @@ describe('Tooltip', () => {
 
     expect(screen.getByText('Direct Child')).toBeInTheDocument();
   });
+
+  it('renders with dark variant without crashing', () => {
+    render(
+      <Tooltip text="Dark tooltip info" variant="dark">
+        <button type="button">Dark hover</button>
+      </Tooltip>,
+    );
+
+    expect(screen.getByRole('button', { name: 'Dark hover' })).toBeInTheDocument();
+  });
 });
+

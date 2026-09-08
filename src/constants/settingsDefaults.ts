@@ -49,6 +49,8 @@ export const DEFAULT_CHAT_SETTINGS: Omit<ChatSettings, 'lockedApiKey'> & { locke
   topK: DEFAULT_TOP_K,
   showThoughts: DEFAULT_SHOW_THOUGHTS,
   systemInstruction: DEFAULT_SYSTEM_INSTRUCTION,
+  isLiveArtifactsEnabled: false,
+  visionPromptMode: null,
   ttsVoice: DEFAULT_TTS_VOICE,
   thinkingBudget: DEFAULT_THINKING_BUDGET,
   thinkingLevel: DEFAULT_THINKING_LEVEL as ThinkingLevel,

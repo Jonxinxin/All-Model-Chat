@@ -68,6 +68,7 @@ vi.mock('@/utils/chat/session', () => ({
 
 vi.mock('@/utils/model/modelCapabilities', () => ({
   isGemini3Model: vi.fn((id: string) => id.includes('gemini-3')),
+  isGemmaModel: vi.fn((id: string) => id?.toLowerCase().includes('gemma')),
   isImageGenerationModel: vi.fn((id: string) => id.includes('image')),
   shouldStripThinkingFromContext: vi.fn(() => false),
   bansModelTurnPrefill: vi.fn((id: string) => /gemini-3\.[6-9]/.test(id) || id.includes('gemini-3.5-flash-lite')),

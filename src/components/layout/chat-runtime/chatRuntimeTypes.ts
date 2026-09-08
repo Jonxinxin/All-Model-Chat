@@ -97,6 +97,7 @@ export interface ChatInputRuntimeValue {
   onEditMessageContent: (messageId: string, content: string, files?: UploadedFile[]) => void;
   onToggleBBox: () => void;
   onToggleGuide: () => void;
+  isLiveArtifactsPromptActive?: boolean;
 }
 
 export interface ChatRuntimeValues {

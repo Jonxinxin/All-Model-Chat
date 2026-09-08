@@ -4,6 +4,13 @@ import {
   type AppLanguage as RegistryAppLanguage,
 } from '@/i18n/languageRegistry';
 
+export interface ModelCapabilities {
+  vision?: boolean;
+  thinking?: boolean;
+  tools?: boolean;
+  webSearch?: boolean;
+}
+
 export interface ModelOption {
   id: string;
   name: string;
@@ -19,6 +26,26 @@ export interface ModelOption {
   unavailable?: boolean;
   /** True when the connection is enabled but has no API key yet. */
   missingApiKey?: boolean;
+  /** Whether the model is shown in the chat model picker (defaults to true; false hides it). */
+  visibleInSelector?: boolean;
+  /** Whether reasoning/thinking is enabled for this model. */
+  enableThinking?: boolean;
+  /** Whether tool/function calling/MCP is enabled for this model. */
+  enableTools?: boolean;
+  /** Context window limit in tokens (e.g. 128000, 200000, 1048576). */
+  contextWindow?: number;
+  /** Maximum output tokens supported by model. */
+  maxOutputTokens?: number;
+  /** Intrinsic model capabilities. */
+  capabilities?: ModelCapabilities;
+  /** Creator or vendor who owns the model architecture. */
+  ownedBy?: string;
+  /** Custom model parameters overriding session defaults. */
+  parameters?: {
+    temperature?: number;
+    maxOutputTokens?: number;
+    topP?: number;
+  };
 }
 
 export enum HarmCategory {
@@ -103,6 +130,14 @@ export const THIRD_PARTY_TEMPLATE_IDS = [
   'grok',
   'ollama',
   'lmstudio',
+  'baichuan',
+  'stepfun',
+  'yi',
+  'doubao',
+  'mistral',
+  'perplexity',
+  'cerebras',
+  'fireworks',
   'custom-openai',
   'custom-anthropic',
 ] as const;
@@ -174,6 +209,8 @@ export interface GeoLocationCoordinates {
   name?: string;
 }
 
+export type VisionPromptMode = 'bbox' | 'hdGuide' | null;
+
 export interface ChatSettings {
   modelId: string;
   /** Which provider this session's modelId belongs to. Absent = gemini-native. */
@@ -183,6 +220,8 @@ export interface ChatSettings {
   topK: number;
   showThoughts: boolean;
   systemInstruction: string;
+  isLiveArtifactsEnabled?: boolean;
+  visionPromptMode?: VisionPromptMode;
   ttsVoice: string;
   thinkingBudget: number;
   thinkingLevel?: ThinkingLevel;

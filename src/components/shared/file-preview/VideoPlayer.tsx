@@ -5,6 +5,8 @@ import { VideoSegmentBar } from './video/VideoSegmentBar';
 import { VideoControls } from './video/VideoControls';
 import { useVideoGeometry } from './video/useVideoGeometry';
 import { useVideoHotkeys } from './video/useVideoHotkeys';
+import type { TimelineMarker } from '@/utils/media-nav/timelineMarkers';
+import { useVideoVolumeStore } from '@/stores/videoVolumeStore';
 
 export interface VideoPlayerHandle {
   seekTo: (seconds: number, autoplay?: boolean, manual?: boolean) => void;
@@ -41,6 +43,7 @@ export interface VideoPlayerProps {
   isAnnotationVisible?: boolean;
   onAnnotationVisibilityChange?: (visible: boolean) => void;
   onAnnotationDismiss?: () => void;
+  timelineMarkers?: TimelineMarker[];
   onLoadedMetadata?: (e: React.SyntheticEvent<HTMLVideoElement, Event>) => void;
   onTimeUpdate?: (currentTime: number) => void;
   onSeeking?: (e: React.SyntheticEvent<HTMLVideoElement, Event>) => void;
@@ -75,6 +78,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
     isAnnotationVisible: controlledIsAnnotationVisible,
     onAnnotationVisibilityChange,
     onAnnotationDismiss: _onAnnotationDismiss,
+    timelineMarkers,
     onLoadedMetadata,
     onTimeUpdate,
     onSeeking,
@@ -91,11 +95,25 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [playbackRate, setPlaybackRate] = useState<number>(1);
-  const [volume, setVolume] = useState(1);
-  const [isMuted, setIsMuted] = useState(false);
+  const volume = useVideoVolumeStore((state) => state.volume);
+  const isMuted = useVideoVolumeStore((state) => state.isMuted);
+  const setStoreVolume = useVideoVolumeStore((state) => state.setVolume);
+  const toggleStoreMute = useVideoVolumeStore((state) => state.toggleMute);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isPictureInPicture, setIsPictureInPicture] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(true);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video) {
+      try {
+        video.volume = volume;
+        video.muted = isMuted;
+      } catch {
+        // Fallback for environments where volume assignment is restricted
+      }
+    }
+  }, [volume, isMuted]);
 
   // Segment state
   const isControlledSegment = controlledSegment !== undefined;
@@ -250,21 +268,35 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
   }, [playbackRate]);
 
   const toggleMute = useCallback(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    video.muted = !video.muted;
-    setIsMuted(video.muted);
-  }, []);
-
-  const handleVolumeChange = useCallback((newVolume: number) => {
+    toggleStoreMute();
     const video = videoRef.current;
     if (video) {
-      video.volume = newVolume;
-      video.muted = newVolume === 0;
+      const nextMuted = useVideoVolumeStore.getState().isMuted;
+      const nextVol = useVideoVolumeStore.getState().volume;
+      try {
+        video.muted = nextMuted;
+        video.volume = nextVol;
+      } catch {
+        // Fallback for environments where volume assignment is restricted
+      }
     }
-    setVolume(newVolume);
-    setIsMuted(newVolume === 0);
-  }, []);
+  }, [toggleStoreMute]);
+
+  const handleVolumeChange = useCallback(
+    (newVolume: number) => {
+      setStoreVolume(newVolume);
+      const video = videoRef.current;
+      if (video) {
+        try {
+          video.volume = newVolume;
+          video.muted = newVolume === 0;
+        } catch {
+          // Fallback for environments where volume assignment is restricted
+        }
+      }
+    },
+    [setStoreVolume],
+  );
 
   const toggleFullscreen = useCallback(async () => {
     const container = containerRef.current;
@@ -365,8 +397,16 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
 
   const handleLoadedMetadata = (e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
     const video = videoRef.current;
-    if (video && Number.isFinite(video.duration)) {
-      setDuration(video.duration);
+    if (video) {
+      try {
+        video.volume = volume;
+        video.muted = isMuted;
+      } catch {
+        // Fallback for environments where volume assignment is restricted
+      }
+      if (Number.isFinite(video.duration)) {
+        setDuration(video.duration);
+      }
     }
     updateDisplayRect();
     onLoadedMetadata?.(e);
@@ -512,10 +552,21 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
           style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
           <video
-            ref={videoRef}
+            ref={(el) => {
+              videoRef.current = el;
+              if (el) {
+                try {
+                  el.volume = volume;
+                  el.muted = isMuted;
+                } catch {
+                  // Fallback for environments where volume assignment is restricted
+                }
+              }
+            }}
             src={src}
             autoPlay={autoPlay}
             loop={loop}
+            muted={isMuted}
             playsInline
             onClick={handleVideoClick}
             onSeeking={handleSeeking}
@@ -541,6 +592,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
             annotation={annotation}
             visible={effectiveAnnotationVisible}
             displayRect={displayRect}
+            isPlaying={isPlaying}
             onClose={handleCloseAnnotation}
           />
 
@@ -557,6 +609,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(funct
               isFullscreen={isFullscreen}
               isPictureInPicture={isPictureInPicture}
               activeSegment={activeSegment}
+              timelineMarkers={timelineMarkers}
               onTogglePlay={togglePlay}
               onStepFrame={stepFrame}
               onCyclePlaybackRate={cyclePlaybackRate}

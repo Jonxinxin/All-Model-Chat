@@ -1,4 +1,4 @@
-import { render, fireEvent } from '@testing-library/react';
+import { render, fireEvent, act } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { VideoHighlightOverlay } from './VideoHighlightOverlay';
 
@@ -85,5 +85,61 @@ describe('VideoHighlightOverlay', () => {
     expect(box?.style.left).toBe('20%');
     expect(box?.style.height).toBe('40%');
     expect(box?.style.width).toBe('60%');
+  });
+
+  it('applies animate-reticle-pulse on entry', () => {
+    const { container } = render(
+      <VideoHighlightOverlay visible={true} annotation={{ box2d: [100, 200, 500, 800], snippet: '脉冲测试' }} />,
+    );
+    const box = container.querySelector('[data-testid="video-highlight-box"]');
+    expect(box?.classList.contains('animate-reticle-pulse')).toBe(true);
+  });
+
+  it('auto-dims during video playback and restores on hover or pause', () => {
+    vi.useFakeTimers();
+
+    const { container, rerender } = render(
+      <VideoHighlightOverlay
+        visible={true}
+        isPlaying={true}
+        annotation={{ box2d: [100, 200, 500, 800], snippet: '淡出测试' }}
+      />,
+    );
+
+    const overlay = container.querySelector('[data-testid="video-highlight-overlay"]') as HTMLElement;
+    expect(overlay.className).toContain('opacity-100');
+
+    // Fast-forward 2.5s
+    act(() => {
+      vi.advanceTimersByTime(2600);
+    });
+    rerender(
+      <VideoHighlightOverlay
+        visible={true}
+        isPlaying={true}
+        annotation={{ box2d: [100, 200, 500, 800], snippet: '淡出测试' }}
+      />,
+    );
+
+    expect(overlay.className).toContain('opacity-25');
+
+    // Hover over overlay restores full opacity
+    fireEvent.mouseEnter(overlay);
+    expect(overlay.className).toContain('opacity-100');
+
+    fireEvent.mouseLeave(overlay);
+    expect(overlay.className).toContain('opacity-25');
+
+    // Paused restores full opacity
+    rerender(
+      <VideoHighlightOverlay
+        visible={true}
+        isPlaying={false}
+        annotation={{ box2d: [100, 200, 500, 800], snippet: '淡出测试' }}
+      />,
+    );
+    expect(overlay.className).toContain('opacity-100');
+
+    vi.useRealTimers();
   });
 });

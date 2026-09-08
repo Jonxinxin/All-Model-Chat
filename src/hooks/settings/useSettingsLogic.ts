@@ -93,7 +93,7 @@ export const useSettingsLogic = ({
       requestAnimationFrame(() => {
         // Skip the restore while an anchor scroll owns the container.
         if (scrollContainerRef.current && Date.now() >= anchorScrollLockUntilRef.current) {
-          scrollContainerRef.current.scrollTop = activeTabScrollTop;
+          scrollContainerRef.current.scrollTop = activeTab === 'providers' ? 0 : activeTabScrollTop;
         }
       });
     }

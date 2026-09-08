@@ -57,14 +57,62 @@ export const seekSessionImage = (params: SeekSessionImageParams): boolean => {
   const target = resolveNamedFile(images, fileName, store.activeFileId);
   if (!target) return false;
 
+  // Gather sibling highlights for the same image in the message or session
+  const allHighlights: ReturnType<typeof toImageNavHighlight>[] = [];
+  if (params.messageId) {
+    const msg = activeMessages.find((m) => m.id === params.messageId);
+    if (msg?.content) {
+      const { imageLocates } = parseLocateMarkers(msg.content);
+      const matchingLocates = imageLocates.filter(
+        (loc) => !loc.imageName || loc.imageName === target.name || loc.imageName === fileName,
+      );
+
+      if (matchingLocates.length > 1) {
+        let hasActive = false;
+        matchingLocates.forEach((loc, idx) => {
+          const isSelected =
+            !hasActive &&
+            Boolean(
+              (label && loc.label === label) ||
+                (snippet && loc.snippet === snippet) ||
+                (box2d && loc.box2d && box2d[0] === loc.box2d[0] && box2d[1] === loc.box2d[1]) ||
+                (point && loc.point && point[0] === loc.point[0] && point[1] === loc.point[1]),
+            );
+
+          if (isSelected) hasActive = true;
+
+          allHighlights.push(
+            toImageNavHighlight(loc, {
+              messageId: params.messageId,
+              index: idx + 1,
+              total: matchingLocates.length,
+              isActive: isSelected,
+              focusToken: isSelected ? ++focusTokenCounter : 0,
+            }),
+          );
+        });
+
+        // If none strictly matched, mark first as active
+        if (!hasActive && allHighlights.length > 0) {
+          allHighlights[0].isActive = true;
+          allHighlights[0].focusToken = ++focusTokenCounter;
+        }
+      }
+    }
+  }
+
+  const primaryHighlight = toImageNavHighlight(
+    { imageName: target.name, box2d, point, arrow, label, snippet },
+    { messageId: params.messageId, index: 1, total: 1, isActive: true, focusToken: ++focusTokenCounter },
+  );
+
   store.openAs('image');
   store.setActiveFile(target.id);
-  store.setImageHighlight(
-    toImageNavHighlight(
-      { imageName: target.name, box2d, point, arrow, label, snippet },
-      { messageId: params.messageId, focusToken: ++focusTokenCounter },
-    ),
-  );
+  if (allHighlights.length > 1) {
+    store.setImageHighlights(allHighlights);
+  } else {
+    store.setImageHighlight(primaryHighlight);
+  }
 
   const chatStore = useChatStore.getState();
   if (typeof chatStore.setCurrentChatSettings === 'function') {

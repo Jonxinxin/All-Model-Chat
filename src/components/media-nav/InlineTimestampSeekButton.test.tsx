@@ -1,7 +1,8 @@
-import { render, fireEvent } from '@testing-library/react';
+import { render, fireEvent, act } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { InlineTimestampSeekButton } from './InlineTimestampSeekButton';
 import * as seekVideoModule from '@/utils/media-nav/seekVideo';
+import { useMediaNavStore } from '@/stores/mediaNavStore';
 
 vi.mock('@/utils/media-nav/seekVideo', () => ({
   seekSessionVideo: vi.fn(),
@@ -68,5 +69,33 @@ describe('InlineTimestampSeekButton', () => {
     // Outer button must NOT have .select-none to avoid being stripped by copy utilities
     const btn = container.querySelector('[data-testid="inline-timestamp-seek-btn"]')!;
     expect(btn.classList.contains('select-none')).toBe(false);
+  });
+
+  it('highlights with data-active="true" during reverse grounding sync', () => {
+    act(() => {
+      useMediaNavStore.setState({
+        isOpen: true,
+        openKind: 'video',
+        currentPlayTime: 20,
+      });
+    });
+
+    const { container } = render(
+      <InlineTimestampSeekButton startSeconds={15} endSeconds={30} videoName="test.mp4">
+        00:15 - 00:30
+      </InlineTimestampSeekButton>,
+    );
+
+    const btn = container.querySelector('[data-testid="inline-timestamp-seek-btn"]')!;
+    expect(btn.getAttribute('data-active')).toBe('true');
+
+    // Scrub outside range
+    act(() => {
+      useMediaNavStore.setState({
+        currentPlayTime: 50,
+      });
+    });
+
+    expect(btn.getAttribute('data-active')).toBeNull();
   });
 });

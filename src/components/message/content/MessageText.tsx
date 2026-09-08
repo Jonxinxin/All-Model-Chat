@@ -163,19 +163,25 @@ export const MessageText: React.FC<MessageTextProps> = ({
   // object identity is stable across unrelated store updates.
   const savedSessions = useChatStore((state) => state.savedSessions);
   const activeSessionId = useChatStore((state) => state.activeSessionId);
+  const activeSession = useMemo(
+    () => savedSessions.find((session) => session.id === activeSessionId),
+    [activeSessionId, savedSessions],
+  );
   const currentChatSettingsSystemInstruction = useMemo(() => {
-    const activeSession = savedSessions.find((session) => session.id === activeSessionId);
     return activeSession?.settings.systemInstruction ?? appSettings.systemInstruction;
-  }, [activeSessionId, appSettings.systemInstruction, savedSessions]);
+  }, [activeSession, appSettings.systemInstruction]);
   const liveArtifactsMode = useMemo(
     () =>
       isLiveArtifactsModeFromSettings({
+        isLiveArtifactsEnabled: activeSession?.settings.isLiveArtifactsEnabled ?? appSettings.isLiveArtifactsEnabled,
         systemInstruction: currentChatSettingsSystemInstruction,
         promptMode: appSettings.liveArtifactsPromptMode,
         liveArtifactsSystemPrompt: appSettings.liveArtifactsSystemPrompt,
         liveArtifactsSystemPrompts: appSettings.liveArtifactsSystemPrompts,
       }),
     [
+      activeSession?.settings.isLiveArtifactsEnabled,
+      appSettings.isLiveArtifactsEnabled,
       appSettings.liveArtifactsPromptMode,
       appSettings.liveArtifactsSystemPrompt,
       appSettings.liveArtifactsSystemPrompts,

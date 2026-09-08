@@ -14,6 +14,7 @@ import { useI18n } from '@/contexts/I18nContext';
 import { formatTimestamp } from '@/utils/media-nav/timestamp';
 import { Tooltip } from '@/components/shared/Tooltip';
 import { Slider } from '@/components/shared/Slider';
+import type { TimelineMarker } from '@/utils/media-nav/timelineMarkers';
 
 interface VideoControlsProps {
   visible: boolean;
@@ -27,6 +28,7 @@ interface VideoControlsProps {
   isFullscreen: boolean;
   isPictureInPicture?: boolean;
   activeSegment?: { start: number; end: number } | null;
+  timelineMarkers?: TimelineMarker[];
   onTogglePlay: () => void;
   onStepFrame: (direction: 'back' | 'forward') => void;
   onCyclePlaybackRate: () => void;
@@ -49,6 +51,7 @@ export const VideoControls: React.FC<VideoControlsProps> = ({
   isFullscreen,
   isPictureInPicture: _isPictureInPicture,
   activeSegment,
+  timelineMarkers,
   onTogglePlay,
   onStepFrame,
   onCyclePlaybackRate,
@@ -85,6 +88,59 @@ export const VideoControls: React.FC<VideoControlsProps> = ({
           />
         )}
 
+        {timelineMarkers && duration > 0 && timelineMarkers.map((marker) => {
+          const markerPercent = Math.min(100, Math.max(0, (marker.time / duration) * 100));
+          const isMarkerActive =
+            Math.abs(currentTime - marker.time) <= 1.0 ||
+            (marker.endTime !== undefined && currentTime >= marker.time - 0.5 && currentTime <= marker.endTime + 0.5);
+
+          return (
+            <div
+              key={marker.id}
+              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-25 pointer-events-auto"
+              style={{ left: `${markerPercent}%` }}
+              data-testid="timeline-marker-pin"
+            >
+              <Tooltip
+                variant="dark"
+                text={
+                  <div className="flex flex-col gap-1 max-w-[220px] text-xs select-none">
+                    <div className="flex items-center gap-1.5 font-semibold">
+                      <span className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.9)] flex-shrink-0" />
+                      <span className="font-mono text-amber-300 font-bold">
+                        {formatTimestamp(marker.time)}
+                        {marker.endTime ? ` - ${formatTimestamp(marker.endTime)}` : ''}
+                      </span>
+                    </div>
+                    {marker.snippet && (
+                      <span className="text-zinc-100 font-medium truncate tracking-wide">
+                        {marker.snippet}
+                      </span>
+                    )}
+                  </div>
+                }
+                side="top"
+                align="center"
+              >
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSeek(marker.time);
+                  }}
+                  className={`w-2.5 h-2.5 rounded-full border border-white/90 shadow-[0_0_6px_rgba(251,191,36,0.9)] cursor-pointer transition-all hover:scale-150 active:scale-110 flex items-center justify-center ${
+                    isMarkerActive
+                      ? 'bg-amber-400 scale-125 ring-2 ring-amber-300 ring-offset-1 ring-offset-black'
+                      : 'bg-amber-400/90 hover:bg-amber-300'
+                  }`}
+                  aria-label={`Jump to ${formatTimestamp(marker.time)}: ${marker.snippet || ''}`}
+                  title={`${formatTimestamp(marker.time)} ${marker.snippet || ''}`}
+                />
+              </Tooltip>
+            </div>
+          );
+        })}
+
         <input
           type="range"
           min={0}
@@ -108,7 +164,7 @@ export const VideoControls: React.FC<VideoControlsProps> = ({
 
       <div className="flex items-center justify-between text-white/95 text-xs select-none">
         <div className="flex items-center gap-1 sm:gap-1.5">
-          <Tooltip text={`${isPlaying ? t('videoPause') : t('videoPlay')} (Space / K)`} asChild>
+          <Tooltip variant="dark" text={`${isPlaying ? t('videoPause') : t('videoPlay')} (Space / K)`} asChild>
             <button
               type="button"
               onClick={onTogglePlay}
@@ -123,7 +179,7 @@ export const VideoControls: React.FC<VideoControlsProps> = ({
             </button>
           </Tooltip>
 
-          <Tooltip text={`${t('videoStepBack')} (Shift+← / ,)`} asChild>
+          <Tooltip variant="dark" text={`${t('videoStepBack')} (Shift+← / ,)`} asChild>
             <button
               type="button"
               onClick={() => onStepFrame('back')}
@@ -134,7 +190,7 @@ export const VideoControls: React.FC<VideoControlsProps> = ({
             </button>
           </Tooltip>
 
-          <Tooltip text={`${t('videoStepForward')} (Shift+→ / .)`} asChild>
+          <Tooltip variant="dark" text={`${t('videoStepForward')} (Shift+→ / .)`} asChild>
             <button
               type="button"
               onClick={() => onStepFrame('forward')}
@@ -153,7 +209,7 @@ export const VideoControls: React.FC<VideoControlsProps> = ({
         </div>
 
         <div className="flex items-center gap-1 sm:gap-2">
-          <Tooltip text={t('videoSpeed')} asChild>
+          <Tooltip variant="dark" text={t('videoSpeed')} asChild>
             <button
               type="button"
               onClick={onCyclePlaybackRate}
@@ -165,7 +221,7 @@ export const VideoControls: React.FC<VideoControlsProps> = ({
           </Tooltip>
 
           <div className="flex items-center gap-1.5 group/volume relative">
-            <Tooltip text={`${isMuted ? t('videoUnmute') : t('videoMute')} (M)`} asChild>
+            <Tooltip variant="dark" text={`${isMuted ? t('videoUnmute') : t('videoMute')} (M)`} asChild>
               <button
                 type="button"
                 onClick={onToggleMute}
@@ -189,7 +245,7 @@ export const VideoControls: React.FC<VideoControlsProps> = ({
           </div>
 
           {onTogglePictureInPicture && (
-            <Tooltip text="画中画 (P)" asChild>
+            <Tooltip variant="dark" text="画中画 (P)" asChild>
               <button
                 type="button"
                 onClick={onTogglePictureInPicture}
@@ -201,7 +257,7 @@ export const VideoControls: React.FC<VideoControlsProps> = ({
             </Tooltip>
           )}
 
-          <Tooltip text={`${isFullscreen ? t('videoExitFullscreen') : t('videoFullscreen')} (F)`} asChild>
+          <Tooltip variant="dark" text={`${isFullscreen ? t('videoExitFullscreen') : t('videoFullscreen')} (F)`} asChild>
             <button
               type="button"
               onClick={onToggleFullscreen}

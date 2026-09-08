@@ -27,6 +27,7 @@ export const useChatInputRuntimeValues = ({
     handleToggleBBoxMode,
     handleToggleGuideMode,
     handleSuggestionClick,
+    isLiveArtifactsPromptActive,
   } = app;
 
   // Destructure the chatState members used below into local constants. The
@@ -122,6 +123,7 @@ export const useChatInputRuntimeValues = ({
       onEditMessageContent: handleUpdateMessageContent,
       onToggleBBox: handleToggleBBoxMode,
       onToggleGuide: handleToggleGuideMode,
+      isLiveArtifactsPromptActive,
     }),
     [
       availableModels,
@@ -143,6 +145,7 @@ export const useChatInputRuntimeValues = ({
       handleTogglePinCurrentSession,
       handleTranscribeAudio,
       handleUpdateMessageContent,
+      isLiveArtifactsPromptActive,
       liveClientFunctions,
       onMessageSent,
       onOpenSettings,

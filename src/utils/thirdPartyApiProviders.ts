@@ -40,6 +40,14 @@ export const THIRD_PARTY_TEMPLATE_LABELS: Record<ThirdPartyTemplateId, string> =
   grok: 'Grok',
   ollama: 'Ollama',
   lmstudio: 'LM Studio',
+  baichuan: 'Baichuan (百川)',
+  stepfun: 'StepFun (阶跃星辰)',
+  yi: '01.AI (零一万物)',
+  doubao: 'Doubao (火山引擎)',
+  mistral: 'Mistral AI',
+  perplexity: 'Perplexity',
+  cerebras: 'Cerebras',
+  fireworks: 'Fireworks AI',
   'custom-openai': 'Custom (OpenAI compatible)',
   'custom-anthropic': 'Custom (Anthropic)',
 };
@@ -228,6 +236,103 @@ const TEMPLATE_DEFAULTS: Record<ThirdPartyTemplateId, ThirdPartyTemplateDefaults
     protocol: 'openai-compatible',
     docUrl: 'https://lmstudio.ai',
     authOptional: true,
+  },
+  baichuan: {
+    name: 'Baichuan',
+    baseUrl: 'https://api.baichuan-ai.com/v1',
+    modelId: 'Baichuan4',
+    models: [
+      { id: 'Baichuan4', name: 'Baichuan 4', isPinned: true },
+      { id: 'Baichuan3-Turbo', name: 'Baichuan 3 Turbo' },
+    ],
+    protocol: 'openai-compatible',
+    apiKeyUrl: 'https://platform.baichuan-ai.com/console/apikey',
+    docUrl: 'https://platform.baichuan-ai.com/docs/api',
+  },
+  stepfun: {
+    name: 'StepFun',
+    baseUrl: 'https://api.stepfun.com/v1',
+    modelId: 'step-2-16k',
+    models: [
+      { id: 'step-2-16k', name: 'Step 2 (16K)', isPinned: true },
+      { id: 'step-1-8k', name: 'Step 1 (8K)' },
+    ],
+    protocol: 'openai-compatible',
+    apiKeyUrl: 'https://platform.stepfun.com/interface-key',
+    docUrl: 'https://platform.stepfun.com/docs/llm/text',
+  },
+  yi: {
+    name: '01.AI',
+    baseUrl: 'https://api.lingyiwanwu.com/v1',
+    modelId: 'yi-lightning',
+    models: [
+      { id: 'yi-lightning', name: 'Yi Lightning', isPinned: true },
+      { id: 'yi-large', name: 'Yi Large' },
+    ],
+    protocol: 'openai-compatible',
+    apiKeyUrl: 'https://platform.lingyiwanwu.com/apikeys',
+    docUrl: 'https://platform.lingyiwanwu.com/docs',
+  },
+  doubao: {
+    name: 'Doubao',
+    baseUrl: 'https://ark.cn-beijing.volces.com/api/v3',
+    modelId: 'doubao-pro-32k',
+    models: [
+      { id: 'doubao-pro-32k', name: 'Doubao Pro 32K', isPinned: true },
+      { id: 'doubao-lite-32k', name: 'Doubao Lite 32K' },
+    ],
+    protocol: 'openai-compatible',
+    apiKeyUrl: 'https://console.volcengine.com/ark',
+    docUrl: 'https://www.volcengine.com/docs/82379/1099470',
+  },
+  mistral: {
+    name: 'Mistral AI',
+    baseUrl: 'https://api.mistral.ai/v1',
+    modelId: 'mistral-large-latest',
+    models: [
+      { id: 'mistral-large-latest', name: 'Mistral Large', isPinned: true },
+      { id: 'codestral-latest', name: 'Codestral' },
+      { id: 'mistral-small-latest', name: 'Mistral Small' },
+    ],
+    protocol: 'openai-compatible',
+    apiKeyUrl: 'https://console.mistral.ai/api-keys/',
+    docUrl: 'https://docs.mistral.ai/',
+  },
+  perplexity: {
+    name: 'Perplexity',
+    baseUrl: 'https://api.perplexity.ai',
+    modelId: 'sonar-pro',
+    models: [
+      { id: 'sonar-pro', name: 'Sonar Pro', isPinned: true },
+      { id: 'sonar', name: 'Sonar' },
+    ],
+    protocol: 'openai-compatible',
+    apiKeyUrl: 'https://www.perplexity.ai/settings/api',
+    docUrl: 'https://docs.perplexity.ai/',
+  },
+  cerebras: {
+    name: 'Cerebras',
+    baseUrl: 'https://api.cerebras.ai/v1',
+    modelId: 'llama-3.3-70b',
+    models: [
+      { id: 'llama-3.3-70b', name: 'Llama 3.3 70B (Fast)', isPinned: true },
+      { id: 'llama3.1-8b', name: 'Llama 3.1 8B' },
+    ],
+    protocol: 'openai-compatible',
+    apiKeyUrl: 'https://cloud.cerebras.ai/',
+    docUrl: 'https://inference-docs.cerebras.ai/',
+  },
+  fireworks: {
+    name: 'Fireworks AI',
+    baseUrl: 'https://api.fireworks.ai/inference/v1',
+    modelId: 'accounts/fireworks/models/deepseek-r1',
+    models: [
+      { id: 'accounts/fireworks/models/deepseek-r1', name: 'DeepSeek R1', isPinned: true },
+      { id: 'accounts/fireworks/models/deepseek-v3', name: 'DeepSeek V3' },
+    ],
+    protocol: 'openai-compatible',
+    apiKeyUrl: 'https://fireworks.ai/api-keys',
+    docUrl: 'https://docs.fireworks.ai/',
   },
   'custom-openai': {
     name: 'Custom',
@@ -513,14 +618,21 @@ export const buildProviderAwareModelList = (
   session?: Pick<ChatSettings, 'modelId' | 'providerId'>,
 ): ModelOption[] => {
   const thirdPartyModels = getEnabledThirdPartyProviders(appSettings).flatMap(({ id, config }) =>
-    deduplicateModelsById(config.models).map((model) => ({
-      ...model,
-      apiMode: 'third-party' as const,
-      providerId: id,
-      templateId: getConnectionDisplayTemplateId(config),
-      connectionName: config.name,
-      ...(config.authOptional || config.apiKey?.trim() ? {} : { missingApiKey: true as const }),
-    })),
+    deduplicateModelsById(config.models)
+      .filter((model) => {
+        if (model.visibleInSelector === false) {
+          return session?.providerId === id && session?.modelId === model.id;
+        }
+        return true;
+      })
+      .map((model) => ({
+        ...model,
+        apiMode: 'third-party' as const,
+        providerId: id,
+        templateId: getConnectionDisplayTemplateId(config),
+        connectionName: config.name,
+        ...(config.authOptional || config.apiKey?.trim() ? {} : { missingApiKey: true as const }),
+      })),
   );
 
   const models = [...deduplicateModelsById(baseModels), ...thirdPartyModels];
@@ -636,3 +748,101 @@ export const isLocalEngineEndpoint = (templateId?: string | null, baseUrl?: stri
     lower.includes('127.0.0.1:1234')
   );
 };
+
+export const reorderThirdPartyConnections = (
+  thirdPartyApi: ThirdPartyApiSettings,
+  orderedIds: string[],
+): ThirdPartyApiSettings => {
+  const connectionMap = new Map(thirdPartyApi.connections.map((c) => [c.id, c]));
+  const reordered: ThirdPartyConnection[] = [];
+
+  orderedIds.forEach((id) => {
+    const conn = connectionMap.get(id);
+    if (conn) {
+      reordered.push(conn);
+      connectionMap.delete(id);
+    }
+  });
+
+  // Append any connections that weren't in orderedIds
+  connectionMap.forEach((conn) => {
+    reordered.push(conn);
+  });
+
+  return {
+    ...thirdPartyApi,
+    connections: reordered,
+  };
+};
+
+export const updateModelInConnection = (
+  thirdPartyApi: ThirdPartyApiSettings,
+  connectionId: string,
+  modelId: string,
+  updates: Partial<ModelOption>,
+): ThirdPartyApiSettings => ({
+  ...thirdPartyApi,
+  connections: thirdPartyApi.connections.map((connection) => {
+    if (connection.id !== connectionId) return connection;
+    return {
+      ...connection,
+      models: connection.models.map((m) => (m.id === modelId ? { ...m, ...updates } : m)),
+    };
+  }),
+});
+
+export const deleteModelFromConnection = (
+  thirdPartyApi: ThirdPartyApiSettings,
+  connectionId: string,
+  modelId: string,
+): ThirdPartyApiSettings => ({
+  ...thirdPartyApi,
+  connections: thirdPartyApi.connections.map((connection) => {
+    if (connection.id !== connectionId) return connection;
+    const nextModels = connection.models.filter((m) => m.id !== modelId);
+    return {
+      ...connection,
+      models: nextModels,
+      modelId: connection.modelId === modelId ? (nextModels[0]?.id ?? '') : connection.modelId,
+    };
+  }),
+});
+
+export const addModelToConnection = (
+  thirdPartyApi: ThirdPartyApiSettings,
+  connectionId: string,
+  newModel: ModelOption,
+): ThirdPartyApiSettings => ({
+  ...thirdPartyApi,
+  connections: thirdPartyApi.connections.map((connection) => {
+    if (connection.id !== connectionId) return connection;
+    const existingIndex = connection.models.findIndex((m) => m.id === newModel.id);
+    if (existingIndex >= 0) {
+      const updatedModels = [...connection.models];
+      updatedModels[existingIndex] = { ...updatedModels[existingIndex], ...newModel };
+      return { ...connection, models: updatedModels };
+    }
+    return {
+      ...connection,
+      models: [...connection.models, newModel],
+      modelId: connection.modelId ? connection.modelId : newModel.id,
+    };
+  }),
+});
+
+export function generateColorFromChar(text: string): string {
+  if (!text) return '#475569';
+  let hash = 0;
+  for (let i = 0; i < text.length; i++) {
+    hash = text.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const hue = Math.abs(hash % 360);
+  return `hsl(${hue}, 65%, 38%)`;
+}
+
+export function getFirstCharacter(text: string): string {
+  if (!text) return '?';
+  const trimmed = text.trim();
+  if (!trimmed) return '?';
+  return trimmed.slice(0, 1).toUpperCase();
+}

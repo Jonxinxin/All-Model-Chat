@@ -2,6 +2,7 @@ import { createRef, act } from 'react';
 import { setupProviderTestRenderer as setupTestRenderer } from '@/test/render/providerRenderer';
 import { fireEvent } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { useVideoVolumeStore, resetVideoVolumeStoreForTest } from '@/stores/videoVolumeStore';
 import { VideoPlayer, type VideoPlayerHandle } from './VideoPlayer';
 
 describe('VideoPlayer', () => {
@@ -140,5 +141,35 @@ describe('VideoPlayer', () => {
     act(() => {
       playerRef.current?.togglePictureInPicture?.();
     });
+  });
+
+  it('initializes video element with persisted volume and muted state from store', () => {
+    localStorage.clear();
+    resetVideoVolumeStoreForTest();
+    useVideoVolumeStore.getState().setVolume(0.42);
+    useVideoVolumeStore.getState().setMuted(true);
+
+    renderer.render(<VideoPlayer src="blob:mock-video-url" testId="custom-video-test" />);
+    const video = renderer.container.querySelector('[data-testid="custom-video-test"]') as HTMLVideoElement;
+    expect(video).not.toBeNull();
+    expect(video.volume).toBe(0.42);
+    expect(video.muted).toBe(true);
+  });
+
+  it('updates persisted store when volume or mute is modified via handle or controls', () => {
+    localStorage.clear();
+    resetVideoVolumeStoreForTest();
+    const playerRef = createRef<VideoPlayerHandle>();
+    renderer.render(<VideoPlayer ref={playerRef} src="blob:mock-video-url" />);
+
+    act(() => {
+      playerRef.current?.toggleMute();
+    });
+    expect(useVideoVolumeStore.getState().isMuted).toBe(true);
+
+    act(() => {
+      playerRef.current?.toggleMute();
+    });
+    expect(useVideoVolumeStore.getState().isMuted).toBe(false);
   });
 });

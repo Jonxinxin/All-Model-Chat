@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useChatStore } from '@/stores/chatStore';
 import { useMediaNavStore } from '@/stores/mediaNavStore';
@@ -97,5 +97,34 @@ describe('InlineImageLocateButton', () => {
     fireEvent.click(screen.getByTestId('inline-image-locate-btn'));
     expect(useMediaNavStore.getState().isOpen).toBe(false);
     spy.mockRestore();
+  });
+
+  it('highlights with data-active="true" when imageHighlight matches in image mode', () => {
+    act(() => {
+      useMediaNavStore.setState({
+        isOpen: true,
+        openKind: 'image',
+        imageHighlight: {
+          box2d: [100, 200, 300, 400],
+          label: '目标区域',
+        },
+      });
+    });
+
+    render(
+      <InlineImageLocateButton imageName="chart.png" box2d={[100, 200, 300, 400]} label="目标区域">
+        目标区域
+      </InlineImageLocateButton>,
+    );
+
+    const btn = screen.getByTestId('inline-image-locate-btn');
+    expect(btn.getAttribute('data-active')).toBe('true');
+
+    act(() => {
+      useMediaNavStore.setState({
+        imageHighlight: null,
+      });
+    });
+    expect(btn.getAttribute('data-active')).toBeNull();
   });
 });

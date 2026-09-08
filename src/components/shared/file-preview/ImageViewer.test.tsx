@@ -166,4 +166,35 @@ describe('ImageViewer', () => {
     expect(img.style.backgroundColor).toBe('white');
     expect(img.style.borderRadius).toBe('4px');
   });
+
+  it('toggles visual select cropper mode from toolbar', async () => {
+    await act(async () => {
+      renderer.render(<ImageViewer file={mockImageFile} />);
+    });
+
+    const visualSelectBtn = screen.getByTestId('image-visual-select-btn');
+    expect(visualSelectBtn).toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.click(visualSelectBtn);
+    });
+
+    expect(screen.getByTestId('visual-cropper-surface')).toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.click(visualSelectBtn);
+    });
+
+    expect(screen.queryByTestId('visual-cropper-surface')).toBeNull();
+  });
+
+  it('renders export annotated image button in toolbar', async () => {
+    await act(async () => {
+      renderer.render(<ImageViewer file={mockImageFile} />);
+    });
+
+    const exportBtn = screen.getByTestId('image-export-annotated-btn');
+    expect(exportBtn).toBeInTheDocument();
+  });
 });
+

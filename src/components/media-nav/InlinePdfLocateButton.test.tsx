@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useChatStore } from '@/stores/chatStore';
 import { useMediaNavStore } from '@/stores/mediaNavStore';
@@ -74,5 +74,26 @@ describe('InlinePdfLocateButton', () => {
     fireEvent.click(screen.getByTestId('inline-pdf-locate-btn'));
     expect(useMediaNavStore.getState().isOpen).toBe(false);
     spy.mockRestore();
+  });
+
+  it('highlights with data-active="true" when currentPage matches in PDF mode', () => {
+    act(() => {
+      useMediaNavStore.setState({
+        isOpen: true,
+        openKind: 'pdf',
+        currentPage: 5,
+      });
+    });
+
+    render(<InlinePdfLocateButton pageNumber={5}>第 5 页</InlinePdfLocateButton>);
+    const btn = screen.getByTestId('inline-pdf-locate-btn');
+    expect(btn.getAttribute('data-active')).toBe('true');
+
+    act(() => {
+      useMediaNavStore.setState({
+        currentPage: 6,
+      });
+    });
+    expect(btn.getAttribute('data-active')).toBeNull();
   });
 });

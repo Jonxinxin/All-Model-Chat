@@ -52,6 +52,9 @@ export const createSettingsForNewChat = ({
     ...sanitizedTemplateSettings,
     // systemInstruction 属于会话内容（如场景提示词），沿用全局默认，保持现有语义。
     systemInstruction: baseSettings.systemInstruction,
+    isLiveArtifactsEnabled:
+      sanitizedTemplateSettings.isLiveArtifactsEnabled ?? baseSettings.isLiveArtifactsEnabled ?? false,
+    visionPromptMode: sanitizedTemplateSettings.visionPromptMode ?? baseSettings.visionPromptMode ?? null,
     // 锁定 API Key 始终重置，新聊天重新轮换。
     lockedApiKey: null,
   };

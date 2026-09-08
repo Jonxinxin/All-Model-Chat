@@ -248,19 +248,27 @@ async function buildGenerationConfigFromOptions({
   // neither the tool (unsupported by the API) nor the round-trip, so skip both.
   if (isDeepSearchEnabled && !isGemma) {
     const deepSearchPrompt = await loadDeepSearchSystemPrompt();
-    finalSystemInstruction = finalSystemInstruction
-      ? `${finalSystemInstruction}\n\n${deepSearchPrompt}`
-      : deepSearchPrompt;
+    if (!finalSystemInstruction?.includes(deepSearchPrompt.trim())) {
+      finalSystemInstruction = finalSystemInstruction
+        ? `${finalSystemInstruction}\n\n${deepSearchPrompt}`
+        : deepSearchPrompt;
+    }
   }
 
   if (isLocalPythonEnabled) {
     const localPythonPrompt = await loadLocalPythonSystemPrompt();
-    finalSystemInstruction = finalSystemInstruction
-      ? `${finalSystemInstruction}\n\n${localPythonPrompt}`
-      : localPythonPrompt;
+    if (!finalSystemInstruction?.includes(localPythonPrompt.trim())) {
+      finalSystemInstruction = finalSystemInstruction
+        ? `${finalSystemInstruction}\n\n${localPythonPrompt}`
+        : localPythonPrompt;
+    }
   }
 
-  const gemmaThinkingLevel = isGemma ? (showThoughts ? 'HIGH' : 'MINIMAL') : undefined;
+  const gemmaThinkingLevel = isGemma
+    ? (thinkingLevel === 'HIGH' || thinkingLevel === 'MINIMAL'
+        ? thinkingLevel
+        : (showThoughts ? 'HIGH' : 'MINIMAL'))
+    : undefined;
 
   const generationConfig: GenerationConfig = {
     ...config,

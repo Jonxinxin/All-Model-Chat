@@ -53,9 +53,15 @@ const inheritAppSystemInstructionForEmptySession = (
   const nextSettings: ChatSettings = {
     ...session.settings,
     systemInstruction: inheritedSettings.systemInstruction,
+    isLiveArtifactsEnabled: session.settings.isLiveArtifactsEnabled ?? inheritedSettings.isLiveArtifactsEnabled,
+    visionPromptMode: session.settings.visionPromptMode ?? inheritedSettings.visionPromptMode,
   };
 
-  if (nextSettings.systemInstruction === session.settings.systemInstruction) {
+  if (
+    nextSettings.systemInstruction === session.settings.systemInstruction &&
+    nextSettings.isLiveArtifactsEnabled === session.settings.isLiveArtifactsEnabled &&
+    nextSettings.visionPromptMode === session.settings.visionPromptMode
+  ) {
     return { session, settingsChanged: false };
   }
 

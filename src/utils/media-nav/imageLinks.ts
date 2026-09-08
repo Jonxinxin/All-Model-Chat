@@ -1,4 +1,5 @@
 import { createLocateTagPatterns, linkifyLocateTags } from './locateTagTransform';
+import { normalizeBoxCoordinates, normalizePointCoordinates } from './coordinateSniffer';
 
 const IMAGE_LOCATE_PATTERNS = createLocateTagPatterns('image-locate');
 
@@ -6,29 +7,20 @@ const buildImageSeekMarkdownLink = (attrs: Record<string, string>, inner: string
   const fileName = attrs.file?.trim() || attrs.image?.trim() || attrs.doc?.trim();
   const rawBox = attrs.box?.trim() || attrs.box2d?.trim() || attrs.box_2d?.trim();
   const rawPoint = attrs.point?.trim();
-  if (!rawBox && !rawPoint) return null;
+
+  const box = normalizeBoxCoordinates(rawBox);
+  const point = normalizePointCoordinates(rawPoint);
+  if (!box && !point) return null;
 
   const query = new URLSearchParams();
   if (fileName) query.set('file', fileName);
 
-  if (rawBox) {
-    const normalizedBox = rawBox
-      .replace(/[()[\]]/g, '')
-      .split(/[,;\s]+/)
-      .map((v) => v.trim())
-      .filter(Boolean)
-      .join(',');
-    if (normalizedBox) query.set('box', normalizedBox);
+  if (box) {
+    query.set('box', box.join(','));
   }
 
-  if (rawPoint) {
-    const normalizedPoint = rawPoint
-      .replace(/[()[\]]/g, '')
-      .split(/[,;\s]+/)
-      .map((v) => v.trim())
-      .filter(Boolean)
-      .join(',');
-    if (normalizedPoint) query.set('point', normalizedPoint);
+  if (point) {
+    query.set('point', point.join(','));
   }
 
   if (attrs.arrow?.trim()) {
@@ -46,8 +38,19 @@ const buildImageSeekMarkdownLink = (attrs: Record<string, string>, inner: string
   }
 
   let label: string;
-  if (rawLabel && cleanSnippet && rawLabel !== cleanSnippet) {
-    label = `${rawLabel} · ${cleanSnippet}`;
+  const lowerLabel = rawLabel?.toLowerCase() || '';
+  const lowerSnippet = cleanSnippet.toLowerCase();
+
+  if (rawLabel && cleanSnippet) {
+    if (rawLabel === cleanSnippet) {
+      label = rawLabel;
+    } else if (lowerSnippet.includes(lowerLabel)) {
+      label = cleanSnippet;
+    } else if (lowerLabel.includes(lowerSnippet)) {
+      label = rawLabel;
+    } else {
+      label = `${rawLabel} · ${cleanSnippet}`;
+    }
   } else if (rawLabel) {
     label = rawLabel;
   } else if (cleanSnippet) {

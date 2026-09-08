@@ -40,6 +40,7 @@ export const linkifyLocateTags = (
       const trailingMatch = processedText.match(trailingPattern);
       const bodyPart = trailingMatch ? trailingMatch[1] : processedText;
       const trailingPart = trailingMatch ? trailingMatch[2] : '';
+      const existingLinkHrefs = new Set<string>();
 
       let transformedBody = bodyPart.replace(
         inlineTagRegex,
@@ -53,6 +54,8 @@ export const linkifyLocateTags = (
           const attrs = parseTagAttributes(attrStr);
           const link = buildMarkdownLink(attrs, inner || '');
           if (link) {
+            const hrefMatch = link.match(/\((#[^)]+)\)/);
+            if (hrefMatch) existingLinkHrefs.add(hrefMatch[1]);
             const prefix = leadingNewline || leadingSpace || ' ';
             return `${prefix}${link}`;
           }
@@ -61,6 +64,7 @@ export const linkifyLocateTags = (
       );
 
       transformedBody = transformedBody.replace(/\n\s*(\n\s*)+/g, '\n\n');
+      transformedBody = transformedBody.replace(/[ \t]+([。，、！？；：.!?])/g, '$1');
 
       const transformedTrailingButtons: string[] = [];
       tagRegex.lastIndex = 0;
@@ -69,7 +73,13 @@ export const linkifyLocateTags = (
         const attrs = parseTagAttributes(trailingMatchItem[1]);
         const link = buildMarkdownLink(attrs, trailingMatchItem[2] || '');
         if (link) {
+          const hrefMatch = link.match(/\((#[^)]+)\)/);
+          if (hrefMatch && existingLinkHrefs.has(hrefMatch[1])) {
+            // Already represented by an inline button in the body text
+            continue;
+          }
           transformedTrailingButtons.push(link);
+          if (hrefMatch) existingLinkHrefs.add(hrefMatch[1]);
         }
       }
 

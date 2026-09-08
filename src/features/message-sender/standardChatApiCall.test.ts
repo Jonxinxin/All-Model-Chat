@@ -457,4 +457,47 @@ describe('performStandardChatApiCall', () => {
       }),
     );
   });
+
+  it('preserves user custom instruction while excluding Live Artifacts when locate directives are active', async () => {
+    mocks.sendStatelessMessageStreamApi.mockImplementation(
+      async (_key, _model, _history, _parts, _config, _signal, _part, _thought, _error, onComplete) => {
+        onComplete();
+      },
+    );
+
+    const pdfFile = {
+      id: 'pdf-1',
+      name: 'doc.pdf',
+      type: 'application/pdf',
+      size: 100,
+    };
+
+    const params = baseParams({
+      sessionToUpdate: {
+        ...DEFAULT_CHAT_SETTINGS,
+        isPdfNavEnabled: true,
+        isLiveArtifactsEnabled: true,
+        systemInstruction: 'Stay concise and helpful.',
+      },
+      enrichedFiles: [pdfFile],
+    });
+
+    await performStandardChatApiCall(params as never);
+
+    expect(mocks.buildGenerationConfig).toHaveBeenCalledWith(
+      expect.objectContaining({
+        systemInstruction: expect.stringContaining('Stay concise and helpful.'),
+      }),
+    );
+    expect(mocks.buildGenerationConfig).toHaveBeenCalledWith(
+      expect.objectContaining({
+        systemInstruction: expect.stringContaining('PDF Locate Protocol'),
+      }),
+    );
+    expect(mocks.buildGenerationConfig).toHaveBeenCalledWith(
+      expect.objectContaining({
+        systemInstruction: expect.not.stringContaining('Live Artifacts Protocol'),
+      }),
+    );
+  });
 });

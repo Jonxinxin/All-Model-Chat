@@ -7,7 +7,7 @@ import { SETTINGS_TABS } from '@/constants/settingsTabs';
 import { ensureFeatureTranslations } from '@/i18n/featureTranslations';
 import { setupStoreStateReset } from '@/test/stores/reset';
 import { useSettingsUiStore } from '@/stores/settingsUiStore';
-import type { McpServerConfig } from '@/types';
+import type { McpServerConfig, ThirdPartyConnection } from '@/types';
 import { SettingsModal } from './SettingsModal';
 
 // Every catalog entry promises "navigate + highlight" via its
@@ -24,12 +24,26 @@ const TEST_MCP_SERVER: McpServerConfig = {
   env: {},
 };
 
+const TEST_THIRD_PARTY_CONNECTION: ThirdPartyConnection = {
+  id: 'test-provider',
+  name: 'Test Provider',
+  templateId: 'openai',
+  protocol: 'openai-compatible',
+  apiKey: 'test-key',
+  baseUrl: 'https://api.openai.com/v1',
+  extraHeaders: {},
+  modelId: 'gpt-4o',
+  models: [{ id: 'gpt-4o', name: 'GPT-4o' }],
+  enabled: true,
+};
+
 describe('settings search anchors', () => {
   const renderer = setupTestRenderer({ providers: { language: 'en' } });
   setupStoreStateReset();
 
   const renderSettingsModal = async (lastTab: string) => {
     localStorage.setItem('chatSettingsLastTab', lastTab);
+    useSettingsUiStore.setState({ activeTab: lastTab as any });
     await act(async () => {
       const props: ComponentProps<typeof SettingsModal> = {
         isOpen: true,
@@ -38,6 +52,9 @@ describe('settings search anchors', () => {
           ...DEFAULT_APP_SETTINGS,
           modelId: 'gemini-3-flash-preview',
           mcpServers: [TEST_MCP_SERVER],
+          thirdPartyApi: {
+            connections: [TEST_THIRD_PARTY_CONNECTION],
+          },
         },
         currentThemeId: 'pearl',
         availableModels: [],

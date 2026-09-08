@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getErrorMessage } from '@/utils/errorMessage';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, Server } from 'lucide-react';
 import type { AppSettings } from '@/types';
 import { useI18n } from '@/contexts/I18nContext';
 import { DEFAULT_LIVE_ARTIFACTS_MODEL_ID } from '@/constants/modelConfiguration';
@@ -15,8 +15,7 @@ import { ApiConfigToggle } from './api-config/ApiConfigToggle';
 import { ApiKeyInput } from './api-config/ApiKeyInput';
 import { ApiProxySettings } from './api-config/ApiProxySettings';
 import { ApiConnectionTester } from './api-config/ApiConnectionTester';
-import { ThirdPartyApiSettingsPanel } from './api-config/ThirdPartyApiSettingsPanel';
-import { FileStrategyControl } from './appearance/FileStrategyControl';
+import { useSettingsUiStore } from '@/stores/settingsUiStore';
 import { getLatencyGrade, type LatencyGrade } from '@/utils/thirdPartyDiagnostics';
 
 interface ApiConfigSectionProps {
@@ -31,6 +30,7 @@ interface ApiConfigSectionProps {
   serverManagedApi: boolean;
   settings: AppSettings;
   onUpdate: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => void;
+  hideProviderRedirect?: boolean;
 }
 
 export const ApiConfigSection: React.FC<ApiConfigSectionProps> = ({
@@ -45,6 +45,7 @@ export const ApiConfigSection: React.FC<ApiConfigSectionProps> = ({
   serverManagedApi,
   settings,
   onUpdate,
+  hideProviderRedirect = false,
 }) => {
   const { t } = useI18n();
   const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
@@ -262,18 +263,34 @@ export const ApiConfigSection: React.FC<ApiConfigSectionProps> = ({
         </div>
       </div>
 
-      <ThirdPartyApiSettingsPanel
-        settings={settings}
-        onUpdateSettings={(partial) => {
-          (Object.entries(partial) as Array<[keyof AppSettings, AppSettings[keyof AppSettings]]>).forEach(
-            ([key, value]) => {
-              onUpdate(key, value);
-            },
-          );
-        }}
-      />
-
-      <FileStrategyControl settings={settings} onUpdate={onUpdate} />
+      <div
+        className={
+          hideProviderRedirect
+            ? 'hidden'
+            : 'rounded-xl border border-[var(--theme-border-secondary)] bg-[var(--theme-bg-surface-secondary)]/50 p-4 transition-all duration-200'
+        }
+        data-settings-item="api-provider"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--theme-accent-primary)]/10 text-[var(--theme-accent-primary)]">
+              <Server size={18} />
+            </div>
+            <div>
+              <div className="text-sm font-medium text-[var(--theme-text-primary)]">{t('settingsTabProviders')}</div>
+              <div className="text-xs text-[var(--theme-text-secondary)] mt-0.5">{t('apiThirdPartyRedirectDesc')}</div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => useSettingsUiStore.getState().setActiveTab('providers')}
+            className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--theme-accent-primary)] hover:bg-[var(--theme-accent-primary)]/10 border border-[var(--theme-accent-primary)]/30 transition-colors"
+          >
+            <span>{t('settingsGoToProviders')}</span>
+            <ChevronRight size={14} />
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

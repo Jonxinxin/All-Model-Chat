@@ -83,6 +83,7 @@ type ChatAreaInputValue = {
   isBBoxModeActive: boolean;
   onToggleGuide: () => void;
   isGuideModeActive: boolean;
+  isLiveArtifactsPromptActive?: boolean;
   themeId: string;
 };
 
@@ -231,6 +232,7 @@ export const createChatAreaProviderValue = (overrides: ChatAreaProviderValueOver
       isBBoxModeActive: false,
       onToggleGuide: vi.fn(),
       isGuideModeActive: false,
+      isLiveArtifactsPromptActive: false,
       themeId: 'pearl',
       ...inputOverrides,
     },

@@ -115,4 +115,30 @@ describe('seekSessionImage', () => {
     expect(updated.isPdfNavEnabled).toBe(false);
     expect(updated.systemInstruction).toBe('');
   });
+
+  it('collects all sibling image locates for the same image into imageHighlights', () => {
+    const img = makeImage('img-4', 'multi.png');
+    const msg: ChatMessage = {
+      id: 'm-multi',
+      role: 'model',
+      content:
+        '1. <image-locate file="multi.png" box="10,10,50,50" label="Item A">A</image-locate>\n' +
+        '2. <image-locate file="multi.png" box="60,60,90,90" label="Item B">B</image-locate>',
+      timestamp: new Date(),
+      files: [img],
+    };
+    useChatStore.setState({ selectedFiles: [], activeMessages: [msg] });
+
+    const success = seekSessionImage({ messageId: 'm-multi', label: 'Item B' });
+    expect(success).toBe(true);
+
+    const state = useMediaNavStore.getState();
+    expect(state.imageHighlights).toHaveLength(2);
+    expect(state.imageHighlight?.label).toBe('Item B');
+    expect(state.imageHighlights[1].isActive).toBe(true);
+    expect(state.imageHighlights[0].isActive).toBe(false);
+    expect(state.imageHighlights[0].index).toBe(1);
+    expect(state.imageHighlights[1].index).toBe(2);
+  });
 });
+

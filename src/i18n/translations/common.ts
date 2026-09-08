@@ -7,6 +7,16 @@ export const commonTranslations = {
   delete: { en: 'Delete', zh: '删除', ja: '削除', ko: '삭제', es: 'Eliminar', fr: 'Supprimer', de: 'Löschen' },
   clear: { en: 'Clear', zh: '清除', ja: 'クリア', ko: '지우기', es: 'Borrar', fr: 'Effacer', de: 'Löschen' },
   edit: { en: 'Edit', zh: '编辑', ja: '編集', ko: '편집', es: 'Editar', fr: 'Modifier', de: 'Bearbeiten' },
+  enabled: { en: 'Enabled', zh: '已启用', ja: '有効', ko: '활성화됨', es: 'Activado', fr: 'Activé', de: 'Aktiviert' },
+  disabled: {
+    en: 'Disabled',
+    zh: '已禁用',
+    ja: '無効',
+    ko: '비활성화됨',
+    es: 'Desactivado',
+    fr: 'Désactivé',
+    de: 'Deaktiviert',
+  },
   expand: { en: 'Expand', zh: '展开', ja: '展開', ko: '확장', es: 'Expandir', fr: 'Développer', de: 'Erweitern' },
   collapse: {
     en: 'Collapse',

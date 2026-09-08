@@ -46,8 +46,9 @@ export const PdfHighlightOverlay: React.FC<PdfHighlightOverlayProps> = ({
     >
       {!isPoint ? (
         <div
+          key={`pdf-box-${top}-${left}-${width}-${height}`}
           data-testid="pdf-highlight-box"
-          className="absolute rounded border border-red-500/50 dark:border-red-400/50 bg-red-500/[0.07] dark:bg-red-500/[0.12] transition-all duration-300"
+          className="absolute rounded border border-red-500/50 dark:border-red-400/50 bg-red-500/[0.07] dark:bg-red-500/[0.12] transition-all duration-300 animate-reticle-pulse"
           style={{
             top: `${top}%`,
             left: `${left}%`,
@@ -62,8 +63,9 @@ export const PdfHighlightOverlay: React.FC<PdfHighlightOverlayProps> = ({
         </div>
       ) : (
         <div
+          key={`pdf-pt-${top}-${left}`}
           data-testid="pdf-highlight-point"
-          className="absolute -translate-x-1/2 -translate-y-1/2"
+          className="absolute -translate-x-1/2 -translate-y-1/2 animate-reticle-pulse"
           style={{
             top: `${top}%`,
             left: `${left}%`,

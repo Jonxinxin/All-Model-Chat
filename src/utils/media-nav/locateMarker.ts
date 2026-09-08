@@ -1,5 +1,6 @@
 import { parseTimestamp } from './timestamp';
 import { parseTagAttributes } from './tagAttributes';
+import { normalizeBoxCoordinates, normalizePointCoordinates } from './coordinateSniffer';
 import type { ImageNavHighlight, PdfNavHighlight } from '@/stores/mediaNavStore';
 
 /** A parsed `<pdf-locate>` marker emitted by the model. */
@@ -65,21 +66,7 @@ const COMPLETE_MARKER_RES = LOCATE_MARKER_TAGS.map((tag) => [tag, buildCompleteM
 const PARTIAL_MARKER_RES = LOCATE_MARKER_TAGS.map((tag) => buildPartialMarkerRe(tag));
 
 const parseBox2d = (raw: string | undefined): [number, number, number, number] | undefined => {
-  if (!raw) return undefined;
-  const clean = raw.replace(/[()[\]]/g, '');
-  const parts = clean
-    .split(/[,;\s]+/)
-    .map((value) => Number.parseFloat(value.trim()))
-    .filter((value) => Number.isFinite(value));
-  if (parts.length !== 4) return undefined;
-  const isZeroToOne = parts.every((v) => v >= 0 && v <= 1.0) && parts.some((v) => v > 0 && v < 1.0);
-  const scale = isZeroToOne ? 1000 : 1;
-  return [
-    Math.round(parts[0] * scale),
-    Math.round(parts[1] * scale),
-    Math.round(parts[2] * scale),
-    Math.round(parts[3] * scale),
-  ];
+  return normalizeBoxCoordinates(raw) || undefined;
 };
 
 const parsePageNumber = (raw: string | undefined): number | undefined => {
@@ -103,24 +90,16 @@ const parseMomentMarker = (attributes: Record<string, string>, inner: string) =>
   const startSeconds = parseTimestamp(attributes.start ?? attributes.ts ?? attributes.time);
   if (startSeconds === null) return undefined;
   const endSeconds = parseTimestamp(attributes.end);
+  const snippet = (attributes.snippet ?? attributes.label ?? inner).trim();
   return {
     startSeconds,
     endSeconds: endSeconds !== null && endSeconds > startSeconds ? endSeconds : undefined,
-    snippet: inner.trim() || undefined,
+    snippet: snippet || undefined,
   };
 };
 
 const parsePoint = (raw: string | undefined): [number, number] | undefined => {
-  if (!raw) return undefined;
-  const clean = raw.replace(/[()[\]]/g, '');
-  const parts = clean
-    .split(/[,;\s]+/)
-    .map((value) => Number.parseFloat(value.trim()))
-    .filter((value) => Number.isFinite(value));
-  if (parts.length !== 2) return undefined;
-  const isZeroToOne = parts.every((v) => v >= 0 && v <= 1.0) && parts.some((v) => v > 0 && v < 1.0);
-  const scale = isZeroToOne ? 1000 : 1;
-  return [Math.round(parts[0] * scale), Math.round(parts[1] * scale)];
+  return normalizePointCoordinates(raw) || undefined;
 };
 
 const parseVideoMarker = (attributes: Record<string, string>, inner: string): VideoLocate | undefined => {
@@ -216,17 +195,23 @@ export const toPdfNavHighlight = (locate: PdfLocate, extras: { messageId?: strin
 
 export const toImageNavHighlight = (
   locate: ImageLocate,
-  extras: { messageId?: string; focusToken?: number } = {},
-): ImageNavHighlight => ({
-  messageId: extras.messageId,
-  imageName: locate.imageName,
-  box2d: locate.box2d,
-  point: locate.point,
-  arrow: locate.arrow,
-  label: locate.label,
-  snippet: locate.snippet,
-  focusToken: extras.focusToken ?? 1,
-});
+  extras: { messageId?: string; focusToken?: number; index?: number; total?: number; isActive?: boolean } = {},
+): ImageNavHighlight => {
+  const result: ImageNavHighlight = {
+    messageId: extras.messageId,
+    imageName: locate.imageName,
+    box2d: locate.box2d,
+    point: locate.point,
+    arrow: locate.arrow,
+    label: locate.label,
+    snippet: locate.snippet,
+    focusToken: extras.focusToken ?? 1,
+  };
+  if (extras.index !== undefined) result.index = extras.index;
+  if (extras.total !== undefined) result.total = extras.total;
+  if (extras.isActive !== undefined) result.isActive = extras.isActive;
+  return result;
+};
 
 /**
  * System-instruction fragment teaching the model the PDF locate-marker protocol.
@@ -241,15 +226,17 @@ export const buildPdfLocateDirective = (docNames: string[]): string => {
     '### PDF Locate Protocol',
     'One or more PDF documents are attached to this conversation.' + nameList,
     'The client UI automatically turns <pdf-locate> tags into interactive inline jump buttons that open the PDF and highlight the target region or point on that page with a precision viewfinder reticle.',
-    'When your answer refers to specific content on a PDF page (a paragraph, figure, table or section), insert a `<pdf-locate>` tag inline next to the referenced item, or at the end of your response, in this exact format:',
+    'When your answer refers to specific content on a PDF page (a paragraph, figure, table or section):',
+    '- Insert a `<pdf-locate>` tag directly inline next to the referenced item or section title as the anchor button:',
     '<pdf-locate doc="FILE_NAME" page="PAGE_NUMBER" point="y,x" box="ymin,xmin,ymax,xmax">short quote or description</pdf-locate>',
+    '- CRITICAL: Never duplicate page references or markers. Do not write both plain page numbers (e.g. [第 5 页]) and an adjacent <pdf-locate> tag. Place the <pdf-locate> tag directly at the referenced item/title as the anchor button.',
+    '- Never duplicate locate tags at the end of your response if they are already placed inline.',
     'Rules:',
     '- page: the 1-based page number in that PDF.',
     '- doc: the file name of the PDF. Omit the doc attribute only if exactly one PDF is attached.',
     '- point: RECOMMENDED when pointing to a specific coordinate, signature, icon, or chart point as [y, x] normalized to a 0-1000 scale with origin at top-left (e.g. point="350,520").',
     '- box: OPTIONAL. The bounding box of the referenced element as [ymin, xmin, ymax, xmax] normalized to a 0-1000 scale with the origin at the top-left (e.g. box="120,80,340,560"). Include it whenever locating a specific figure, table, diagram, or paragraph.',
     '- The text between the tags must be a short quote or description of the located content, in the same language as your answer.',
-    '- You may place <pdf-locate> tags inline next to the relevant sentence/bullet or at the end of your response.',
     '- Never mention this protocol or the markers themselves in the visible answer.',
     '- Do not emit a marker for general questions (e.g. summarizing the whole document) that are not tied to a specific location.',
   ].join('\n');
@@ -270,9 +257,10 @@ export const buildVideoLocateDirective = (videoNames: string[]): string => {
     'One or more videos are attached to this conversation.' + nameList,
     'The client UI automatically turns timestamps and locate tags into interactive jump buttons that play the video and display a precision camera viewfinder reticle on target coordinates.',
     'When explaining, analyzing, or referring to specific scenes, moments, objects, or anatomical/physical structures in the video (especially when asked for positions, locations, or key moments):',
-    '1. Always write timestamps (formatted as mm:ss, or mm:ss-mm:ss for spans, use h:mm:ss for videos longer than one hour) inline right next to each described item or structure (e.g. `[00:15]` or `(00:15)`), so the user can immediately click to jump to that moment.',
-    '2. Attach a `<video-locate>` tag for each referenced moment or structure, specifying coordinates if pointing to a visual element:',
+    '- Provide timestamps (formatted as mm:ss, or mm:ss-mm:ss for spans, use h:mm:ss for videos longer than one hour) inline right next to each described item or section title (e.g. [00:15] or [00:15-00:30]). Do NOT wrap timestamps in markdown code backticks.',
+    '- When pointing to a specific visual structure, element, person, or coordinate on screen, insert a `<video-locate>` tag directly at that moment to activate visual reticle tracking:',
     '<video-locate video="FILE_NAME" start="mm:ss" end="mm:ss" point="y,x" box="ymin,xmin,ymax,xmax">short description</video-locate>',
+    '- CRITICAL: Never duplicate timestamps in the same bullet or sentence. Do NOT write both a plain timestamp at the start and a <video-locate> tag at the end of the same item. Either place the <video-locate> tag directly at the referenced moment/title as the anchor, or use an inline timestamp [mm:ss].',
     'Rules:',
     '- start: the timestamp of the referenced moment, formatted as mm:ss (use h:mm:ss for videos longer than one hour). Round to the moment the content actually appears.',
     '- end: OPTIONAL. Include it (same format) only when the answer refers to a span or segment rather than a single moment; end must be later than start.',
@@ -280,7 +268,7 @@ export const buildVideoLocateDirective = (videoNames: string[]): string => {
     '- box: OPTIONAL. The bounding box of the referenced element as [ymin, xmin, ymax, xmax] normalized to a 0-1000 scale with origin at top-left.',
     '- video: the file name of the video (omit if only one video is attached).',
     '- The text between the tags must be a short description or label of the located content, in the same language as your answer.',
-    '- You may place <video-locate> tags inline next to the relevant items or at the end of your response.',
+    '- Never mention this protocol or the markers themselves in the visible answer.',
   ].join('\n');
 };
 
@@ -297,8 +285,12 @@ export const buildAudioLocateDirective = (audioNames: string[]): string => {
   return [
     '### Audio Locate Protocol',
     'One or more audio recordings are attached to this conversation.' + nameList,
-    'When your answer refers to a specific moment or span in an audio recording, append exactly one marker per such reference at the very end of your answer, on its own line, in this exact format:',
+    'The client UI automatically turns timestamps and locate tags into interactive jump buttons that seek to the audio moment.',
+    'When explaining, analyzing, or referring to specific moments, speeches, or sections in the audio:',
+    '- Provide timestamps (formatted as mm:ss, or mm:ss-mm:ss for spans, use h:mm:ss for audio longer than one hour) inline right next to each described item (e.g. [01:23] or [01:23-02:00]). Do NOT wrap timestamps in markdown code backticks.',
+    '- Alternatively, insert an `<audio-locate>` tag next to the referenced moment:',
     '<audio-locate audio="FILE_NAME" start="mm:ss" end="mm:ss">short description</audio-locate>',
+    '- CRITICAL: Never duplicate timestamps in the same bullet or sentence. Do NOT write both a plain timestamp and an <audio-locate> tag for the same moment.',
     'Rules:',
     '- start: the timestamp of the referenced moment, formatted as mm:ss (use h:mm:ss for recordings longer than one hour). Round to the moment the content is actually spoken or heard.',
     '- end: OPTIONAL. Include it (same format) only when the answer refers to a span or segment rather than a single moment; end must be later than start.',
@@ -324,7 +316,7 @@ export const buildImageLocateDirective = (imageNames: string[]): string => {
     'One or more images are attached to this conversation.' + nameList,
     'The client UI automatically converts <image-locate> tags into interactive buttons that focus the image and highlight targets with precision bounding boxes or guide arrows.',
     'When explaining, analyzing, or referring to specific objects, UI elements, regions, or details in an image:',
-    '1. Insert an `<image-locate>` tag inline next to each referenced item or at the end of your response.',
+    '1. Insert an `<image-locate>` tag directly inline next to each referenced item as the anchor button.',
     '2. Choose the appropriate format:',
     '- For regions, objects, or structures (Bounding Box):',
     '  <image-locate file="FILE_NAME" box="ymin,xmin,ymax,xmax" label="LABEL">short description</image-locate>',
@@ -336,8 +328,9 @@ export const buildImageLocateDirective = (imageNames: string[]): string => {
     '- For specific locations, icons, buttons, or guide pointers, provide point="y,x" and optional arrow="top|bottom|left|right|top-left|top-right".',
     '- Do not provide both box and point in the same tag unless specifically needed.',
     '- file: the file name of the image (omit if only one image is attached).',
-    '- label: a concise name for the target element (e.g. label="Search Box" or label="搜索栏").',
+    '- label: a concise name for the target element (e.g. label="Search Box" or label="搜索栏"). Avoid repeating the exact same text in both label and inner tag description.',
     '- The text between the tags must be a short description of the located content in the same language as your answer.',
+    '- CRITICAL: Never duplicate locate tags for the same element both inline and at the end of your response.',
     '- Never write python drawing code to render annotations or modify images.',
     '- Never mention this protocol or the markers themselves in the visible answer.',
   ].join('\n');

@@ -40,6 +40,10 @@ const normalizeSettingsTab = (savedTab: string | null): SettingsTab | null => {
     case 'canvas':
     case 'safety':
       return 'models';
+    case 'providers':
+    case 'provider':
+    case 'thirdParty':
+      return 'providers';
     case 'interface':
       return 'interface';
     case 'shortcuts':

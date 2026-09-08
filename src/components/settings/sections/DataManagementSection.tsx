@@ -26,6 +26,7 @@ import { SETTINGS_SECTION_CARD_CLASS, SETTINGS_SECTION_LABEL_CLASS } from '@/con
 import { applyImportedProviders, exportProvidersBackupFile, parseProvidersBackupText } from '@/utils/thirdPartyBackup';
 import { toastError, toastSuccess, toastWarning } from '@/stores/toastStore';
 import { interpolate } from '@/i18n/interpolate';
+import { FileStrategyControl } from '@/components/settings/sections/appearance/FileStrategyControl';
 
 interface DataManagementSectionProps {
   onClearHistory: () => void;
@@ -231,6 +232,8 @@ export const DataManagementSection: React.FC<DataManagementSectionProps> = ({
           ))}
         </DataCard>
       </div>
+
+      <FileStrategyControl settings={settings} onUpdate={onUpdate} />
 
       <div data-settings-item="data-system-tools">
         <DataCard title={t('settingsSystemTools')} icon={<Settings size={14} strokeWidth={1.5} />}>

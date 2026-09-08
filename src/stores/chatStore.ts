@@ -545,6 +545,23 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
         lockedApiKey: pendingLockedApiKey,
       };
       const nextSettings = updater(currentBase);
+      if (nextSettings === currentBase) {
+        return;
+      }
+      set({
+        pendingLockedApiKey: nextSettings.lockedApiKey ?? null,
+        pendingChatSettings: nextSettings,
+      });
+      return;
+    }
+    const hasSession = get().savedSessions.some((session) => session.id === activeSessionId);
+    if (!hasSession) {
+      const currentBase: ChatSettings = {
+        ...DEFAULT_CHAT_SETTINGS,
+        ...(pendingChatSettings ?? {}),
+        lockedApiKey: pendingLockedApiKey,
+      };
+      const nextSettings = updater(currentBase);
       set({
         pendingLockedApiKey: nextSettings.lockedApiKey ?? null,
         pendingChatSettings: nextSettings,
@@ -552,10 +569,16 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       return;
     }
     get().updateAndPersistSessions((prevSessions) =>
-      updateSessionByIdInSessions(prevSessions, activeSessionId, (session) => ({
-        ...session,
-        settings: updater(session.settings),
-      })),
+      updateSessionByIdInSessions(prevSessions, activeSessionId, (session) => {
+        const nextSettings = updater(session.settings);
+        if (nextSettings === session.settings) {
+          return session;
+        }
+        return {
+          ...session,
+          settings: nextSettings,
+        };
+      }),
     );
   },
 }));

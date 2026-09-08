@@ -78,4 +78,14 @@ describe('linkifyPdfLocates', () => {
 
     expect(output).toContain('[第 2 页 · 见 \\[图 1.2 架构图\\]](#pdf-seek?page=2');
   });
+
+  it('does not duplicate page prefix when snippet mentions page number in mid-phrase', () => {
+    const input = '详见分析 <pdf-locate page="5">报告第 5 页结论</pdf-locate> 以及 <pdf-locate page="8">P.8 架构图</pdf-locate>。';
+    const output = linkifyPdfLocates(input);
+
+    expect(output).toContain('[报告第 5 页结论](#pdf-seek?page=5');
+    expect(output).not.toContain('第 5 页 · 报告第 5 页结论');
+    expect(output).toContain('[P.8 架构图](#pdf-seek?page=8');
+    expect(output).not.toContain('第 8 页 · P.8 架构图');
+  });
 });

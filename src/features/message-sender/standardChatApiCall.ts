@@ -5,7 +5,8 @@ import {
   buildPdfLocateDirective,
   buildVideoLocateDirective,
 } from '@/utils/media-nav/locateMarker';
-import { isLiveArtifactsSystemInstruction } from '@/features/prompts/promptRegistry';
+import { isLiveArtifactsModeFromSettings } from '@/utils/live-artifacts/liveArtifactsMode';
+import { composeSystemInstruction } from '@/features/prompts/promptCompositor';
 import {
   collectSessionMediaFiles,
   isAudioFile,
@@ -22,6 +23,7 @@ import { createMessage } from '@/utils/chat/session';
 import { isServerCodeExecutionMode } from '@/utils/codeExecution';
 import {
   isGemini3Model,
+  isGemmaModel,
   isImageGenerationModel,
   shouldStripThinkingFromContext,
 } from '@/utils/model/modelCapabilities';
@@ -233,16 +235,24 @@ export const performStandardChatApiCall = async ({
       ? buildImageLocateDirective(images.map((file) => file.name))
       : '',
   ].filter(Boolean);
-  const baseInstruction =
-    locateDirectives.length > 0 && isLiveArtifactsSystemInstruction(sessionToUpdate.systemInstruction)
-      ? ''
-      : sessionToUpdate.systemInstruction;
-  const effectiveSystemInstruction =
-    locateDirectives.length > 0
-      ? baseInstruction
-        ? `${baseInstruction}\n\n${locateDirectives.join('\n\n')}`
-        : locateDirectives.join('\n\n')
-      : sessionToUpdate.systemInstruction;
+  const isLiveArtifactsActive = isLiveArtifactsModeFromSettings({
+    isLiveArtifactsEnabled: sessionToUpdate.isLiveArtifactsEnabled,
+    systemInstruction: sessionToUpdate.systemInstruction,
+    promptMode: appSettings.liveArtifactsPromptMode,
+    liveArtifactsSystemPrompt: appSettings.liveArtifactsSystemPrompt,
+    liveArtifactsSystemPrompts: appSettings.liveArtifactsSystemPrompts,
+  });
+  const effectiveSystemInstruction = await composeSystemInstruction({
+    userInstruction: sessionToUpdate.systemInstruction,
+    isLiveArtifactsEnabled: isLiveArtifactsActive,
+    liveArtifactsPromptMode: appSettings.liveArtifactsPromptMode,
+    visionPromptMode: sessionToUpdate.visionPromptMode,
+    isDeepSearchEnabled: !activeProvider && Boolean(sessionToUpdate.isDeepSearchEnabled),
+    isLocalPythonEnabled: !activeProvider && Boolean(sessionToUpdate.isLocalPythonEnabled),
+    isGemmaModel: isGemmaModel(apiModelId),
+    locateDirectives,
+    language: resolveAppLanguage(appSettings.language),
+  });
 
   const { streamOnError, streamOnComplete, streamOnPart, onThoughtChunk } = getStreamHandlers(
     finalSessionId,
@@ -275,19 +285,20 @@ export const performStandardChatApiCall = async ({
   });
 
   if (activeProvider) {
+    const activeModel = activeProvider.models?.find((m) => m.id === apiModelId);
     const providerConfig = {
       baseUrl: activeProvider.baseUrl,
       templateId: activeProvider.templateId,
       systemInstruction: effectiveSystemInstruction,
-      temperature: sessionToUpdate.temperature,
-      topP: sessionToUpdate.topP,
+      temperature: activeModel?.parameters?.temperature ?? sessionToUpdate.temperature,
+      topP: activeModel?.parameters?.topP ?? sessionToUpdate.topP,
       topK: sessionToUpdate.topK,
-      maxOutputTokens: sessionToUpdate.maxOutputTokens,
+      maxOutputTokens: activeModel?.parameters?.maxOutputTokens ?? sessionToUpdate.maxOutputTokens,
       stopSequences: sessionToUpdate.stopSequences,
       presencePenalty: sessionToUpdate.presencePenalty,
       frequencyPenalty: sessionToUpdate.frequencyPenalty,
       seed: sessionToUpdate.seed,
-      thinkingLevel: sessionToUpdate.thinkingLevel,
+      thinkingLevel: activeModel?.enableThinking === false ? ('NONE' as const) : sessionToUpdate.thinkingLevel,
       thinkingBudget: sessionToUpdate.thinkingBudget,
       extraHeaders: activeProvider.extraHeaders,
     };

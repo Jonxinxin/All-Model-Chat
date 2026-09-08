@@ -194,4 +194,37 @@ describe('ImageHighlightOverlay', () => {
     const badge = container.querySelector('.inline-flex')?.parentElement as HTMLElement;
     expect(badge.style.transform).toContain('scale(0.5)');
   });
+
+  it('renders multi-target highlights with switcher pill and allows switching targets', () => {
+    const onSelectHighlight = vi.fn();
+    const highlights = [
+      { box2d: [100, 100, 300, 300] as [number, number, number, number], label: 'Item 1', index: 1, isActive: true },
+      { box2d: [400, 400, 600, 600] as [number, number, number, number], label: 'Item 2', index: 2, isActive: false },
+    ];
+
+    const { container } = render(
+      <ImageHighlightOverlay
+        visible={true}
+        highlights={highlights}
+        onSelectHighlight={onSelectHighlight}
+      />,
+    );
+
+    const switcher = container.querySelector('[data-testid="image-multi-highlight-switcher"]');
+    expect(switcher).not.toBeNull();
+    expect(switcher?.textContent).toContain('1/2');
+
+    const inactiveBox = container.querySelector('[data-testid="image-inactive-box"]');
+    expect(inactiveBox).not.toBeNull();
+
+    // Click inactive box to switch
+    fireEvent.click(inactiveBox!);
+    expect(onSelectHighlight).toHaveBeenCalledWith(1);
+
+    // Click next button on switcher
+    const nextBtn = container.querySelector('[data-testid="image-highlight-next"]');
+    fireEvent.click(nextBtn!);
+    expect(onSelectHighlight).toHaveBeenCalledWith(1);
+  });
 });
+

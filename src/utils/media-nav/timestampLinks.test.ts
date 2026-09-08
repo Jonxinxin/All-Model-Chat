@@ -80,9 +80,13 @@ describe('linkifyTimestamps', () => {
       '<video-locate start="00:15" point="300,500">尿道外口</video-locate>',
     ].join('\n');
     const output = linkifyTimestamps(input);
-    // Body timestamps should be linkified
-    expect(output).toContain('[00:05](#video-seek?start=5)');
-    expect(output).toContain('[00:15](#video-seek?start=15)');
+    // Body timestamps should be linkified with coordinate metadata preserved
+    expect(output).toContain(
+      '[00:05](#video-seek?start=5&point=200%2C500&snippet=%E9%98%B4%E8%92%82%E5%8C%85%E7%9A%AE)',
+    );
+    expect(output).toContain(
+      '[00:15](#video-seek?start=15&point=300%2C500&snippet=%E5%B0%BF%E9%81%93%E5%A4%96%E5%8F%A3)',
+    );
     // Trailing duplicate tags should NOT produce duplicate bottom buttons
     expect(output).not.toContain('阴蒂包皮](#video-seek');
   });
@@ -119,9 +123,13 @@ describe('linkifyTimestamps', () => {
     ].join('\n');
     const output = linkifyTimestamps(input);
 
-    // In-sentence timestamps should be converted to inline buttons
-    expect(output).toContain('• 在 [00:02](#video-seek?start=2)，手指触碰宫颈外口时');
-    expect(output).toContain('• 在 [00:54 - 00:56](#video-seek?start=54&end=56)，手指离开宫颈口时');
+    // In-sentence timestamps should be converted to inline buttons with coordinate metadata
+    expect(output).toContain(
+      '• 在 [00:02](#video-seek?start=2&point=450%2C550&snippet=%E5%AE%AB%E9%A2%88%E5%A4%96%E5%8F%A3%E8%BE%B9%E7%BC%98%E7%9A%84%E4%B9%B3%E7%99%BD%E8%89%B2%E9%BB%8F%E6%B6%B2)，手指触碰宫颈外口时',
+    );
+    expect(output).toContain(
+      '• 在 [00:54 - 00:56](#video-seek?start=54&end=56&point=500%2C520&snippet=%E5%AE%AB%E9%A2%88%E7%AE%A1%E5%8F%A3%E5%BE%AE%E7%99%BD%E5%8D%8A%E9%80%8F%E6%98%8E%E9%BB%8F%E6%B6%B2)，手指离开宫颈口时',
+    );
 
     // Redundant second-line locate buttons should NOT appear
     expect(output).not.toContain('宫颈外口边缘的乳白色黏液');
@@ -186,5 +194,73 @@ describe('linkifyTimestamps', () => {
     const input = '<video-locate start="01:00">片段 [核心看点]</video-locate>';
     const output = linkifyTimestamps(input);
     expect(output).toContain('[01:00 · 片段 \\[核心看点\\]](#video-seek?start=60');
+  });
+
+  it('unwraps lone timestamps in backticks outside code fences and converts to seek links', () => {
+    const input = '关键节点 `[00:15]` 以及区间 `00:20-00:35`，但代码 `const t = "00:40";` 保持原样。';
+    const output = linkifyTimestamps(input);
+    expect(output).toContain('[00:15](#video-seek?start=15)');
+    expect(output).toContain('[00:20-00:35](#video-seek?start=20&end=35)');
+    expect(output).toContain('`const t = "00:40";`');
+  });
+
+  it('deduplicates same-line inline locate tag when bullet starts with backtick timestamp and transfers coordinates', () => {
+    const input =
+      '* **害羞端坐** `[00:00-00:09]`：Cosplay 角色扮演者戴着长马尾假发，双手掩面坐在床沿呈害羞状 <video-locate video="demo.mp4" start="00:00" end="00:09" point="163,546">扮演者坐在床边捂脸</video-locate>。';
+    const output = linkifyTimestamps(input);
+
+    // Front timestamp should be converted into interactive link with coordinates attached
+    expect(output).toContain(
+      '* **害羞端坐** [00:00-00:09](#video-seek?start=0&end=9&point=163%2C546&video=demo.mp4&snippet=%E6%89%AE%E6%BC%94%E8%80%85%E5%9D%90%E5%9C%A8%E5%BA%8A%E8%BE%B9%E6%8D%82%E8%84%B8)：Cosplay 角色扮演者戴着长马尾假发，双手掩面坐在床沿呈害羞状。',
+    );
+    // Trailing locate tag should be removed without leaving extra spaces or duplicate buttons
+    expect(output).not.toContain('<video-locate');
+    expect(output).not.toContain('`[00:00-00:09]`');
+    expect(output).not.toContain('捂脸 。');
+  });
+
+  it('handles Chinese full-width brackets （） around timestamps cleanly', () => {
+    const input = '### 一、入座与准备阶段（00:00 - 02:03）';
+    const output = linkifyTimestamps(input);
+    expect(output).toBe('### 一、入座与准备阶段[00:00 - 02:03](#video-seek?start=0&end=123)');
+  });
+
+  it('cleanly deduplicates and enhances multi-bullet video navigation notes', () => {
+    const input = [
+      '### 一、入座与准备阶段（00:00 - 02:03）',
+      '* **害羞端坐** `[00:00-00:09]`：Cosplay 角色扮演者戴着浅蓝银色长马尾假发，双手掩面坐在床沿呈害羞状 <video-locate video="clip.mp4" start="00:00" end="00:09" point="163,546">扮演者坐在床边捂脸</video-locate>。',
+      '* **道具准备** `[00:10-00:25]`：切换为第一人称仰卧视角，男方平躺在床上并拿出润滑剂瓶子 <video-locate video="clip.mp4" start="00:21" end="00:25" point="657,194">拿取润滑剂</video-locate>。',
+      '* **褪裙跨坐** `[00:26-01:28]`：女方爬上床跨坐在男方腿部上方，随后脱下深蓝色裙子，露出白皙的下半身 <video-locate video="clip.mp4" start="00:46" end="01:28" point="495,504">褪去下装跨坐</video-locate>。',
+      '* **位置对准** `[01:29-02:03]`：镜头正对女方后侧臀部及私密处，女方调整跨坐姿态并对准角度准备坐下 <video-locate video="clip.mp4" start="01:54" end="02:03" point="664,510">特写调整体位</video-locate>。',
+    ].join('\n');
+
+    const output = linkifyTimestamps(input);
+
+    // Header converted cleanly
+    expect(output).toContain('### 一、入座与准备阶段[00:00 - 02:03](#video-seek?start=0&end=123)');
+
+    // Item 1
+    expect(output).toContain(
+      '* **害羞端坐** [00:00-00:09](#video-seek?start=0&end=9&point=163%2C546&video=clip.mp4&snippet=%E6%89%AE%E6%BC%94%E8%80%85%E5%9D%90%E5%9C%A8%E5%BA%8A%E8%BE%B9%E6%8D%82%E8%84%B8)：Cosplay 角色扮演者戴着浅蓝银色长马尾假发，双手掩面坐在床沿呈害羞状。',
+    );
+
+    // Item 2
+    expect(output).toContain(
+      '* **道具准备** [00:10-00:25](#video-seek?start=10&end=25&point=657%2C194&video=clip.mp4&snippet=%E6%8B%BF%E5%8F%96%E6%B6%A6%E6%BB%91%E5%89%82)：切换为第一人称仰卧视角，男方平躺在床上并拿出润滑剂瓶子。',
+    );
+
+    // Item 3
+    expect(output).toContain(
+      '* **褪裙跨坐** [00:26-01:28](#video-seek?start=26&end=88&point=495%2C504&video=clip.mp4&snippet=%E8%A4%AA%E5%8E%BB%E4%B8%8B%E8%A3%85%E8%B7%A8%E5%9D%90)：女方爬上床跨坐在男方腿部上方，随后脱下深蓝色裙子，露出白皙的下半身。',
+    );
+
+    // Item 4
+    expect(output).toContain(
+      '* **位置对准** [01:29-02:03](#video-seek?start=89&end=123&point=664%2C510&video=clip.mp4&snippet=%E7%89%B9%E5%86%99%E8%B0%83%E6%95%B4%E4%BD%93%E4%BD%8D)：镜头正对女方后侧臀部及私密处，女方调整跨坐姿态并对准角度准备坐下。',
+    );
+
+    // Zero redundant locate tags remaining
+    expect(output).not.toContain('<video-locate');
+    expect(output).not.toContain('`[');
   });
 });

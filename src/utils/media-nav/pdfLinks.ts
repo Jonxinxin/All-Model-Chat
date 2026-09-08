@@ -32,9 +32,13 @@ const buildPdfSeekMarkdownLink = (attrs: Record<string, string>, inner: string):
   if (cleanSnippet) query.set('snippet', cleanSnippet);
 
   let label: string;
+  const mentionsPage = new RegExp(
+    `(?:第\\s*${pageNumber}\\s*页|page\\s*${pageNumber}\\b|\\bp\\.?\\s*${pageNumber}\\b)`,
+    'i',
+  );
   if (!cleanSnippet) {
     label = `第 ${pageNumber} 页`;
-  } else if (/^(?:第\s*\d+\s*页|page\s*\d+|p\.\s*\d+)/i.test(cleanSnippet)) {
+  } else if (mentionsPage.test(cleanSnippet) || /^(?:第\s*\d+\s*页|page\s*\d+|p\.\s*\d+)/i.test(cleanSnippet)) {
     label = cleanSnippet;
   } else {
     label = `第 ${pageNumber} 页 · ${cleanSnippet}`;

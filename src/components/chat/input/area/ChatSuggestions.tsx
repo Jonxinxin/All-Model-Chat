@@ -36,6 +36,7 @@ interface ChatSuggestionsProps {
   show: boolean;
   onSuggestionClick?: (suggestion: string) => void;
   onOrganizeInfoClick?: (suggestion: string) => void;
+  isLiveArtifactsActive?: boolean;
   onToggleBBox?: () => void;
   isBBoxModeActive?: boolean;
   onToggleGuide?: () => void;
@@ -55,6 +56,7 @@ const ChatSuggestionsComponent: React.FC<ChatSuggestionsProps> = ({
   show,
   onSuggestionClick,
   onOrganizeInfoClick,
+  isLiveArtifactsActive,
   onToggleBBox,
   isBBoxModeActive,
   onToggleGuide,
@@ -112,23 +114,31 @@ const ChatSuggestionsComponent: React.FC<ChatSuggestionsProps> = ({
         onScroll={checkScroll}
         className={`flex gap-2 overflow-x-auto pb-1 px-1 no-scrollbar scroll-smooth ${suggestionFadeClass(showLeftArrow, showRightArrow)}`}
       >
-        {SUGGESTIONS_KEYS.map((suggestion, index) => (
-          <React.Fragment key={index}>
-            <button
-              type="button"
-              onClick={() => {
-                const text = t(suggestion.descKey as keyof typeof translations);
-                if (suggestion.specialAction === 'organize' && onOrganizeInfoClick) {
-                  onOrganizeInfoClick(text);
-                } else if (onSuggestionClick) {
-                  onSuggestionClick(text);
-                }
-              }}
-              className={SUGGESTION_CHIP_CLASS}
-            >
-              <SuggestionIcon iconName={suggestion.icon} />
-              <span>{t(suggestion.titleKey as keyof typeof translations)}</span>
-            </button>
+        {SUGGESTIONS_KEYS.map((suggestion, index) => {
+          const isOrganize = suggestion.specialAction === 'organize';
+          const isOrganizeWithState = isOrganize && isLiveArtifactsActive !== undefined;
+          const isOrganizeActive = Boolean(isOrganizeWithState && isLiveArtifactsActive);
+
+          return (
+            <React.Fragment key={index}>
+              <button
+                type="button"
+                onClick={() => {
+                  const text = t(suggestion.descKey as keyof typeof translations);
+                  if (isOrganize && onOrganizeInfoClick) {
+                    onOrganizeInfoClick(text);
+                  } else if (onSuggestionClick) {
+                    onSuggestionClick(text);
+                  }
+                }}
+                className={isOrganizeActive ? SUGGESTION_CHIP_ACTIVE_CLASS : SUGGESTION_CHIP_CLASS}
+                aria-pressed={isOrganizeWithState ? isOrganizeActive : undefined}
+                data-testid={isOrganize ? 'organize-info-chip' : undefined}
+              >
+                <SuggestionIcon iconName={suggestion.icon} />
+                <span>{t(suggestion.titleKey as keyof typeof translations)}</span>
+                {isOrganizeWithState && <SuggestionToggleDot />}
+              </button>
 
             {suggestion.specialAction === 'organize' && (
               <>
@@ -210,8 +220,9 @@ const ChatSuggestionsComponent: React.FC<ChatSuggestionsProps> = ({
               </>
             )}
           </React.Fragment>
-        ))}
-      </div>
+        );
+      })}
+    </div>
 
       {showLeftArrow && (
         <button

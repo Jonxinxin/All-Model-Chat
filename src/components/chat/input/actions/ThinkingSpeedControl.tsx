@@ -5,7 +5,7 @@ import { useI18n } from '@/contexts/I18nContext';
 import { useChatInputContext } from '@/components/chat/input/ChatInputContext';
 import { usePortaledMenu } from '@/hooks/ui/usePortaledMenu';
 import { getCachedModelCapabilities } from '@/stores/modelCapabilitiesStore';
-import { isReasoningModel } from '@/utils/model/modelCapabilities';
+import { getDefaultThinkingLevelForModel, isReasoningModel } from '@/utils/model/modelCapabilities';
 import type { ThinkingLevel } from '@/types';
 
 const LEVEL_LABEL_KEYS: Record<ThinkingLevel, string> = {
@@ -153,11 +153,13 @@ export const ThinkingSpeedControl: React.FC = () => {
     if (next) setCurrentChatSettings((prev) => ({ ...prev, thinkingLevel: next }));
   };
 
+  const defaultLevel = getDefaultThinkingLevelForModel(modelId);
+
   const handleResetDefault = () => {
-    setCurrentChatSettings((prev) => ({ ...prev, thinkingLevel: 'HIGH' as ThinkingLevel }));
+    setCurrentChatSettings((prev) => ({ ...prev, thinkingLevel: defaultLevel }));
   };
 
-  const isDefault = displayLevel === 'HIGH';
+  const isDefault = displayLevel === defaultLevel;
 
   const intensityLabel = t('thinkingIntensity');
   const intensityText = intensityLabel !== 'thinkingIntensity' ? intensityLabel : '强度';
@@ -173,9 +175,10 @@ export const ThinkingSpeedControl: React.FC = () => {
   const supportsFast = (isFlash3 || isRobotics) && activeCapabilities.supportsMinimalThinkingLevel;
   const isFastActive = supportsFast && displayLevel === 'MINIMAL';
   const handleToggleFast = () => {
+    const targetNonFast = defaultLevel === 'MINIMAL' ? 'HIGH' : defaultLevel;
     setCurrentChatSettings((prev) => ({
       ...prev,
-      thinkingLevel: isFastActive ? ('HIGH' as ThinkingLevel) : ('MINIMAL' as ThinkingLevel),
+      thinkingLevel: isFastActive ? (targetNonFast as ThinkingLevel) : ('MINIMAL' as ThinkingLevel),
     }));
   };
 

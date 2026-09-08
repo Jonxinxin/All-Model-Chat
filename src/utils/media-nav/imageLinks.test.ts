@@ -66,4 +66,20 @@ describe('linkifyImageLocates', () => {
 
     expect(output).toContain('[\\[主界面\\]](#image-seek?');
   });
+
+  it('avoids duplicating text when snippet already contains the label', () => {
+    const input = '<image-locate box="10,20,30,40" label="搜索栏">顶部搜索栏</image-locate>';
+    const output = linkifyImageLocates(input);
+
+    expect(output).toContain('[顶部搜索栏](#image-seek?');
+    expect(output).not.toContain('搜索栏 · 顶部搜索栏');
+  });
+
+  it('avoids duplicating text when label already contains the snippet', () => {
+    const input = '<image-locate box="10,20,30,40" label="用户头像按钮">用户头像</image-locate>';
+    const output = linkifyImageLocates(input);
+
+    expect(output).toContain('[用户头像按钮](#image-seek?');
+    expect(output).not.toContain('用户头像按钮 · 用户头像');
+  });
 });

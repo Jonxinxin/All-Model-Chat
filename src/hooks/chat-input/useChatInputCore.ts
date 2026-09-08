@@ -58,6 +58,7 @@ export const useChatInputCore = () => {
     onToggleBBox,
     onToggleGuide,
     onToggleQuadImages,
+    isLiveArtifactsPromptActive,
   } = useChatInputRuntime();
   const { activeSessionId, currentChatSettings, isLoading } = useChatState(appSettings);
   const isEditing = !!editingMessageId;
@@ -126,9 +127,16 @@ export const useChatInputCore = () => {
       onLiveTranscript,
       liveClientFunctions,
       onToggleBBox,
-      isBBoxModeActive: !isThirdPartyChat && isBboxSystemInstruction(currentChatSettings.systemInstruction),
+      isBBoxModeActive:
+        !isThirdPartyChat &&
+        (currentChatSettings.visionPromptMode === 'bbox' ||
+          isBboxSystemInstruction(currentChatSettings.systemInstruction)),
       onToggleGuide,
-      isGuideModeActive: !isThirdPartyChat && isHdGuideSystemInstruction(currentChatSettings.systemInstruction),
+      isGuideModeActive:
+        !isThirdPartyChat &&
+        (currentChatSettings.visionPromptMode === 'hdGuide' ||
+          isHdGuideSystemInstruction(currentChatSettings.systemInstruction)),
+      isLiveArtifactsPromptActive: Boolean(isLiveArtifactsPromptActive),
       onToggleQuadImages,
       themeId,
     }),
@@ -141,6 +149,7 @@ export const useChatInputCore = () => {
       editMode,
       editingMessageId,
       isEditing,
+      isLiveArtifactsPromptActive,
       isLoading,
       isPipActive,
       isProcessingFile,

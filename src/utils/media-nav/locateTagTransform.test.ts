@@ -37,4 +37,26 @@ describe('locateTagTransform', () => {
     const result = linkifyLocateTags(input, 'custom-locate', customPatterns, dummyBuilder);
     expect(result).toBe('Generating text ');
   });
+
+  it('omits trailing locate tags that are already converted in body', () => {
+    const input = [
+      'Body has <custom-locate id="1">item 1</custom-locate> and <custom-locate id="2">item 2</custom-locate>.',
+      '',
+      '<custom-locate id="1">item 1</custom-locate>',
+      '<custom-locate id="3">item 3</custom-locate>',
+    ].join('\n');
+    const result = linkifyLocateTags(input, 'custom-locate', customPatterns, dummyBuilder);
+
+    expect(result).toContain('Body has [item 1](#custom?id=1) and [item 2](#custom?id=2).');
+    // Trailing row should only contain item 3 because item 1 was already in the body
+    expect(result).toContain('[item 3](#custom?id=3)');
+    expect(result).not.toContain('\n\n[item 1](#custom?id=1)');
+  });
+
+  it('cleans up spaces before punctuation marks when tags are converted', () => {
+    const input = 'This is point <custom-locate id="1">one</custom-locate> 。 And another <custom-locate id="2">two</custom-locate> ！';
+    const result = linkifyLocateTags(input, 'custom-locate', customPatterns, dummyBuilder);
+    expect(result).toContain('[one](#custom?id=1)。');
+    expect(result).toContain('[two](#custom?id=2)！');
+  });
 });

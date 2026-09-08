@@ -1,11 +1,15 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { ZoomIn, ZoomOut, RotateCcw, RotateCw } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCcw, RotateCw, Camera, Crosshair } from 'lucide-react';
 import Panzoom, { type PanzoomObject } from '@panzoom/panzoom';
 import { type UploadedFile } from '@/types';
 import { FloatingToolbar, ToolbarButton, ToolbarDivider } from './FloatingToolbar';
 import { useI18n } from '@/contexts/I18nContext';
 import { ImageHighlightOverlay } from '@/components/media-nav/ImageHighlightOverlay';
-import type { ImageNavHighlight } from '@/stores/mediaNavStore';
+import { useMediaNavStore, type ImageNavHighlight } from '@/stores/mediaNavStore';
+import { useChatStore } from '@/stores/chatStore';
+import { exportAnnotatedImage } from '@/utils/media-nav/exportAnnotatedImage';
+import { ImageMinimap } from './image/ImageMinimap';
+import { ImageVisualCropper } from './image/ImageVisualCropper';
 
 interface ImageViewerProps {
   file: UploadedFile;
@@ -19,7 +23,19 @@ const BUTTON_ZOOM_FACTOR = 1.3;
 const ImageViewerContent: React.FC<ImageViewerProps> = ({ file, highlight }) => {
   const { t } = useI18n();
   const [scale, setScale] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
   const [rotation, setRotation] = useState(0);
+  const [isVisualCropActive, setIsVisualCropActive] = useState(false);
+  const [dimensions, setDimensions] = useState({
+    imgW: 0,
+    imgH: 0,
+    vpW: 0,
+    vpH: 0,
+  });
+
+  const storeHighlights = useMediaNavStore((state) => state.imageHighlights);
+  const storeHighlight = useMediaNavStore((state) => state.imageHighlight);
+  const currentHighlight = highlight || storeHighlight;
 
   const viewportRef = useRef<HTMLDivElement>(null);
   const panzoomElementRef = useRef<HTMLDivElement>(null);
@@ -41,9 +57,12 @@ const ImageViewerContent: React.FC<ImageViewerProps> = ({ file, highlight }) => 
     panzoomRef.current = pz;
 
     const handlePanzoomChange = (e: Event) => {
-      const detail = (e as CustomEvent<{ scale: number }>).detail;
-      if (!detail || typeof detail.scale !== 'number') return;
-      setScale(detail.scale);
+      const detail = (e as CustomEvent<{ scale: number; x: number; y: number }>).detail;
+      if (!detail) return;
+      if (typeof detail.scale === 'number') setScale(detail.scale);
+      if (typeof detail.x === 'number' && typeof detail.y === 'number') {
+        setPan({ x: detail.x, y: detail.y });
+      }
     };
 
     elem.addEventListener('panzoomchange', handlePanzoomChange);
@@ -139,8 +158,8 @@ const ImageViewerContent: React.FC<ImageViewerProps> = ({ file, highlight }) => 
   }, []);
 
   const focusHighlight = useCallback(() => {
-    if (!highlight || !imageRef.current || !panzoomRef.current || !viewportRef.current) return;
-    const { box2d, point } = highlight;
+    if (!currentHighlight || !imageRef.current || !panzoomRef.current || !viewportRef.current) return;
+    const { box2d, point } = currentHighlight;
     if (!box2d && !point) return;
 
     const img = imageRef.current;
@@ -198,22 +217,78 @@ const ImageViewerContent: React.FC<ImageViewerProps> = ({ file, highlight }) => 
     } catch {
       // Ignore unmounted or animation cancellation errors
     }
-  }, [highlight, rotation]);
+  }, [currentHighlight, rotation]);
 
-  const handleImageLoad = useCallback(() => {
-    if (highlight) {
-      focusHighlight();
+  const updateDimensions = useCallback(() => {
+    const img = imageRef.current;
+    const vp = viewportRef.current;
+    if (img && vp) {
+      setDimensions({
+        imgW: img.offsetWidth,
+        imgH: img.offsetHeight,
+        vpW: vp.clientWidth,
+        vpH: vp.clientHeight,
+      });
     }
-  }, [focusHighlight, highlight]);
+  }, []);
 
   useEffect(() => {
-    if (!highlight) return;
+    updateDimensions();
+    window.addEventListener('resize', updateDimensions);
+    return () => window.removeEventListener('resize', updateDimensions);
+  }, [updateDimensions, scale]);
+
+  const handlePanTo = useCallback((x: number, y: number) => {
+    panzoomRef.current?.pan(x, y, { animate: true });
+    setPan({ x, y });
+  }, []);
+
+  const handleExportAnnotated = useCallback(async () => {
+    if (!file.dataUrl) return;
+    const highlightsToExport =
+      storeHighlights.length > 0 ? storeHighlights : currentHighlight ? [currentHighlight] : [];
+    await exportAnnotatedImage({
+      imageSrc: file.dataUrl,
+      fileName: file.name,
+      highlights: highlightsToExport,
+      rotation,
+    });
+  }, [file.dataUrl, file.name, currentHighlight, storeHighlights, rotation]);
+
+  const handleConfirmVisualSelection = useCallback(
+    (box2d: [number, number, number, number]) => {
+      const tag = `<image-locate file="${file.name}" box="[${box2d.join(',')}]">请问这里的具体情况是？</image-locate>`;
+      useChatStore.getState().setCommandedInput({
+        id: Date.now(),
+        text: tag,
+        mode: 'append',
+      });
+      setIsVisualCropActive(false);
+    },
+    [file.name],
+  );
+
+  useEffect(() => {
+    const pz = panzoomRef.current;
+    if (!pz) return;
+    pz.setOptions({ disablePan: isVisualCropActive });
+  }, [isVisualCropActive]);
+
+  const handleImageLoad = useCallback(() => {
+    updateDimensions();
+    if (currentHighlight) {
+      focusHighlight();
+    }
+  }, [currentHighlight, focusHighlight, updateDimensions]);
+
+  useEffect(() => {
+    if (!currentHighlight) return;
     focusHighlight();
     const rafId = requestAnimationFrame(() => {
       focusHighlight();
     });
     return () => cancelAnimationFrame(rafId);
-  }, [focusHighlight, highlight, highlight?.focusToken]);
+  }, [focusHighlight, currentHighlight, currentHighlight?.focusToken]);
 
   const isMermaidDiagram = file.type === 'image/svg+xml';
 
@@ -260,10 +335,33 @@ const ImageViewerContent: React.FC<ImageViewerProps> = ({ file, highlight }) => 
               onLoad={handleImageLoad}
               draggable={false}
             />
-            {highlight && <ImageHighlightOverlay highlight={highlight} scale={scale} />}
+            {currentHighlight && (
+              <ImageHighlightOverlay highlight={currentHighlight} highlights={storeHighlights} scale={scale} />
+            )}
+            {isVisualCropActive && (
+              <ImageVisualCropper
+                fileName={file.name}
+                imageDimensions={{ width: dimensions.imgW, height: dimensions.imgH }}
+                onConfirmSelection={handleConfirmVisualSelection}
+                onCancel={() => setIsVisualCropActive(false)}
+              />
+            )}
           </div>
         </div>
       </div>
+
+      {!isVisualCropActive && file.dataUrl && dimensions.imgW > 0 && dimensions.vpW > 0 && (
+        <ImageMinimap
+          src={file.dataUrl}
+          scale={scale}
+          pan={pan}
+          imageDimensions={{ width: dimensions.imgW, height: dimensions.imgH }}
+          viewportDimensions={{ width: dimensions.vpW, height: dimensions.vpH }}
+          rotation={rotation}
+          highlights={storeHighlights.length > 0 ? storeHighlights : currentHighlight ? [currentHighlight] : []}
+          onPanTo={handlePanTo}
+        />
+      )}
 
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-auto panzoom-exclude">
         <FloatingToolbar className="p-1.5">
@@ -307,6 +405,27 @@ const ImageViewerContent: React.FC<ImageViewerProps> = ({ file, highlight }) => 
 
           <ToolbarButton onClick={handleRotateRight} title={t('filePreviewRotate')} aria-label={t('filePreviewRotate')}>
             <RotateCw size={16} strokeWidth={1.5} />
+          </ToolbarButton>
+
+          <ToolbarDivider />
+
+          <ToolbarButton
+            active={isVisualCropActive}
+            onClick={() => setIsVisualCropActive((prev) => !prev)}
+            title={isVisualCropActive ? t('filePreviewVisualSelectExit') : t('filePreviewVisualSelect')}
+            aria-label={t('filePreviewVisualSelect')}
+            data-testid="image-visual-select-btn"
+          >
+            <Crosshair size={16} strokeWidth={1.5} className={isVisualCropActive ? 'text-red-400' : ''} />
+          </ToolbarButton>
+
+          <ToolbarButton
+            onClick={handleExportAnnotated}
+            title={t('filePreviewExportAnnotated')}
+            aria-label={t('filePreviewExportAnnotated')}
+            data-testid="image-export-annotated-btn"
+          >
+            <Camera size={16} strokeWidth={1.5} />
           </ToolbarButton>
         </FloatingToolbar>
       </div>

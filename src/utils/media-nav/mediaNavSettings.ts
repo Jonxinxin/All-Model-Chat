@@ -44,6 +44,7 @@ export const applyMediaNavKindToSettings = <T extends ChatSettings>(
     isVideoNavEnabled: kind === 'video' ? true : preserve ? Boolean(prev.isVideoNavEnabled) : false,
     isAudioNavEnabled: kind === 'audio' ? true : preserve ? Boolean(prev.isAudioNavEnabled) : false,
     isImageNavEnabled: kind === 'image' ? true : preserve ? Boolean(prev.isImageNavEnabled) : false,
+    isLiveArtifactsEnabled: false,
     ...(isLiveArtifactsSystemInstruction(prev.systemInstruction)
       ? { systemInstruction: DEFAULT_SYSTEM_INSTRUCTION }
       : {}),

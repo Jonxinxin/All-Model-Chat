@@ -378,6 +378,26 @@
   animation: modalExit 0.15s ease-in both;
 }
 
+/* Media Navigation Reticle & Bounding Box entrance focus pulse */
+@keyframes reticleFocusPulse {
+  0% {
+    transform: scale(0.86);
+    opacity: 0.15;
+  }
+  50% {
+    transform: scale(1.04);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-reticle-pulse {
+  animation: reticleFocusPulse 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

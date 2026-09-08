@@ -195,6 +195,7 @@ export const ChatInputArea: React.FC = () => {
             show={chatInput.showEmptyStateSuggestions}
             onSuggestionClick={chatInput.onSuggestionClick}
             onOrganizeInfoClick={chatInput.onOrganizeInfoClick}
+            isLiveArtifactsActive={chatInput.isLiveArtifactsPromptActive}
             onToggleBBox={isGeminiNative ? chatInput.onToggleBBox : undefined}
             isBBoxModeActive={chatInput.isBBoxModeActive}
             onToggleGuide={isGeminiNative ? chatInput.onToggleGuide : undefined}

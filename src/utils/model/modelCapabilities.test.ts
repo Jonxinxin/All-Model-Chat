@@ -144,6 +144,8 @@ describe('getModelCapabilities', () => {
     expect(getModelCapabilities('gpt-4o-mini').supportsThinkingLevel).toBe(false);
     expect(getModelCapabilities('claude-haiku-4-5').supportsThinkingLevel).toBe(false);
     expect(getModelCapabilities('qwen2.5-72b-instruct').supportsThinkingLevel).toBe(false);
+    expect(getModelCapabilities('gemma-4-31b-it').supportsThinkingLevel).toBe(true);
+    expect(getModelCapabilities('gemma-4-26b-a4b-it').supportsThinkingLevel).toBe(true);
   });
 
   describe('reasoning model identification', () => {
@@ -249,6 +251,21 @@ describe('getDefaultThinkingLevelForModel', () => {
     expect(getDefaultThinkingLevelForModel('gemini-3.1-flash-image-preview')).toBe('MINIMAL');
   });
 
+  it('defaults Gemini 3.8 Flash, 3.7 Flash and Robotics to MEDIUM per official API', () => {
+    expect(getDefaultThinkingLevelForModel('gemini-3.8-flash')).toBe('MEDIUM');
+    expect(getDefaultThinkingLevelForModel('gemini-3.7-flash')).toBe('MEDIUM');
+    expect(getDefaultThinkingLevelForModel('gemini-robotics-er-2-preview')).toBe('MEDIUM');
+  });
+
+  it('defaults Gemini 3.5 Flash-Lite and Gemma 4 to MINIMAL per official API', () => {
+    expect(getDefaultThinkingLevelForModel('gemini-3.5-flash-lite')).toBe('MINIMAL');
+    expect(getDefaultThinkingLevelForModel('gemma-4-31b-it')).toBe('MINIMAL');
+  });
+
+  it('defaults Gemini 3.1 Pro to HIGH per official API', () => {
+    expect(getDefaultThinkingLevelForModel('gemini-3.1-pro-preview')).toBe('HIGH');
+  });
+
   it('keeps fallback thinking level for non-special models', () => {
     expect(getDefaultThinkingLevelForModel('gemini-2.5-flash', 'HIGH')).toBe('HIGH');
   });
@@ -265,7 +282,15 @@ describe('normalizeThinkingLevelForModel', () => {
     expect(normalizeThinkingLevelForModel('gemini-3.8-flash', 'MINIMAL')).toBe('LOW');
   });
 
-  it('keeps MINIMAL for Gemini 3 Flash models', () => {
+  it('normalizes unsupported levels to HIGH for Gemma 4 and Flash Image models', () => {
+    expect(normalizeThinkingLevelForModel('gemma-4-31b-it', 'LOW')).toBe('HIGH');
+    expect(normalizeThinkingLevelForModel('gemma-4-31b-it', 'MEDIUM')).toBe('HIGH');
+    expect(normalizeThinkingLevelForModel('gemma-4-31b-it', 'NONE')).toBe('MINIMAL');
+    expect(normalizeThinkingLevelForModel('gemini-3.1-flash-lite-image', 'LOW')).toBe('HIGH');
+    expect(normalizeThinkingLevelForModel('gemini-3.1-flash-lite-image', 'MINIMAL')).toBe('MINIMAL');
+  });
+
+  it('keeps MINIMAL for Gemini 3 Flash models that support minimal', () => {
     expect(normalizeThinkingLevelForModel('gemini-3-flash-preview', 'MINIMAL')).toBe('MINIMAL');
     expect(normalizeThinkingLevelForModel('gemini-3.5-flash-lite', 'MINIMAL')).toBe('MINIMAL');
     expect(normalizeThinkingLevelForModel('gemini-3.6-flash', 'MINIMAL')).toBe('MINIMAL');

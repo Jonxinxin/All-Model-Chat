@@ -12,6 +12,7 @@ export interface VideoAnnotation {
 interface VideoHighlightOverlayProps {
   annotation: VideoAnnotation | null;
   visible: boolean;
+  isPlaying?: boolean;
   onClose?: () => void;
   /** Exact rendered rectangle of the video stream within the container. */
   displayRect?: VideoDisplayRect | null;
@@ -19,14 +20,29 @@ interface VideoHighlightOverlayProps {
 
 /**
  * Minimalist camera viewfinder / reticle overlay for video moments.
- * Clean, subtle corner brackets and frosted-glass HUD badge.
+ * Clean, subtle corner brackets, entrance focus pulse, and smart auto-dimming during playback.
  */
 export const VideoHighlightOverlay: React.FC<VideoHighlightOverlayProps> = ({
   annotation,
   visible,
+  isPlaying = false,
   onClose,
   displayRect,
 }) => {
+  const [isDimmed, setIsDimmed] = React.useState(false);
+  const [isHovered, setIsHovered] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!isPlaying) {
+      setIsDimmed(false);
+      return undefined;
+    }
+    const timer = setTimeout(() => {
+      setIsDimmed(true);
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [isPlaying, annotation]);
+
   if (!visible || !annotation) return null;
   const { box2d, point, snippet } = annotation;
   if (!box2d && !point) return null;
@@ -54,9 +70,15 @@ export const VideoHighlightOverlay: React.FC<VideoHighlightOverlayProps> = ({
     left = x / 10;
   }
 
+  const isAutoDimmed = isDimmed && !isHovered;
+
   return (
     <div
-      className={`absolute ${displayRect ? '' : 'inset-0'} pointer-events-none z-20 overflow-visible transition-opacity duration-300`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className={`absolute ${displayRect ? '' : 'inset-0'} z-20 overflow-visible transition-opacity duration-300 ${
+        isAutoDimmed ? 'opacity-25 hover:opacity-100 pointer-events-auto' : 'opacity-100 pointer-events-none'
+      }`}
       style={
         displayRect
           ? {
@@ -71,8 +93,9 @@ export const VideoHighlightOverlay: React.FC<VideoHighlightOverlayProps> = ({
     >
       {!isPoint ? (
         <div
+          key={`box-${top}-${left}-${width}-${height}`}
           data-testid="video-highlight-box"
-          className="absolute rounded border border-white/35 bg-white/[0.03] transition-all duration-300"
+          className="absolute rounded border border-white/35 bg-white/[0.03] transition-all duration-300 animate-reticle-pulse"
           style={{
             top: `${top}%`,
             left: `${left}%`,
@@ -87,8 +110,9 @@ export const VideoHighlightOverlay: React.FC<VideoHighlightOverlayProps> = ({
         </div>
       ) : (
         <div
+          key={`pt-${top}-${left}`}
           data-testid="video-highlight-point"
-          className="absolute -translate-x-1/2 -translate-y-1/2"
+          className="absolute -translate-x-1/2 -translate-y-1/2 animate-reticle-pulse"
           style={{
             top: `${top}%`,
             left: `${left}%`,

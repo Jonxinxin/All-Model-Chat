@@ -370,10 +370,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <div
             ref={scrollContainerRef}
             onScroll={handleContentScroll}
-            className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar px-4 py-4 sm:px-6 sm:py-6 md:px-8 md:pt-4 md:pb-8"
+            className={`flex-1 ${activeTab === 'providers' && !isSearching ? 'overflow-hidden p-0 flex flex-col' : 'overflow-y-auto overflow-x-hidden custom-scrollbar px-4 py-4 sm:px-6 sm:py-6 md:px-8 md:pt-4 md:pb-8'}`}
           >
-            <div className="max-w-3xl mx-auto w-full pb-4 md:pb-6 md:min-h-[48px] flex flex-col justify-center">
-              <div className="flex items-center justify-between gap-3">
+            <div
+              className={`${
+                activeTab === 'providers' && !isSearching
+                  ? 'w-full px-6 border-b border-[var(--theme-border-secondary)]/30 h-16 flex items-center justify-between flex-shrink-0 bg-[var(--theme-bg-primary)]'
+                  : 'max-w-3xl mx-auto w-full pb-4 md:pb-6 md:min-h-[48px] flex flex-col justify-center'
+              }`}
+            >
+              <div className="flex items-center justify-between gap-3 w-full">
                 <h2
                   className={`${isSearching ? 'block' : 'hidden md:block'} text-xl font-semibold text-[var(--theme-text-primary)] min-w-0 truncate`}
                 >
@@ -463,6 +469,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 onExportHistory={settingsTransferActions.onExportHistory}
                 onImportScenarios={onImportScenarios}
                 onExportScenarios={onExportScenarios}
+                onCloseModal={onClose}
                 activeModelBadgeLabel={
                   activeTabUsesScope && visibleScope === 'defaults' ? t('settingsDefaultModelBadge') : undefined
                 }

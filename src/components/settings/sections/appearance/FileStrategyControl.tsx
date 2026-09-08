@@ -18,7 +18,7 @@ export const FileStrategyControl: React.FC<FileStrategyControlProps> = ({ settin
   };
 
   return (
-    <div className={SETTINGS_SECTION_CARD_CLASS} data-settings-item="api-files-strategy">
+    <div className={SETTINGS_SECTION_CARD_CLASS} data-settings-item="data-files-strategy">
       <div className="mb-3 flex items-start justify-between">
         <label className={`${SETTINGS_SECTION_LABEL_CLASS} flex items-center gap-2`}>
           <CloudUpload size={14} strokeWidth={1.5} />

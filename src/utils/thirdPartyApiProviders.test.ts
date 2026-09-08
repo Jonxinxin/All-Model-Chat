@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { GEMINI_PROVIDER_ID, normalizeProviderId } from '@/types';
+import { GEMINI_PROVIDER_ID, normalizeProviderId, THIRD_PARTY_TEMPLATE_IDS } from '@/types';
 import { createAppSettings, createThirdPartyConnection } from '@/test/data/factories';
 import {
   buildProviderAwareModelList,
@@ -16,6 +16,7 @@ import {
   sanitizeThirdPartyApiSettings,
   resolveProviderForModelId,
   createConnectionFromTemplate,
+  THIRD_PARTY_TEMPLATE_LABELS,
 } from './thirdPartyApiProviders';
 
 describe('normalizeProviderId', () => {
@@ -130,6 +131,16 @@ describe('createConnectionFromTemplate', () => {
     expect(second.name).toBe('OpenAI 2');
     expect(second.templateId).toBe('openai');
     expect(second.extraHeaders).toEqual({});
+  });
+
+  it('provides valid defaults and non-empty models for all template IDs', () => {
+    THIRD_PARTY_TEMPLATE_IDS.forEach((templateId) => {
+      const conn = createConnectionFromTemplate(templateId, [], `test-${templateId}`);
+      expect(conn.name).toBeTruthy();
+      expect(conn.protocol).toBeTruthy();
+      expect(conn.models.length).toBeGreaterThan(0);
+      expect(THIRD_PARTY_TEMPLATE_LABELS[templateId]).toBeTruthy();
+    });
   });
 });
 

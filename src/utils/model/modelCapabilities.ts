@@ -196,6 +196,9 @@ const supportsThinkingLevel = (modelId: string): boolean => {
   if (isGemini31FlashImageModel(modelId)) {
     return true;
   }
+  if (isGemmaModel(modelId)) {
+    return true;
+  }
   return (
     !isTtsModel(modelId) &&
     !isTranscribeModel(modelId) &&
@@ -389,17 +392,35 @@ export const normalizeImageSizeForModel = (modelId: string, imageSize?: string):
   return supportedImageSizes[0];
 };
 
-export const getDefaultThinkingLevelForModel = (modelId: string, fallback: ThinkingLevel = 'HIGH'): ThinkingLevel => {
+const isGemini3ProTextModel = (modelId: string): boolean => {
+  const lowerId = modelId.toLowerCase();
+  return lowerId.includes('gemini-3.1-pro') || (lowerId.includes('gemini-3-pro') && !lowerId.includes('image'));
+};
+
+export const getDefaultThinkingLevelForModel = (modelId: string, fallback?: ThinkingLevel): ThinkingLevel => {
+  const lowerId = (modelId || '').toLowerCase();
   if (isGemini31FlashLiveModel(modelId) || isGemini31FlashImageModel(modelId)) {
     return 'MINIMAL';
   }
 
-  return fallback;
-};
+  if (fallback !== undefined) {
+    return fallback;
+  }
 
-const isGemini3ProTextModel = (modelId: string): boolean => {
-  const lowerId = modelId.toLowerCase();
-  return lowerId.includes('gemini-3.1-pro') || (lowerId.includes('gemini-3-pro') && !lowerId.includes('image'));
+  if (lowerId.includes('flash-lite') || isGemmaModel(modelId)) {
+    return 'MINIMAL';
+  }
+
+  if (
+    isGemini37Or38FlashModel(modelId) ||
+    lowerId.includes('gemini-3.5-flash') ||
+    lowerId.includes('gemini-3.6-flash') ||
+    isGeminiRoboticsModel(modelId)
+  ) {
+    return 'MEDIUM';
+  }
+
+  return 'HIGH';
 };
 
 export const normalizeThinkingLevelForModel = (
@@ -415,6 +436,14 @@ export const normalizeThinkingLevelForModel = (
     (isGemini3ProTextModel(modelId) || isGemini37Or38FlashModel(modelId))
   ) {
     return 'LOW';
+  }
+
+  // Gemma and Flash Image only accept MINIMAL and HIGH in the Gemini API.
+  if (isGemmaModel(modelId) || isGemini31FlashImageModel(modelId)) {
+    if (resolvedLevel === 'NONE' || resolvedLevel === 'MINIMAL') {
+      return 'MINIMAL';
+    }
+    return 'HIGH';
   }
 
   if (isGemini3Model(modelId) || isGeminiRoboticsModel(modelId)) {
