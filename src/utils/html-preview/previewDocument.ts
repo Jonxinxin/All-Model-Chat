@@ -84,7 +84,7 @@ export const whenKatexReady = (): Promise<void> => {
 // allow-same-origin for message-bubble artifacts, keeping them on an opaque
 // origin so scripted content cannot reach the parent page's origin.
 const PREVIEW_CONTENT_SECURITY_POLICY =
-  "default-src 'none'; img-src https: data: blob:; style-src 'unsafe-inline' https:; script-src 'unsafe-inline' https: blob:; font-src https: data:; media-src https: data: blob:; connect-src https: data: blob:; worker-src blob:; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'";
+  "default-src 'none'; img-src https: data: blob:; style-src 'unsafe-inline' https:; script-src 'unsafe-inline' http: https: blob:; font-src https: data:; media-src https: data: blob:; connect-src http: https: data: blob:; worker-src blob:; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'";
 const PREVIEW_CONTENT_SECURITY_POLICY_META = `<meta http-equiv="Content-Security-Policy" content="${PREVIEW_CONTENT_SECURITY_POLICY}">`;
 const PREVIEW_BASE_FONT_SIZE_ATTRIBUTE = 'data-amc-live-artifact-base-font-size';
 const PREVIEW_THEME_ATTRIBUTE = 'data-amc-live-artifact-theme';
@@ -416,11 +416,46 @@ const injectPreviewBaseFontSize = (srcDoc: string, baseFontSize?: number): strin
   return injectIntoParsedDocument(parsedDocument, { headElements: [style] });
 };
 
+const ECHARTS_SCRIPT_SRC = '/vendor/echarts.min.js';
+const ECHARTS_SCRIPT_ATTRIBUTE = 'data-amc-echarts-script';
+const ECHARTS_SCRIPT_TAG = `<script ${ECHARTS_SCRIPT_ATTRIBUTE}="true" src="${ECHARTS_SCRIPT_SRC}"></script>`;
+
+export const hasEchartsChart = (htmlOrDoc: string | Document): boolean => {
+  if (typeof htmlOrDoc === 'string') {
+    return /data-amc-(?:chart|echarts)\b/.test(htmlOrDoc);
+  }
+  return Boolean(htmlOrDoc.querySelector('[data-amc-chart], [data-amc-echarts]'));
+};
+
+const injectEchartsScript = (srcDoc: string): string => {
+  const parsedDocument = parsePreviewDocument(srcDoc);
+  if (!parsedDocument) {
+    return srcDoc;
+  }
+
+  const hasChart =
+    hasEchartsChart(parsedDocument) || Boolean(parsedDocument.querySelector('[data-amc-stream-preview-root]'));
+  if (!hasChart) {
+    return srcDoc;
+  }
+
+  if (
+    parsedDocument.head.querySelector(`script[${ECHARTS_SCRIPT_ATTRIBUTE}]`) ||
+    parsedDocument.head.querySelector(`script[src="${ECHARTS_SCRIPT_SRC}"]`)
+  ) {
+    return srcDoc;
+  }
+
+  return injectIntoParsedDocument(parsedDocument, { headElements: [ECHARTS_SCRIPT_TAG] });
+};
+
 const prepareHtmlPreviewSrcDoc = (srcDoc: string, options: { baseFontSize?: number; themeId?: string } = {}): string =>
-  renderPreviewMath(
-    injectPreviewBaseFontSize(
-      injectPreviewTheme(injectPreviewSecurityPolicy(srcDoc), options.themeId),
-      options.baseFontSize,
+  injectEchartsScript(
+    renderPreviewMath(
+      injectPreviewBaseFontSize(
+        injectPreviewTheme(injectPreviewSecurityPolicy(srcDoc), options.themeId),
+        options.baseFontSize,
+      ),
     ),
   );
 
@@ -493,7 +528,7 @@ const buildUnrestrictedPreviewDocument = (htmlContent: string): string => {
     return htmlContent;
   }
 
-  return appendBridgeScriptToDocument(parsedDocument);
+  return injectEchartsScript(appendBridgeScriptToDocument(parsedDocument));
 };
 
 /**

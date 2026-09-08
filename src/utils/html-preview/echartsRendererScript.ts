@@ -174,6 +174,13 @@ export const normalizeEchartsOption = (raw: unknown): Record<string, unknown> | 
     if (!xData || !rawSeries || !rawSeries.length) {
       return null;
     }
+    if (
+      rawSeries.some(
+        (s) => !s || typeof s !== 'object' || !Array.isArray((s as Record<string, unknown>).y),
+      )
+    ) {
+      return null;
+    }
 
     const isStacked = rawType.includes('stacked');
     const isLineOrArea = rawType === 'line' || rawType === 'area';
@@ -348,10 +355,11 @@ export const ECHARTS_RENDERER_SCRIPT = `
         chartInstances.add(chart);
       }
       chart.setOption(option, true);
-    } catch (err) {
+    } catch (renderError) {
       node.setAttribute(ERROR_ATTR, '1');
       if (typeof notifyDiagnostic === 'function') {
-        notifyDiagnostic({ type: 'chart-error', message: err.message || 'ECharts render failed', snippet: attr.slice(0, 200) });
+        const errorMsg = renderError instanceof Error ? renderError.message : 'ECharts render failed';
+        notifyDiagnostic({ type: 'chart-error', message: errorMsg, snippet: attr.slice(0, 200) });
       }
     }
   }
