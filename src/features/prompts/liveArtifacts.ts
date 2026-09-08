@@ -103,17 +103,19 @@ export const LIVE_ARTIFACTS_INLINE_SYSTEM_PROMPT_ZH = `[Live Artifacts Inline Pr
 - 表格：表头 background:surface-muted；格线 border token；宽表外包 overflow-x:auto。
 - 网格：repeat(auto-fit,minmax(min(100%,12em),1fr))。
 
-## 数据图表 DSL（data-amc-chart）
-数值型数据必须优先用 data-amc-chart 声明，禁止手写 SVG 图表（x 与 series[].y 必须等长）。
-- 用法：<div data-amc-chart='{"type":"bar","title":"季度营收","x":["Q1","Q2","Q3","Q4"],"series":[{"name":"营收","y":[420,560,380,610]}]}'></div>
-- type：bar/grouped-bar/stacked-bar/line/area/pie/donut/scatter
-- bar/line/area：x + series[].y 等长；多系列用 grouped-bar 或 stacked-bar
-- pie/donut：slices:[{"name":"搜索","y":46},...]，donut 中心自动显示合计
-- scatter：series[].points:[[x,y],...]
-- 可选：title/height(120–480)/legend/xLabel/yLabel；系列 color 仅允许 accent/success/warning/danger/muted/subtle 语义名
-- 规则：节点里不要再写任何内容；数字必须是 JSON 数字；x 与 y 长度必须一致
-例（折线对比）：
-<div data-amc-chart='{"type":"line","title":"DAU 趋势","x":["1月","2月","3月","4月"],"series":[{"name":"DAU","y":[1200,1450,1380,1900]},{"name":"新增","y":[200,300,180,420]}]}'></div>
+## 数据图表（data-amc-chart）
+数值型数据必须优先用 data-amc-chart 声明（基于标准 Apache ECharts Option JSON），禁止手写 SVG 图表。
+- 用法：<div data-amc-chart='{"tooltip":{"trigger":"axis"},"xAxis":{"type":"category","data":["Q1","Q2","Q3","Q4"]},"yAxis":{"type":"value"},"series":[{"name":"营收","type":"bar","data":[420,560,380,610]}]}' style="height:280px;"></div>
+- 容器必须指定行内高度（如 style="height:280px;"，建议范围 160–480px）；宿主自动挂载自适应主题与 SVG 矢量渲染器。
+- 支持标准 ECharts 图表配置：bar（柱状图）、line（折线/面积图）、pie（饼/环形图）、scatter（散点图）等。堆叠直接声明 stack: "total"，面积图声明 areaStyle: {}。
+- 业务规约：
+  1. 默认包含 tooltip 声明："tooltip":{"trigger":"axis"}（饼图为 "item"）。
+  2. 跨数量级（跨度 >10 倍）的极值数据对比强制使用对数轴（yAxis: {"type":"log"}）或双 Y 轴，杜绝柱条贴地失去可读性。
+  3. 杜绝三重冗余：禁止同时用指标卡、表格、图表机械重复陈述完全相同的 3 个数据点。
+  4. 指标卡规范：指标卡（Metrics）必须包含「指标名 (label) + 核心数值 (value) + 辅助说明 (subtext)」完整三要素。
+- 规则：节点内部保持为空；数字必须是 JSON 数字；JSON 属性名与字符串必须使用双引号。
+例（趋势对比）：
+<div data-amc-chart='{"tooltip":{"trigger":"axis"},"legend":{},"xAxis":{"type":"category","data":["1月","2月","3月","4月"]},"yAxis":{"type":"value"},"series":[{"name":"DAU","type":"line","smooth":true,"data":[1200,1450,1380,1900]},{"name":"新增","type":"line","smooth":true,"data":[200,300,180,420]}]}' style="height:280px;"></div>
 
 ## 结构图 DSL（data-amc-graphviz）
 结构/依赖/流程/状态机/组织关系优先用 data-amc-graphviz 声明，禁止手写 SVG 图（图布局由宿主渲染器完成）。
@@ -336,16 +338,18 @@ Model (no more JSON—output HTML artifact with the plan):
 - Grid: repeat(auto-fit,minmax(min(100%,12em),1fr)).
 
 ## Declarative chart DSL (data-amc-chart)
-For numeric data, always use the data-amc-chart declaration; never hand-write SVG charts (x and series[].y must have equal length).
-- Usage: <div data-amc-chart='{"type":"bar","title":"Quarterly revenue","x":["Q1","Q2","Q3","Q4"],"series":[{"name":"Revenue","y":[420,560,380,610]}]}'></div>
-- type: bar/grouped-bar/stacked-bar/line/area/pie/donut/scatter
-- bar/line/area: x + series[].y equal length; multiple series use grouped-bar or stacked-bar
-- pie/donut: slices:[{"name":"Search","y":46},...]; donut center shows the total automatically
-- scatter: series[].points:[[x,y],...]
-- Optional: title/height(120–480)/legend/xLabel/yLabel; series color only allows the semantic names accent/success/warning/danger/muted/subtle
-- Rules: keep the node empty; numbers must be JSON numbers; x and y lengths must match
-Example (line comparison):
-<div data-amc-chart='{"type":"line","title":"DAU trend","x":["Jan","Feb","Mar","Apr"],"series":[{"name":"DAU","y":[1200,1450,1380,1900]},{"name":"New","y":[200,300,180,420]}]}'></div>
+For numeric data, use data-amc-chart with Apache ECharts Option JSON; never hand-write SVG charts.
+- Usage: <div data-amc-chart='{"tooltip":{"trigger":"axis"},"xAxis":{"type":"category","data":["Q1","Q2"]},"yAxis":{"type":"value"},"series":[{"type":"bar","data":[100,200]}]}' style="height:280px;"></div>
+- Container requires inline height (e.g. style="height:280px;", range 160–480px); host applies adaptive theme & SVG renderer.
+- Standard ECharts options supported: bar, line, pie, scatter. Stacking: stack: "total"; area: areaStyle: {}.
+- Visual guardrails:
+  1. Always include tooltip: "tooltip":{"trigger":"axis"} ("item" for pie).
+  2. For data spanning large orders of magnitude (>10x), use log axis (yAxis: {"type":"log"}) or dual Y-axes.
+  3. No triple redundancy: never repeat the same 3 numbers across metric cards, tables, and charts simultaneously.
+  4. Metric cards standard: must include all three elements: label + core value + contextual subtext.
+- Rules: keep node content empty; numbers must be JSON numbers; JSON keys/strings must use double quotes.
+Example:
+<div data-amc-chart='{"tooltip":{"trigger":"axis"},"xAxis":{"type":"category","data":["A","B","C"]},"yAxis":{"type":"value"},"series":[{"name":"DAU","type":"line","data":[12,18,15]}]}' style="height:280px;"></div>
 
 ## Declarative graph DSL (data-amc-graphviz)
 Use data-amc-graphviz for structure/dependency/flow/state-machine/organization; never hand-write SVG diagrams (layout is done by the host renderer).
