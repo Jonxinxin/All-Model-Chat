@@ -216,7 +216,7 @@ const GRAPHVIZ_SVG_FONT_FAMILY =
 
 // Bump when the injected default styling changes so cached SVGs rendered with
 // the previous style are never reused (see getGraphvizCacheKey).
-const RENDER_STYLE_VERSION = 'v6';
+const RENDER_STYLE_VERSION = 'v7';
 
 /**
  * Theme-aware default styles injected before the model's own DOT so a bare
@@ -309,10 +309,164 @@ const cleanupEmptyDotAttributes = (dot: string): string => {
   return out;
 };
 
+/**
+ * Recognizes CJK unified ideographs, extensions, and standard CJK punctuation/brackets.
+ */
+export const isCjkText = (str: string): boolean =>
+  /[\u4e00-\u9fff\u3400-\u4dbf\u3000-\u303f\uff01-\uff60\u2018-\u201f]/.test(str);
+
+/**
+ * WebAssembly Graphviz compiles without system TrueType/FreeType font metrics and
+ * falls back to Latin (Helvetica) Adobe Font Metrics (~0.5em/char). Browser fonts
+ * (PingFang SC, Microsoft YaHei) render CJK characters at 1.0em squares, which causes
+ * Chinese labels to overflow / burst through node boundaries by ~20-40px on both sides.
+ *
+ * This function calculates the true rendered bounding width in inches so Graphviz
+ * can layout cards with sufficient width and comfortable breathing margins.
+ */
+export const estimateCjkNodeWidth = (label: string, fontSize = 14): number => {
+  const lines = label.split(/\\n|\n|<br\s*\/?>/i);
+  let maxPt = 0;
+  for (const line of lines) {
+    let cjk = 0;
+    let latin = 0;
+    for (const char of line) {
+      if (isCjkText(char)) {
+        cjk += 1;
+      } else {
+        latin += 1;
+      }
+    }
+    const lineWidthPt = cjk * fontSize * 1.05 + latin * fontSize * 0.58;
+    if (lineWidthPt > maxPt) maxPt = lineWidthPt;
+  }
+  // 28pt padding (~0.39 in) provides safe breathing margin around text
+  const widthInches = (maxPt + 28) / 72;
+  return Math.max(0.75, Number(widthInches.toFixed(2)));
+};
+
+const DOT_DECLARATION_KEYWORDS = new Set(['graph', 'node', 'edge', 'subgraph', 'strict', 'digraph']);
+
+/**
+ * Scans DOT statements and dynamically injects or updates `width="..."` on any node
+ * containing CJK characters, preventing text from clipping or bursting through borders.
+ */
+export const compensateCjkNodeWidths = (dot: string): string => {
+  let out = '';
+  let quote: '"' | "'" | null = null;
+  let escaped = false;
+  let inBracket = false;
+  let bracketContent = '';
+  let lastIdent = '';
+  let sawSpaceAfterIdent = false;
+  let isEdgeStatement = false;
+
+  for (let i = 0; i < dot.length; i += 1) {
+    const ch = dot[i];
+
+    if (quote) {
+      if (inBracket) {
+        bracketContent += ch;
+      } else {
+        out += ch;
+      }
+
+      if (escaped) {
+        escaped = false;
+      } else if (ch === '\\') {
+        escaped = true;
+      } else if (ch === quote) {
+        quote = null;
+      }
+      continue;
+    }
+
+    if (ch === '"' || ch === "'") {
+      quote = ch;
+      if (inBracket) {
+        bracketContent += ch;
+      } else {
+        out += ch;
+      }
+      continue;
+    }
+
+    if (!inBracket) {
+      if (ch === '[' && lastIdent) {
+        inBracket = true;
+        bracketContent = '';
+        continue;
+      }
+
+      out += ch;
+
+      if (ch === ';' || ch === '{' || ch === '}' || ch === '\n') {
+        lastIdent = '';
+        sawSpaceAfterIdent = false;
+        isEdgeStatement = false;
+      } else if (ch === '-' && (dot[i + 1] === '>' || dot[i + 1] === '-')) {
+        isEdgeStatement = true;
+      } else if (/[a-zA-Z0-9_\u4e00-\u9fa5]/.test(ch)) {
+        if (sawSpaceAfterIdent) {
+          lastIdent = ch;
+          sawSpaceAfterIdent = false;
+        } else {
+          lastIdent += ch;
+        }
+      } else if (/\s/.test(ch)) {
+        if (lastIdent) sawSpaceAfterIdent = true;
+      } else {
+        lastIdent = '';
+        sawSpaceAfterIdent = false;
+      }
+    } else {
+      if (ch === ']') {
+        inBracket = false;
+        const nodeId = lastIdent.trim();
+        lastIdent = '';
+        sawSpaceAfterIdent = false;
+
+        if (!isEdgeStatement && !DOT_DECLARATION_KEYWORDS.has(nodeId.toLowerCase())) {
+          const labelMatch = bracketContent.match(/\blabel\s*=\s*"([^"]*)"/);
+          const textToMeasure = labelMatch ? labelMatch[1] : (isCjkText(nodeId) ? nodeId : '');
+
+          if (textToMeasure && isCjkText(textToMeasure)) {
+            const fontSizeMatch = bracketContent.match(/\bfontsize\s*=\s*["']?([0-9.]+)["']?/i);
+            const fontSize = fontSizeMatch ? parseFloat(fontSizeMatch[1]) : 14;
+            const requiredWidth = estimateCjkNodeWidth(textToMeasure, fontSize);
+            const existingWidthMatch = bracketContent.match(/\bwidth\s*=\s*["']?([0-9.]+)["']?/i);
+
+            if (existingWidthMatch) {
+              const existingWidth = parseFloat(existingWidthMatch[1]);
+              if (existingWidth < requiredWidth) {
+                bracketContent = bracketContent.replace(
+                  /\bwidth\s*=\s*["']?[0-9.]+["']?/i,
+                  `width="${requiredWidth}"`,
+                );
+              }
+            } else {
+              bracketContent = `${bracketContent.trimEnd()} width="${requiredWidth}"`;
+            }
+          }
+        }
+
+        out += `[${bracketContent}]`;
+      } else {
+        bracketContent += ch;
+      }
+    }
+  }
+
+  return out;
+};
+
 export const applyThemeAndLayout = (dot: string, options: DotRenderOptions): string => {
   let code = dot;
   const layout = resolveDotLayout(code, options.layout);
   const colors = resolveGraphvizTheme(options.themeId).colors;
+
+  // Compensate CJK node widths so WebAssembly Graphviz accurately sizes card boundaries for Chinese text
+  code = compensateCjkNodeWidths(code);
 
   // Normalize style="rounded" to style="rounded,filled" so fillcolor is never ignored when the model specifies rounded style
   code = code.replace(/\bstyle\s*=\s*(["'])rounded\1/gi, 'style=$1rounded,filled$1');
@@ -372,7 +526,7 @@ export const applyThemeAndLayout = (dot: string, options: DotRenderOptions): str
     if (isFill) {
       const fillKey = SEMANTIC_FILL_MAP[semantic] ?? 'bgInput';
       const fill = flattenGraphvizFill(colors[fillKey], colors.bgInput);
-      return `${attr}="${fill}" color="${stroke}" fontcolor="${stroke}"`;
+      return `${attr}="${fill}" color="${stroke}" fontcolor="${normalizeGraphvizColor(colors.textPrimary)}"`;
     }
     return `${attr}="${stroke}"`;
   });
