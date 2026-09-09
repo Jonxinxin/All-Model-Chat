@@ -7,6 +7,10 @@ export default defineConfig({
   integrations: [
     starlight({
       title: 'AMC WebUI',
+      logo: {
+        src: './src/assets/logo.svg',
+        replacesTitle: false,
+      },
       defaultLocale: 'root',
       locales: {
         root: {
@@ -21,6 +25,30 @@ export default defineConfig({
       social: {
         github: 'https://github.com/yeahhe365/AMC-WebUI',
       },
+      lastUpdated: true,
+      editLink: {
+        baseUrl: 'https://github.com/yeahhe365/AMC-WebUI/edit/main/docs-site/',
+      },
+      tableOfContents: {
+        minHeadingLevel: 2,
+        maxHeadingLevel: 3,
+      },
+      head: [
+        {
+          tag: 'meta',
+          attrs: {
+            name: 'keywords',
+            content: 'AMC WebUI, Google Gemini, Thinking Model, Live API, Local-First, Model Context Protocol, Pyodide, Artifacts',
+          },
+        },
+        {
+          tag: 'meta',
+          attrs: {
+            property: 'og:site_name',
+            content: 'AMC WebUI Documentation',
+          },
+        },
+      ],
       customCss: ['./src/styles/custom.css'],
       sidebar: [
         {

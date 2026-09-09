@@ -3,13 +3,16 @@ title: AMC WebUI
 description: All-in-one Model Console WebUI · 以 Google Gemini 原生能力为主，兼具 OpenAI 兼容生态
 template: splash
 hero:
-  tagline: 以 Google Gemini 原生能力为主，兼具 OpenAI 兼容生态的极客级 AI 控制台。本地持久化，隐私优先。
+  title: AMC WebUI
+  tagline: 专为极客与开发者打造的下一代 AI 工作台 · 极致发挥 Google Gemini 原生深度推理、实时音视频与交互生态
+  image:
+    file: ../../assets/logo.svg
   actions:
-    - text: 🚀 快速上手
+    - text: 🚀 快速上手 (文档指南)
       link: /getting-started/introduction/
       icon: right-arrow
       variant: primary
-    - text: 🌐 在线演示
+    - text: 🌐 在线体验 (Live Demo)
       link: https://all-model-chat.pages.dev/
       icon: external
     - text: ⭐️ GitHub 仓库

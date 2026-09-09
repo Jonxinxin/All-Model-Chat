@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
-import { Copy, Check, Terminal } from 'lucide-react';
+import { Copy, Check, Terminal, Download } from 'lucide-react';
 
-export const EnvConfigGenerator: React.FC = () => {
+interface EnvConfigGeneratorProps {
+  locale?: string;
+}
+
+export const EnvConfigGenerator: React.FC<EnvConfigGeneratorProps> = ({ locale = 'zh' }) => {
+  const isEn = locale === 'en';
   const [deployMode, setDeployMode] = useState<'docker' | 'static'>('docker');
   const [keyMode, setKeyMode] = useState<'byok' | 'server'>('byok');
   const [enableLiveProxy, setEnableLiveProxy] = useState(true);
@@ -9,6 +14,7 @@ export const EnvConfigGenerator: React.FC = () => {
   const [enableThirdParty, setEnableThirdParty] = useState(true);
   const [port, setPort] = useState('8080');
   const [copied, setCopied] = useState(false);
+  const [downloaded, setDownloaded] = useState(false);
 
   const generateConfig = () => {
     if (deployMode === 'static') {
@@ -91,12 +97,28 @@ VITE_DEFAULT_LOCALE=zh-CN
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleDownload = () => {
+    const content = generateConfig();
+    const filename = deployMode === 'static' ? '.env.production' : '.env';
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setDownloaded(true);
+    setTimeout(() => setDownloaded(false), 2000);
+  };
+
   return (
     <div className="interactive-widget-box not-content" style={{ fontFamily: 'sans-serif' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
         <Terminal size={20} color="#8b5cf6" />
         <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--sl-color-white)' }}>
-          交互式部署环境变量生成器
+          {isEn ? 'Interactive Environment Config Generator' : '交互式部署环境变量生成器'}
         </h3>
       </div>
 
@@ -266,28 +288,54 @@ VITE_DEFAULT_LOCALE=zh-CN
         >
           <code>{generateConfig()}</code>
         </pre>
-        <button
-          type="button"
-          onClick={handleCopy}
-          style={{
-            position: 'absolute',
-            top: '8px',
-            right: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            padding: '4px 10px',
-            borderRadius: '6px',
-            border: '1px solid var(--sl-color-hairline)',
-            background: 'rgba(255,255,255,0.08)',
-            color: copied ? '#4ade80' : 'var(--sl-color-gray-2)',
-            fontSize: '0.75rem',
-            cursor: 'pointer',
-          }}
-        >
-          {copied ? <Check size={14} /> : <Copy size={14} />}
-          {copied ? '已复制' : '复制配置'}
-        </button>
+        <div style={{ position: 'absolute', top: '8px', right: '8px', display: 'flex', gap: '6px' }}>
+          <button
+            type="button"
+            onClick={handleDownload}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '4px 10px',
+              borderRadius: '6px',
+              border: '1px solid var(--sl-color-hairline)',
+              background: 'rgba(255,255,255,0.08)',
+              color: downloaded ? '#4ade80' : 'var(--sl-color-gray-2)',
+              fontSize: '0.75rem',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            {downloaded ? <Check size={14} /> : <Download size={14} />}
+            {downloaded
+              ? isEn
+                ? 'Downloaded'
+                : '已下载'
+              : isEn
+                ? `Save ${deployMode === 'static' ? '.env.production' : '.env'}`
+                : `下载 ${deployMode === 'static' ? '.env.production' : '.env'}`}
+          </button>
+          <button
+            type="button"
+            onClick={handleCopy}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '4px 10px',
+              borderRadius: '6px',
+              border: '1px solid var(--sl-color-hairline)',
+              background: 'rgba(255,255,255,0.08)',
+              color: copied ? '#4ade80' : 'var(--sl-color-gray-2)',
+              fontSize: '0.75rem',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            {copied ? <Check size={14} /> : <Copy size={14} />}
+            {copied ? (isEn ? 'Copied' : '已复制') : isEn ? 'Copy' : '复制配置'}
+          </button>
+        </div>
       </div>
     </div>
   );

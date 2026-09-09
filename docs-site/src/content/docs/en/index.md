@@ -3,7 +3,10 @@ title: AMC WebUI
 description: All-in-one Model Console WebUI featuring native Google Gemini capabilities and OpenAI-compatible endpoints.
 template: splash
 hero:
-  tagline: All-in-one Model Console WebUI featuring native Google Gemini capabilities, OpenAI-compatible ecosystem, and Local-First privacy.
+  title: AMC WebUI
+  tagline: Next-generation AI Console engineered for power users · Harness native Google Gemini deep reasoning, real-time Live API, and open tool ecosystems.
+  image:
+    file: ../../../assets/logo.svg
   actions:
     - text: 🚀 Getting Started
       link: /en/getting-started/introduction/

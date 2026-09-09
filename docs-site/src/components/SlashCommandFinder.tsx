@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Command } from 'lucide-react';
+import { Search, Command, Copy, Check } from 'lucide-react';
 
 interface SlashItem {
   name: string;
@@ -8,6 +8,10 @@ interface SlashItem {
   descriptionEn: string;
   shortcut?: string;
   scope: string;
+}
+
+interface SlashCommandFinderProps {
+  locale?: string;
 }
 
 const COMMAND_LIST: SlashItem[] = [
@@ -137,9 +141,17 @@ const COMMAND_LIST: SlashItem[] = [
   },
 ];
 
-export const SlashCommandFinder: React.FC = () => {
+export const SlashCommandFinder: React.FC<SlashCommandFinderProps> = ({ locale = 'zh' }) => {
+  const isEn = locale === 'en';
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<'all' | 'session' | 'tools' | 'system'>('all');
+  const [copiedCmd, setCopiedCmd] = useState<string | null>(null);
+
+  const handleCopyCmd = (name: string) => {
+    navigator.clipboard.writeText(name);
+    setCopiedCmd(name);
+    setTimeout(() => setCopiedCmd(null), 1500);
+  };
 
   const filtered = COMMAND_LIST.filter((cmd) => {
     const matchesCategory = category === 'all' || cmd.category === category;
@@ -168,12 +180,28 @@ export const SlashCommandFinder: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Command size={18} color="#8b5cf6" />
           <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 600, color: 'var(--sl-color-white)' }}>
-            斜杠命令与快捷指令交互速查
+            {isEn ? 'Slash Commands & Interactive Quick Reference' : '斜杠命令与快捷指令交互速查'}
           </h3>
         </div>
-        <span style={{ fontSize: '0.75rem', color: 'var(--sl-color-gray-4)' }}>
-          输入框中输入 <code style={{ color: '#38bdf8' }}>/</code> 即可快速唤出
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span
+            style={{
+              fontSize: '0.75rem',
+              padding: '2px 8px',
+              borderRadius: '9999px',
+              background: 'rgba(139, 92, 246, 0.15)',
+              color: '#c4b5fd',
+              border: '1px solid rgba(139, 92, 246, 0.3)',
+            }}
+          >
+            {filtered.length} / {COMMAND_LIST.length}
+          </span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--sl-color-gray-4)' }}>
+            {isEn ? 'Type ' : '输入框中输入 '}
+            <code style={{ color: '#38bdf8' }}>/</code>
+            {isEn ? ' to trigger' : ' 即可快速唤出'}
+          </span>
+        </div>
       </div>
 
       <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
@@ -185,7 +213,11 @@ export const SlashCommandFinder: React.FC = () => {
           />
           <input
             type="text"
-            placeholder="搜索命令名称、功能或快捷键 (如 /fast, code, 搜索)..."
+            placeholder={
+              isEn
+                ? 'Search commands, shortcuts or descriptions (e.g. /fast, code)...'
+                : '搜索命令名称、功能或快捷键 (如 /fast, code, 搜索)...'
+            }
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             style={{
@@ -202,10 +234,10 @@ export const SlashCommandFinder: React.FC = () => {
         </div>
         <div style={{ display: 'flex', gap: '4px' }}>
           {[
-            { id: 'all', label: '全部' },
-            { id: 'session', label: '会话管理' },
-            { id: 'tools', label: '工具开关' },
-            { id: 'system', label: '系统与模式' },
+            { id: 'all', label: isEn ? 'All' : '全部' },
+            { id: 'session', label: isEn ? 'Session' : '会话管理' },
+            { id: 'tools', label: isEn ? 'Tools' : '工具开关' },
+            { id: 'system', label: isEn ? 'System' : '系统与模式' },
           ].map((item) => (
             <button
               key={item.id}
@@ -237,61 +269,90 @@ export const SlashCommandFinder: React.FC = () => {
           overflowY: 'auto',
         }}
       >
-        {filtered.map((item) => (
-          <div
-            key={item.name}
-            style={{
-              background: '#060913',
-              border: '1px solid var(--sl-color-hairline)',
-              borderRadius: '8px',
-              padding: '10px 12px',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              gap: '6px',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontWeight: 700, color: '#a78bfa', fontFamily: 'monospace', fontSize: '0.95rem' }}>
-                {item.name}
-              </span>
-              <span
-                style={{
-                  fontSize: '0.7rem',
-                  padding: '2px 6px',
-                  borderRadius: '4px',
-                  background: 'rgba(56, 189, 248, 0.1)',
-                  color: '#38bdf8',
-                  border: '1px solid rgba(56, 189, 248, 0.2)',
-                }}
-              >
-                {item.scope}
-              </span>
-            </div>
-            <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--sl-color-gray-2)', lineHeight: 1.4 }}>
-              {item.descriptionZh}
-            </p>
-            {item.shortcut && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
-                <span style={{ fontSize: '0.7rem', color: 'var(--sl-color-gray-5)' }}>快捷键:</span>
-                <kbd
+        {filtered.map((item) => {
+          const isCopied = copiedCmd === item.name;
+          return (
+            <div
+              key={item.name}
+              style={{
+                background: '#060913',
+                border: '1px solid var(--sl-color-hairline)',
+                borderRadius: '8px',
+                padding: '10px 12px',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                gap: '6px',
+                transition: 'border-color 0.15s ease',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontWeight: 700, color: '#a78bfa', fontFamily: 'monospace', fontSize: '0.95rem' }}>
+                    {item.name}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleCopyCmd(item.name)}
+                    title={isEn ? 'Copy command' : '复制命令'}
+                    style={{
+                      border: 'none',
+                      background: isCopied ? 'rgba(74, 222, 128, 0.15)' : 'rgba(255, 255, 255, 0.06)',
+                      color: isCopied ? '#4ade80' : 'var(--sl-color-gray-4)',
+                      cursor: 'pointer',
+                      borderRadius: '4px',
+                      padding: '2px 5px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '3px',
+                      fontSize: '0.7rem',
+                    }}
+                  >
+                    {isCopied ? <Check size={11} /> : <Copy size={11} />}
+                    <span>{isCopied ? (isEn ? 'Copied' : '已复制') : isEn ? 'Copy' : '复制'}</span>
+                  </button>
+                </div>
+                <span
                   style={{
+                    fontSize: '0.7rem',
                     padding: '2px 6px',
                     borderRadius: '4px',
-                    background: 'rgba(255, 255, 255, 0.08)',
-                    border: '1px solid var(--sl-color-hairline)',
-                    color: 'var(--sl-color-gray-3)',
-                    fontSize: '0.7rem',
-                    fontFamily: 'monospace',
+                    background: 'rgba(56, 189, 248, 0.1)',
+                    color: '#38bdf8',
+                    border: '1px solid rgba(56, 189, 248, 0.2)',
                   }}
                 >
-                  {item.shortcut}
-                </kbd>
+                  {item.scope}
+                </span>
               </div>
-            )}
-          </div>
-        ))}
+              <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--sl-color-gray-2)', lineHeight: 1.4 }}>
+                {isEn ? item.descriptionEn : item.descriptionZh}
+              </p>
+              {item.shortcut && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--sl-color-gray-5)' }}>
+                    {isEn ? 'Shortcut:' : '快捷键:'}
+                  </span>
+                  <kbd
+                    style={{
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      border: '1px solid var(--sl-color-hairline)',
+                      color: 'var(--sl-color-gray-3)',
+                      fontSize: '0.7rem',
+                      fontFamily: 'monospace',
+                    }}
+                  >
+                    {item.shortcut}
+                  </kbd>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 };
+
