@@ -32,7 +32,10 @@
     "test:e2e:headed": "playwright test --headed",
     "generate:icons": "node scripts/generate-material-icons.mjs",
     "i18n:check": "node scripts/check-i18n-coverage.mjs",
-    "i18n:add": "node scripts/add-language.mjs"
+    "i18n:add": "node scripts/add-language.mjs",
+    "docs:dev": "pnpm --filter docs-site dev",
+    "docs:build": "pnpm --filter docs-site build",
+    "docs:preview": "pnpm --filter docs-site preview"
   },
   "dependencies": {
     "@codemirror/lang-cpp": "^6.0.3",
@@ -69,6 +72,7 @@
     "cmdk": "^1.1.1",
     "docx-preview": "^0.4.0",
     "dompurify": "3.4.13",
+    "echarts": "^6.1.0",
     "highlight.js": "^11.9.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",

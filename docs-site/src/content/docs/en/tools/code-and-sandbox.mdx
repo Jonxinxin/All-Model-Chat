@@ -1,0 +1,38 @@
+---
+title: Code Execution & Python Sandbox
+description: Comparing server-side Gemini Code Execution with browser-side Pyodide WASM scientific computing sandbox in AMC WebUI.
+---
+
+# Code Execution & Python Sandbox
+
+AMC WebUI provides **two distinct execution engines** for computation, data analysis, and mathematical verification.
+
+---
+
+## Engine Comparison
+
+| Feature | ☁️ Gemini Code Execution | 🐍 Local Pyodide WASM Sandbox |
+| :--- | :--- | :--- |
+| **Execution Host** | Google Cloud stateless container | Browser Web Worker (WebAssembly) |
+| **Data Privacy** | Sent to Google for processing | **100% Local**, zero network leaks |
+| **Preloaded Libraries** | Standard Google runtime | numpy, pandas, matplotlib |
+| **Dynamic Packages** | Fixed environment | **Dynamic installation** (scipy, scikit-learn) |
+| **File I/O** | Attachment analysis on server | Virtual filesystem mounting & file export |
+| **Plot Rendering** | Text output or static images | **Automatic matplotlib plot interception** |
+
+---
+
+## 1. Server-Side Code Execution
+
+- **Toggle**: Select **Code Execution** in the tools menu, or type `/code`.
+- **Workflow**: The model writes and executes Python in Google's cloud runtime. Real stdout/stderr output is injected back into the conversation for self-correcting logic.
+
+---
+
+## 2. Browser-Side Local Python Sandbox (Pyodide)
+
+A standalone Python environment running entirely client-side:
+
+1. **Independent Worker**: Runs inside an isolated Web Worker to avoid blocking UI interactions.
+2. **Matplotlib Visualizer**: Automatically catches `plt.show()` canvas outputs and embeds responsive graphs directly in the message flow.
+3. **Virtual File System**: Uploaded CSV/Excel files mount to `/workspace/`, enabling direct manipulation via `pandas.read_csv()`.
