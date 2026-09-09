@@ -1,4 +1,5 @@
 import { act } from 'react';
+import { fireEvent } from '@testing-library/react';
 import { setupProviderTestRenderer as setupTestRenderer } from '@/test/render/providerRenderer';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { setupStoreStateReset } from '@/test/stores/reset';
@@ -213,7 +214,9 @@ describe('LibraryPickerModal', () => {
 
     await act(async () => {
       renderer.root.render(<LibraryPickerModal isOpen onClose={onClose} onConfirm={onConfirm} />);
-      await Promise.resolve();
+    });
+    await vi.waitFor(() => {
+      expect(document.body.textContent).toContain('diagram.png');
     });
 
     // Find filter button (has SlidersHorizontal)
@@ -226,26 +229,29 @@ describe('LibraryPickerModal', () => {
     expect(filterBtn).toBeDefined();
 
     // Click to open filter menu
-    await act(async () => {
-      filterBtn!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-      await Promise.resolve();
+    act(() => {
+      fireEvent.click(filterBtn!);
     });
 
     // Select generated source (AI生成)
-    const generatedBtn = Array.from(document.body.querySelectorAll('button')).find(
-      (b) => b.textContent?.includes('已生成') || b.textContent?.includes('Generated'),
-    );
-    expect(generatedBtn).toBeDefined();
+    let generatedBtn: HTMLButtonElement | undefined;
+    await vi.waitFor(() => {
+      generatedBtn = Array.from(document.body.querySelectorAll('button')).find(
+        (b) => b.textContent?.includes('已生成') || b.textContent?.includes('Generated'),
+      );
+      expect(generatedBtn).toBeDefined();
+    });
 
-    await act(async () => {
-      generatedBtn!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-      await Promise.resolve();
+    act(() => {
+      fireEvent.click(generatedBtn!);
     });
 
     // clip.mp4 is generated, others are uploaded
-    expect(document.body.textContent).toContain('clip.mp4');
-    expect(document.body.textContent).not.toContain('diagram.png');
-    expect(document.body.textContent).not.toContain('voice.wav');
+    await vi.waitFor(() => {
+      expect(document.body.textContent).toContain('clip.mp4');
+      expect(document.body.textContent).not.toContain('diagram.png');
+      expect(document.body.textContent).not.toContain('voice.wav');
+    });
   });
 
   it('renders upload button and triggers file input', async () => {

@@ -16,6 +16,7 @@ overrides:
   pdfjs-dist: 4.8.69
   qs: ^6.16.0
   '@xmldom/xmldom': ^0.8.15
+  hono: ^4.13.5
 
 importers:
   .:
@@ -344,13 +345,19 @@ importers:
         version: 7.4.1
 
   docs-site:
-    dependencies:
+    devDependencies:
       '@astrojs/react':
         specifier: ^4.2.1
         version: 4.2.1(@types/node@25.9.5)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(jiti@2.7.0)(lightningcss@1.32.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supports-color@7.2.0)(terser@5.50.0)(yaml@2.9.0)
       '@astrojs/starlight':
         specifier: ^0.32.2
         version: 0.32.2(astro@5.18.2(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.62.4)(supports-color@7.2.0)(terser@5.50.0)(typescript@5.9.3)(yaml@2.9.0))(supports-color@7.2.0)
+      '@types/react':
+        specifier: ^18.3.3
+        version: 18.3.31
+      '@types/react-dom':
+        specifier: ^18.3.0
+        version: 18.3.7(@types/react@18.3.31)
       astro:
         specifier: ^5.4.2
         version: 5.18.2(@types/node@25.9.5)(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.62.4)(supports-color@7.2.0)(terser@5.50.0)(typescript@5.9.3)(yaml@2.9.0)
@@ -366,13 +373,6 @@ importers:
       sharp:
         specifier: ^0.33.5
         version: 0.33.5
-    devDependencies:
-      '@types/react':
-        specifier: ^18.3.3
-        version: 18.3.31
-      '@types/react-dom':
-        specifier: ^18.3.0
-        version: 18.3.7(@types/react@18.3.31)
 
 packages:
   '@adobe/css-tools@4.5.0':
@@ -1902,7 +1902,7 @@ packages:
       { integrity: sha512-ELuehkj5VCBdgEw9zs+ivkKwyzzUCSQuE96YmiPvn1ECBoZCczbFXJLeEGMTYjphP6gydh4pHMqEYPVMYUVgQg== }
     engines: { node: '>=20' }
     peerDependencies:
-      hono: ^4
+      hono: ^4.13.5
 
   '@humanfs/core@0.19.2':
     resolution:
@@ -5636,9 +5636,9 @@ packages:
       { integrity: sha512-nbfWpyRMcMrPMmDwJB+dhX/eiaPKtc2RB+0QZskqJ3WjRA/FDS0e9hZrx8EC/lbEv8gXy98FcDbNa/dspAaJMg== }
     engines: { node: '>=12.0.0' }
 
-  hono@4.12.34:
+  hono@4.13.7:
     resolution:
-      { integrity: sha512-GqXJqY/xJkJmuloTrnV1ZEXG3fqte+VjkUqoRNZXcrUidiUOP4fMSIHHY4tsqZBK++kVyWmt/AAfSUuy57/eSA== }
+      { integrity: sha512-c8/gF9ac8Y78/agExVocyLevgR+JlpNB444Py0FSX8pJoPdYUfUzRcXtYEYGwt6l19qIlVZPN5Mfsw9jFShmQQ== }
     engines: { node: '>=16.9.0' }
 
   html-encoding-sniffer@6.0.0:
@@ -10327,9 +10327,9 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@hono/node-server@2.1.1(hono@4.12.34)':
+  '@hono/node-server@2.1.1(hono@4.13.7)':
     dependencies:
-      hono: 4.12.34
+      hono: 4.13.7
 
   '@humanfs/core@0.19.2':
     dependencies:
@@ -10681,7 +10681,7 @@ snapshots:
 
   '@modelcontextprotocol/sdk@1.30.0(supports-color@7.2.0)(zod@4.4.3)':
     dependencies:
-      '@hono/node-server': 2.1.1(hono@4.12.34)
+      '@hono/node-server': 2.1.1(hono@4.13.7)
       ajv: 8.20.0
       ajv-formats: 3.0.1(ajv@8.20.0)
       content-type: 1.0.5
@@ -10691,7 +10691,7 @@ snapshots:
       eventsource-parser: 3.1.1
       express: 5.2.1(supports-color@7.2.0)
       express-rate-limit: 8.6.2(express@5.2.1(supports-color@7.2.0))(supports-color@7.2.0)
-      hono: 4.12.34
+      hono: 4.13.7
       jose: 6.2.9
       json-schema-typed: 8.0.2
       pkce-challenge: 5.0.1
@@ -13720,7 +13720,7 @@ snapshots:
 
   highlight.js@11.12.0: {}
 
-  hono@4.12.34: {}
+  hono@4.13.7: {}
 
   html-encoding-sniffer@6.0.0:
     dependencies:

@@ -25,3 +25,4 @@ overrides:
   pdfjs-dist: 4.8.69
   qs: ^6.16.0
   '@xmldom/xmldom': ^0.8.15
+  hono: ^4.13.5
