@@ -49,15 +49,33 @@ html {
 }
 
 /* Starlight Card 微动效与光晕过渡 */
-.card {
+.card,
+.sl-link-card {
   transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease !important;
   border: 1px solid var(--sl-color-hairline) !important;
 }
 
-.card:hover {
+.card:hover,
+.sl-link-card:hover {
   transform: translateY(-2px);
   border-color: rgba(139, 92, 246, 0.5) !important;
   box-shadow: 0 8px 24px -8px rgba(139, 92, 246, 0.25);
+}
+
+/* 产品界面预览框容器 */
+.preview-container {
+  margin: 2.5rem 0 3.5rem;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--sl-color-hairline);
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  background: var(--sl-color-bg-sidebar);
+}
+
+.preview-container img {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 /* 交互小部件通用容器样式 */
