@@ -35,7 +35,8 @@
     "i18n:add": "node scripts/add-language.mjs",
     "docs:dev": "pnpm --filter docs-site dev",
     "docs:build": "pnpm --filter docs-site build",
-    "docs:preview": "pnpm --filter docs-site preview"
+    "docs:preview": "pnpm --filter docs-site preview",
+    "docs:deploy": "pnpm run docs:build && wrangler pages deploy docs-site/dist --project-name=all-model-chat-docs --branch=main --commit-dirty=true"
   },
   "dependencies": {
     "@codemirror/lang-cpp": "^6.0.3",
