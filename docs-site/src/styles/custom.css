@@ -62,6 +62,32 @@ html {
   box-shadow: 0 8px 24px -8px rgba(139, 92, 246, 0.25);
 }
 
+/* Hero 现代居中排版（移除冗余 2D Logo 后居中对齐） */
+.hero:not(:has(> img)) {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  text-align: center !important;
+  padding-block: clamp(2.5rem, calc(1.5rem + 5vmin), 5rem) !important;
+}
+
+.hero:not(:has(> img)) .stack {
+  align-items: center !important;
+  max-width: 56rem !important;
+  margin-inline: auto !important;
+}
+
+.hero:not(:has(> img)) .tagline {
+  font-size: clamp(1.1rem, calc(1rem + 0.4vw), 1.3rem) !important;
+  line-height: 1.6 !important;
+  color: var(--sl-color-gray-2) !important;
+}
+
+.hero:not(:has(> img)) .actions {
+  justify-content: center !important;
+  margin-top: 0.75rem !important;
+}
+
 /* 产品界面预览框容器 */
 .preview-container {
   margin: 2.5rem 0 3.5rem;

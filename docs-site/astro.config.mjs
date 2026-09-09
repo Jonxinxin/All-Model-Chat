@@ -11,7 +11,7 @@ export default defineConfig({
       logo: {
         light: './src/assets/app-logo.png',
         dark: './src/assets/app-logo-dark.png',
-        replacesTitle: false,
+        replacesTitle: true,
       },
       defaultLocale: 'root',
       locales: {
