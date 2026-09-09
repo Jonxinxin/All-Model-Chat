@@ -78,7 +78,16 @@ export const ModelBadgeList: React.FC = () => {
 
   return (
     <div className="interactive-widget-box not-content" style={{ fontFamily: 'sans-serif' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '14px',
+          flexWrap: 'wrap',
+          gap: '8px',
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Bot size={18} color="#8b5cf6" />
           <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 600, color: 'var(--sl-color-white)' }}>
@@ -129,9 +138,7 @@ export const ModelBadgeList: React.FC = () => {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontWeight: 600, color: 'var(--sl-color-white)', fontSize: '0.9rem' }}>
-                {model.name}
-              </span>
+              <span style={{ fontWeight: 600, color: 'var(--sl-color-white)', fontSize: '0.9rem' }}>{model.name}</span>
               {model.defaultBadge && (
                 <span
                   style={{
@@ -149,9 +156,7 @@ export const ModelBadgeList: React.FC = () => {
               )}
             </div>
 
-            <div style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#38bdf8' }}>
-              {model.id}
-            </div>
+            <div style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#38bdf8' }}>{model.id}</div>
 
             <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--sl-color-gray-3)', lineHeight: 1.4 }}>
               {model.description}

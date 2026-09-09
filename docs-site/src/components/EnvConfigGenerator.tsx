@@ -69,11 +69,7 @@ VITE_DEFAULT_LOCALE=zh-CN
     }
 
     if (enableThirdParty) {
-      lines.push(
-        '',
-        '# 第三方 OpenAI 兼容端点反代',
-        'RUNTIME_THIRD_PARTY_PROXY_URL=/api/openai',
-      );
+      lines.push('', '# 第三方 OpenAI 兼容端点反代', 'RUNTIME_THIRD_PARTY_PROXY_URL=/api/openai');
     }
 
     if (enableMcpStdio) {
@@ -104,9 +100,18 @@ VITE_DEFAULT_LOCALE=zh-CN
         </h3>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '16px' }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '12px',
+          marginBottom: '16px',
+        }}
+      >
         <div>
-          <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--sl-color-gray-3)', marginBottom: '6px' }}>
+          <label
+            style={{ display: 'block', fontSize: '0.85rem', color: 'var(--sl-color-gray-3)', marginBottom: '6px' }}
+          >
             部署模式
           </label>
           <div style={{ display: 'flex', gap: '8px' }}>
@@ -150,7 +155,9 @@ VITE_DEFAULT_LOCALE=zh-CN
         {deployMode === 'docker' && (
           <>
             <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--sl-color-gray-3)', marginBottom: '6px' }}>
+              <label
+                style={{ display: 'block', fontSize: '0.85rem', color: 'var(--sl-color-gray-3)', marginBottom: '6px' }}
+              >
                 Key 管理模式
               </label>
               <div style={{ display: 'flex', gap: '8px' }}>
@@ -192,7 +199,9 @@ VITE_DEFAULT_LOCALE=zh-CN
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--sl-color-gray-3)', marginBottom: '6px' }}>
+              <label
+                style={{ display: 'block', fontSize: '0.85rem', color: 'var(--sl-color-gray-3)', marginBottom: '6px' }}
+              >
                 访问端口 (WEB_PORT)
               </label>
               <input
@@ -216,29 +225,26 @@ VITE_DEFAULT_LOCALE=zh-CN
       </div>
 
       {deployMode === 'docker' && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', marginBottom: '16px', fontSize: '0.85rem', color: 'var(--sl-color-gray-2)' }}>
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '16px',
+            marginBottom: '16px',
+            fontSize: '0.85rem',
+            color: 'var(--sl-color-gray-2)',
+          }}
+        >
           <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-            <input
-              type="checkbox"
-              checked={enableLiveProxy}
-              onChange={(e) => setEnableLiveProxy(e.target.checked)}
-            />
+            <input type="checkbox" checked={enableLiveProxy} onChange={(e) => setEnableLiveProxy(e.target.checked)} />
             开启 Live WS 代理 (/api/live)
           </label>
           <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-            <input
-              type="checkbox"
-              checked={enableThirdParty}
-              onChange={(e) => setEnableThirdParty(e.target.checked)}
-            />
+            <input type="checkbox" checked={enableThirdParty} onChange={(e) => setEnableThirdParty(e.target.checked)} />
             开启第三方兼容反代 (/api/openai)
           </label>
           <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-            <input
-              type="checkbox"
-              checked={enableMcpStdio}
-              onChange={(e) => setEnableMcpStdio(e.target.checked)}
-            />
+            <input type="checkbox" checked={enableMcpStdio} onChange={(e) => setEnableMcpStdio(e.target.checked)} />
             开启 MCP stdio 进程支持
           </label>
         </div>

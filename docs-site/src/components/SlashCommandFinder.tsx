@@ -11,23 +11,130 @@ interface SlashItem {
 }
 
 const COMMAND_LIST: SlashItem[] = [
-  { name: '/model', category: 'session', descriptionZh: '快速呼出模型选择浮层，支持实时过滤与切换', descriptionEn: 'Open the model picker popover with quick search', shortcut: 'Tab', scope: '全局' },
-  { name: '/new', category: 'session', descriptionZh: '新建空白对话会话', descriptionEn: 'Start a new conversation', shortcut: 'Cmd/Ctrl + Shift + O', scope: '全局' },
-  { name: '/clear', category: 'session', descriptionZh: '清空当前会话全部消息记录', descriptionEn: 'Clear all messages in the current chat', scope: '当前会话' },
-  { name: '/pin', category: 'session', descriptionZh: '置顶或取消置顶当前对话', descriptionEn: 'Pin or unpin the current conversation', scope: '侧边栏' },
-  { name: '/edit', category: 'session', descriptionZh: '重新编辑上一条已发送的用户消息', descriptionEn: 'Edit the last sent user message', shortcut: 'Arrow Up', scope: '输入框' },
-  { name: '/retry', category: 'session', descriptionZh: '重新发起上一轮模型生成', descriptionEn: 'Retry the last model generation turn', scope: '当前会话' },
-  { name: '/deep', category: 'tools', descriptionZh: '切换 Google Deep Search 深度多步规划检索', descriptionEn: 'Toggle Google Deep Search multi-step planning', scope: 'Gemini 原生' },
-  { name: '/online', category: 'tools', descriptionZh: '切换 Google 实时网络搜索 (Grounding)', descriptionEn: 'Toggle Google Search grounding tool', scope: 'Gemini 原生' },
-  { name: '/maps', category: 'tools', descriptionZh: '切换 Google Maps 地理空间位置增强与检索', descriptionEn: 'Toggle Google Maps Grounding tool', scope: 'Gemini 原生' },
-  { name: '/code', category: 'tools', descriptionZh: '切换云端代码执行能力 (Code Execution)', descriptionEn: 'Toggle server-side code execution', scope: 'Gemini 原生' },
-  { name: '/url', category: 'tools', descriptionZh: '提取并抓取网页 URL 内容注入对话上下文', descriptionEn: 'Extract and inject web URL content into context', scope: '通用' },
-  { name: '/file', category: 'tools', descriptionZh: '触发文件上传对话框 (支持图片、文档、ZIP代码库)', descriptionEn: 'Trigger file attachment picker dialog', scope: '多模态' },
-  { name: '/fast', category: 'system', descriptionZh: '在低推理等级 (Low/Minimal) 与完全思考间快速切换', descriptionEn: 'Quickly toggle thinking level between fast and high', scope: 'Thinking 模型' },
-  { name: '/artifacts', category: 'system', descriptionZh: '切换 Live Artifacts 交互沙箱自动生成模式', descriptionEn: 'Toggle Live Artifacts sandbox generation prompt', scope: '生成模型' },
-  { name: '/pip', category: 'system', descriptionZh: '切换画中画 (Picture-in-Picture) 浮动窗口模式', descriptionEn: 'Toggle Picture-in-Picture floating window mode', scope: '应用视图' },
-  { name: '/settings', category: 'system', descriptionZh: '打开系统配置面板', descriptionEn: 'Open system settings modal', shortcut: 'Cmd/Ctrl + ,', scope: '全局' },
-  { name: '/help', category: 'system', descriptionZh: '打开快捷键与功能帮助弹窗', descriptionEn: 'Open help and keyboard shortcuts dialog', shortcut: 'Cmd/Ctrl + /', scope: '全局' },
+  {
+    name: '/model',
+    category: 'session',
+    descriptionZh: '快速呼出模型选择浮层，支持实时过滤与切换',
+    descriptionEn: 'Open the model picker popover with quick search',
+    shortcut: 'Tab',
+    scope: '全局',
+  },
+  {
+    name: '/new',
+    category: 'session',
+    descriptionZh: '新建空白对话会话',
+    descriptionEn: 'Start a new conversation',
+    shortcut: 'Cmd/Ctrl + Shift + O',
+    scope: '全局',
+  },
+  {
+    name: '/clear',
+    category: 'session',
+    descriptionZh: '清空当前会话全部消息记录',
+    descriptionEn: 'Clear all messages in the current chat',
+    scope: '当前会话',
+  },
+  {
+    name: '/pin',
+    category: 'session',
+    descriptionZh: '置顶或取消置顶当前对话',
+    descriptionEn: 'Pin or unpin the current conversation',
+    scope: '侧边栏',
+  },
+  {
+    name: '/edit',
+    category: 'session',
+    descriptionZh: '重新编辑上一条已发送的用户消息',
+    descriptionEn: 'Edit the last sent user message',
+    shortcut: 'Arrow Up',
+    scope: '输入框',
+  },
+  {
+    name: '/retry',
+    category: 'session',
+    descriptionZh: '重新发起上一轮模型生成',
+    descriptionEn: 'Retry the last model generation turn',
+    scope: '当前会话',
+  },
+  {
+    name: '/deep',
+    category: 'tools',
+    descriptionZh: '切换 Google Deep Search 深度多步规划检索',
+    descriptionEn: 'Toggle Google Deep Search multi-step planning',
+    scope: 'Gemini 原生',
+  },
+  {
+    name: '/online',
+    category: 'tools',
+    descriptionZh: '切换 Google 实时网络搜索 (Grounding)',
+    descriptionEn: 'Toggle Google Search grounding tool',
+    scope: 'Gemini 原生',
+  },
+  {
+    name: '/maps',
+    category: 'tools',
+    descriptionZh: '切换 Google Maps 地理空间位置增强与检索',
+    descriptionEn: 'Toggle Google Maps Grounding tool',
+    scope: 'Gemini 原生',
+  },
+  {
+    name: '/code',
+    category: 'tools',
+    descriptionZh: '切换云端代码执行能力 (Code Execution)',
+    descriptionEn: 'Toggle server-side code execution',
+    scope: 'Gemini 原生',
+  },
+  {
+    name: '/url',
+    category: 'tools',
+    descriptionZh: '提取并抓取网页 URL 内容注入对话上下文',
+    descriptionEn: 'Extract and inject web URL content into context',
+    scope: '通用',
+  },
+  {
+    name: '/file',
+    category: 'tools',
+    descriptionZh: '触发文件上传对话框 (支持图片、文档、ZIP代码库)',
+    descriptionEn: 'Trigger file attachment picker dialog',
+    scope: '多模态',
+  },
+  {
+    name: '/fast',
+    category: 'system',
+    descriptionZh: '在低推理等级 (Low/Minimal) 与完全思考间快速切换',
+    descriptionEn: 'Quickly toggle thinking level between fast and high',
+    scope: 'Thinking 模型',
+  },
+  {
+    name: '/artifacts',
+    category: 'system',
+    descriptionZh: '切换 Live Artifacts 交互沙箱自动生成模式',
+    descriptionEn: 'Toggle Live Artifacts sandbox generation prompt',
+    scope: '生成模型',
+  },
+  {
+    name: '/pip',
+    category: 'system',
+    descriptionZh: '切换画中画 (Picture-in-Picture) 浮动窗口模式',
+    descriptionEn: 'Toggle Picture-in-Picture floating window mode',
+    scope: '应用视图',
+  },
+  {
+    name: '/settings',
+    category: 'system',
+    descriptionZh: '打开系统配置面板',
+    descriptionEn: 'Open system settings modal',
+    shortcut: 'Cmd/Ctrl + ,',
+    scope: '全局',
+  },
+  {
+    name: '/help',
+    category: 'system',
+    descriptionZh: '打开快捷键与功能帮助弹窗',
+    descriptionEn: 'Open help and keyboard shortcuts dialog',
+    shortcut: 'Cmd/Ctrl + /',
+    scope: '全局',
+  },
 ];
 
 export const SlashCommandFinder: React.FC = () => {
@@ -48,7 +155,16 @@ export const SlashCommandFinder: React.FC = () => {
 
   return (
     <div className="interactive-widget-box not-content" style={{ fontFamily: 'sans-serif' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '14px',
+          flexWrap: 'wrap',
+          gap: '8px',
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Command size={18} color="#8b5cf6" />
           <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 600, color: 'var(--sl-color-white)' }}>
@@ -62,7 +178,11 @@ export const SlashCommandFinder: React.FC = () => {
 
       <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
         <div style={{ position: 'relative', flex: '1 1 200px' }}>
-          <Search size={16} color="var(--sl-color-gray-4)" style={{ position: 'absolute', left: '10px', top: '10px' }} />
+          <Search
+            size={16}
+            color="var(--sl-color-gray-4)"
+            style={{ position: 'absolute', left: '10px', top: '10px' }}
+          />
           <input
             type="text"
             placeholder="搜索命令名称、功能或快捷键 (如 /fast, code, 搜索)..."
@@ -108,7 +228,15 @@ export const SlashCommandFinder: React.FC = () => {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '10px', maxHeight: '380px', overflowY: 'auto' }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+          gap: '10px',
+          maxHeight: '380px',
+          overflowY: 'auto',
+        }}
+      >
         {filtered.map((item) => (
           <div
             key={item.name}

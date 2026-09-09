@@ -29,7 +29,11 @@ export default defineConfig({
           items: [
             { label: '项目简介', slug: 'getting-started/introduction', translations: { en: 'Introduction' } },
             { label: '快速启动', slug: 'getting-started/quickstart', translations: { en: 'Quickstart' } },
-            { label: '服务商与 API 配置', slug: 'getting-started/api-configuration', translations: { en: 'API Configuration' } },
+            {
+              label: '服务商与 API 配置',
+              slug: 'getting-started/api-configuration',
+              translations: { en: 'API Configuration' },
+            },
             { label: 'PWA 与多端体验', slug: 'getting-started/pwa', translations: { en: 'PWA & Desktop' } },
           ],
         },
@@ -47,8 +51,16 @@ export default defineConfig({
           label: '🛠️ 生产力工具箱',
           translations: { en: '🛠️ Productivity Tools' },
           items: [
-            { label: '联网检索 (Search & Maps)', slug: 'tools/web-search-maps', translations: { en: 'Search & Maps Grounding' } },
-            { label: '代码执行与本地沙箱', slug: 'tools/code-and-sandbox', translations: { en: 'Code & Python Sandbox' } },
+            {
+              label: '联网检索 (Search & Maps)',
+              slug: 'tools/web-search-maps',
+              translations: { en: 'Search & Maps Grounding' },
+            },
+            {
+              label: '代码执行与本地沙箱',
+              slug: 'tools/code-and-sandbox',
+              translations: { en: 'Code & Python Sandbox' },
+            },
             { label: 'Live Artifacts 构件', slug: 'tools/live-artifacts', translations: { en: 'Live Artifacts' } },
             { label: '高级文件与多模态', slug: 'tools/files-multimodal', translations: { en: 'Files & Multimodal' } },
             { label: 'MCP 协议生态', slug: 'tools/mcp', translations: { en: 'Model Context Protocol' } },
@@ -61,18 +73,38 @@ export default defineConfig({
             { label: '斜杠命令速查', slug: 'power-user/slash-commands', translations: { en: 'Slash Commands' } },
             { label: '快捷键与快速切换', slug: 'power-user/shortcuts', translations: { en: 'Shortcuts & Gestures' } },
             { label: '语音合成与转写', slug: 'power-user/tts-transcribe', translations: { en: 'TTS & Transcribe' } },
-            { label: '会话与数据管理', slug: 'power-user/data-management', translations: { en: 'Data & Session Management' } },
+            {
+              label: '会话与数据管理',
+              slug: 'power-user/data-management',
+              translations: { en: 'Data & Session Management' },
+            },
           ],
         },
         {
           label: '🚢 架构与私有化部署',
           translations: { en: '🚢 Deployment & Architecture' },
           items: [
-            { label: '架构原理与 Local-First', slug: 'deployment/architecture', translations: { en: 'Architecture & Local-First' } },
+            {
+              label: '架构原理与 Local-First',
+              slug: 'deployment/architecture',
+              translations: { en: 'Architecture & Local-First' },
+            },
             { label: 'Docker Compose 双容器部署', slug: 'deployment/docker', translations: { en: 'Docker Compose' } },
-            { label: '静态托管 + 独立 API', slug: 'deployment/static-and-api', translations: { en: 'Static Hosting + API' } },
-            { label: '环境变量与安全边界', slug: 'deployment/environment-variables', translations: { en: 'Env & Security' } },
-            { label: '精确计费与开发者日志', slug: 'deployment/pricing-and-logs', translations: { en: 'Pricing & Logs' } },
+            {
+              label: '静态托管 + 独立 API',
+              slug: 'deployment/static-and-api',
+              translations: { en: 'Static Hosting + API' },
+            },
+            {
+              label: '环境变量与安全边界',
+              slug: 'deployment/environment-variables',
+              translations: { en: 'Env & Security' },
+            },
+            {
+              label: '精确计费与开发者日志',
+              slug: 'deployment/pricing-and-logs',
+              translations: { en: 'Pricing & Logs' },
+            },
           ],
         },
         {
