@@ -6,7 +6,9 @@ hero:
   title: AMC WebUI
   tagline: Next-generation AI Console engineered for power users · Harness native Google Gemini deep reasoning, real-time Live API, and open tool ecosystems.
   image:
-    file: ../../../assets/logo.svg
+    dark: ../../../assets/app-logo-dark.png
+    light: ../../../assets/app-logo.png
+    alt: AMC WebUI
   actions:
     - text: 🚀 Getting Started
       link: /en/getting-started/introduction/

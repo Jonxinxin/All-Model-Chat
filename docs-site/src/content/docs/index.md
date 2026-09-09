@@ -6,7 +6,9 @@ hero:
   title: AMC WebUI
   tagline: 专为极客与开发者打造的下一代 AI 工作台 · 极致发挥 Google Gemini 原生深度推理、实时音视频与交互生态
   image:
-    file: ../../assets/logo.svg
+    dark: ../../assets/app-logo-dark.png
+    light: ../../assets/app-logo.png
+    alt: AMC WebUI
   actions:
     - text: 🚀 快速上手 (文档指南)
       link: /getting-started/introduction/

@@ -7,8 +7,10 @@ export default defineConfig({
   integrations: [
     starlight({
       title: 'AMC WebUI',
+      favicon: '/favicon.png',
       logo: {
-        src: './src/assets/logo.svg',
+        light: './src/assets/app-logo.png',
+        dark: './src/assets/app-logo-dark.png',
         replacesTitle: false,
       },
       defaultLocale: 'root',
