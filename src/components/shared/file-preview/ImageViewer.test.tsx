@@ -197,4 +197,3 @@ describe('ImageViewer', () => {
     expect(exportBtn).toBeInTheDocument();
   });
 });
-

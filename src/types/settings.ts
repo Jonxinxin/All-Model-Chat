@@ -53,6 +53,7 @@ export enum HarmCategory {
   HARM_CATEGORY_HATE_SPEECH = 'HARM_CATEGORY_HATE_SPEECH',
   HARM_CATEGORY_SEXUALLY_EXPLICIT = 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
   HARM_CATEGORY_DANGEROUS_CONTENT = 'HARM_CATEGORY_DANGEROUS_CONTENT',
+  HARM_CATEGORY_JAILBREAK = 'HARM_CATEGORY_JAILBREAK',
 }
 
 export enum HarmBlockThreshold {
@@ -289,7 +290,7 @@ export const normalizeProviderId = (value: unknown): ChatProviderId | undefined 
 };
 
 export interface AppSettings extends ChatSettings {
-  themeId: 'system' | 'onyx' | 'graphite' | 'pearl';
+  themeId: 'system' | 'onyx' | 'graphite' | 'pearl' | 'sepia';
   baseFontSize: number;
   useCustomApiConfig: boolean;
   serverManagedApi?: boolean;
@@ -346,3 +347,23 @@ export interface AppSettings extends ChatSettings {
   liveApiKey?: string | null;
   thirdPartyApi: ThirdPartyApiSettings;
 }
+
+/** Subset of AppSettings consumed by chat message rendering components to isolate memoization. */
+export type MessageAppSettings = Pick<
+  AppSettings,
+  | 'baseFontSize'
+  | 'expandCodeBlocksByDefault'
+  | 'isMermaidRenderingEnabled'
+  | 'isGraphvizRenderingEnabled'
+  | 'unwrapMislabeledHtmlBlocks'
+  | 'liveArtifactsCustomFontSize'
+  | 'systemInstruction'
+  | 'isLiveArtifactsEnabled'
+  | 'liveArtifactsPromptMode'
+  | 'liveArtifactsSystemPrompt'
+  | 'liveArtifactsSystemPrompts'
+  | 'autoOpenHtmlPreview'
+  | 'hideThinkingInContext'
+  | 'thoughtTranslationTargetLanguage'
+  | 'thoughtTranslationModelId'
+>;

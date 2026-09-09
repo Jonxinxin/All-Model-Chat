@@ -130,15 +130,13 @@ export const TextFileViewer: React.FC<TextFileViewerProps> = ({
           <Loader2 className="animate-spin mr-2" /> {t('filePreviewLoadingTextContent')}
         </div>
       ) : (
-        <div className="w-full h-full p-4 sm:p-8 pt-16 pb-16 flex items-center justify-center">
-          <div className="w-full h-full max-w-5xl rounded-xl border border-[var(--theme-border-secondary)] overflow-hidden shadow-2xl bg-[var(--theme-bg-code-block)]">
-            <CodeEditor
-              value={displayContent || ''}
-              onChange={(val) => onChange && onChange(val)}
-              language={fileLanguage}
-              readOnly={!isEditable}
-            />
-          </div>
+        <div className="w-full h-full flex flex-col bg-[var(--theme-bg-code-block)]">
+          <CodeEditor
+            value={displayContent || ''}
+            onChange={(val) => onChange && onChange(val)}
+            language={fileLanguage}
+            readOnly={!isEditable}
+          />
         </div>
       )}
     </div>

@@ -121,7 +121,8 @@ export async function runBatchModelHealthCheck(
             modelId: model.id,
             timestamp: Date.now(),
             grade: 'error',
-            errorMessage: probeExecutionError instanceof Error ? probeExecutionError.message : String(probeExecutionError),
+            errorMessage:
+              probeExecutionError instanceof Error ? probeExecutionError.message : String(probeExecutionError),
             diagnosticTip: '请求异常中断。',
           };
           errorCount++;

@@ -48,9 +48,14 @@ export const ChatInputArea: React.FC = () => {
   const isAudioNavOpen = isMediaNavOpen && mediaNavOpenKind === 'audio';
   const isImageNavOpen = isMediaNavOpen && mediaNavOpenKind === 'image';
 
+  const isPdfNavActive = Boolean(chatInput.currentChatSettings?.isPdfNavEnabled) || isPdfNavOpen;
+  const isVideoNavActive = Boolean(chatInput.currentChatSettings?.isVideoNavEnabled) || isVideoNavOpen;
+  const isAudioNavActive = Boolean(chatInput.currentChatSettings?.isAudioNavEnabled) || isAudioNavOpen;
+  const isImageNavActive = Boolean(chatInput.currentChatSettings?.isImageNavEnabled) || isImageNavOpen;
+
   const toggleMediaNav = useCallback(
-    (kind: MediaNavKind, isOpen: boolean) => {
-      const next = !isOpen;
+    (kind: MediaNavKind, isActive: boolean) => {
+      const next = !isActive;
       if (next) {
         chatInput.onDeactivateLiveArtifactsPrompt?.();
         useMediaNavStore.getState().openAs(kind);
@@ -63,17 +68,17 @@ export const ChatInputArea: React.FC = () => {
   );
 
   const handleToggleImageNav = useCallback(
-    () => toggleMediaNav('image', isImageNavOpen),
-    [toggleMediaNav, isImageNavOpen],
+    () => toggleMediaNav('image', isImageNavActive),
+    [toggleMediaNav, isImageNavActive],
   );
-  const handleTogglePdfNav = useCallback(() => toggleMediaNav('pdf', isPdfNavOpen), [toggleMediaNav, isPdfNavOpen]);
+  const handleTogglePdfNav = useCallback(() => toggleMediaNav('pdf', isPdfNavActive), [toggleMediaNav, isPdfNavActive]);
   const handleToggleVideoNav = useCallback(
-    () => toggleMediaNav('video', isVideoNavOpen),
-    [toggleMediaNav, isVideoNavOpen],
+    () => toggleMediaNav('video', isVideoNavActive),
+    [toggleMediaNav, isVideoNavActive],
   );
   const handleToggleAudioNav = useCallback(
-    () => toggleMediaNav('audio', isAudioNavOpen),
-    [toggleMediaNav, isAudioNavOpen],
+    () => toggleMediaNav('audio', isAudioNavActive),
+    [toggleMediaNav, isAudioNavActive],
   );
   const isAnimatingSend = inputState.isAnimatingSend;
   const isMobile = inputState.isMobile;
@@ -195,19 +200,18 @@ export const ChatInputArea: React.FC = () => {
             show={chatInput.showEmptyStateSuggestions}
             onSuggestionClick={chatInput.onSuggestionClick}
             onOrganizeInfoClick={chatInput.onOrganizeInfoClick}
-            isLiveArtifactsActive={chatInput.isLiveArtifactsPromptActive}
             onToggleBBox={isGeminiNative ? chatInput.onToggleBBox : undefined}
             isBBoxModeActive={chatInput.isBBoxModeActive}
             onToggleGuide={isGeminiNative ? chatInput.onToggleGuide : undefined}
             isGuideModeActive={chatInput.isGuideModeActive}
             onToggleImageNav={isGeminiNative && !capabilities.isGemmaModel ? handleToggleImageNav : undefined}
-            isImageNavEnabled={isImageNavOpen}
+            isImageNavEnabled={isImageNavActive}
             onTogglePdfNav={isGeminiNative && !capabilities.isGemmaModel ? handleTogglePdfNav : undefined}
-            isPdfNavEnabled={isPdfNavOpen}
+            isPdfNavEnabled={isPdfNavActive}
             onToggleVideoNav={isGeminiNative && !capabilities.isGemmaModel ? handleToggleVideoNav : undefined}
-            isVideoNavEnabled={isVideoNavOpen}
+            isVideoNavEnabled={isVideoNavActive}
             onToggleAudioNav={isGeminiNative && !capabilities.isGemmaModel ? handleToggleAudioNav : undefined}
-            isAudioNavEnabled={isAudioNavOpen}
+            isAudioNavEnabled={isAudioNavActive}
             isFullscreen={isFullscreen}
           />
         )}

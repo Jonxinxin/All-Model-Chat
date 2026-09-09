@@ -1,6 +1,6 @@
 import { useChatStore } from '@/stores/chatStore';
 import { useMediaNavStore } from '@/stores/mediaNavStore';
-import { collectSessionMediaFiles, isVideoFile, resolveNamedFile } from './sessionMediaFiles';
+import { collectSessionMediaFiles, isNavigableVideoFile, resolveNamedFile } from './sessionMediaFiles';
 import { parseLocateMarkers } from './locateMarker';
 import { seekSessionAudio } from './seekAudio';
 import { applyMediaNavKindToSettings } from './mediaNavSettings';
@@ -9,6 +9,7 @@ export interface SeekSessionVideoParams {
   startSeconds: number;
   endSeconds?: number;
   videoName?: string;
+  kind?: 'video' | 'audio';
   messageId?: string;
   annotation?: {
     box2d?: [number, number, number, number];
@@ -34,6 +35,7 @@ export const seekSessionVideo = (params: SeekSessionVideoParams): boolean => {
     audios.some((a) => a.name === params.videoName || a.name.toLowerCase().includes(params.videoName!.toLowerCase()));
 
   if (
+    params.kind === 'audio' ||
     (isAudioActive &&
       !params.annotation?.box2d &&
       !params.annotation?.point &&
@@ -59,7 +61,7 @@ export const seekSessionVideo = (params: SeekSessionVideoParams): boolean => {
     const msg = activeMessages.find((m) => m.id === params.messageId);
     if (msg) {
       if (!videoName && msg.files) {
-        const msgVideo = msg.files.find(isVideoFile);
+        const msgVideo = msg.files.find(isNavigableVideoFile);
         if (msgVideo) {
           videoName = msgVideo.name;
         }

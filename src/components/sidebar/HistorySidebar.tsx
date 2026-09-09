@@ -50,6 +50,7 @@ interface HistorySidebarProps {
   onClearGroup?: (groupId: string) => void;
   onRenameGroup: (groupId: string, newTitle: string) => void;
   onMoveSessionToGroup: (sessionId: string, groupId: string | null) => void;
+  onRegenerateTitleSession?: (sessionId: string) => void | Promise<void>;
   onToggleGroupExpansion: (groupId: string) => void;
   onNewChatInGroup: (groupId: string) => void;
   onReorderGroups?: (activeId: string, overId: string) => void;
@@ -181,6 +182,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = (props) => {
     onRenameGroup,
     onMoveSessionToGroup,
     onSelectSession,
+    onRegenerateTitleSession,
     newChatShortcut,
     searchChatsShortcut,
     brandHref = '/',
@@ -236,6 +238,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = (props) => {
     handleMiniSearchClick,
     handleEmptySpaceClick,
     handleSessionSelect,
+    handleRegenerateTitle,
   } = useHistorySidebarLogic({
     isOpen,
     onToggle,
@@ -248,6 +251,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = (props) => {
     onRenameGroup,
     onMoveSessionToGroup,
     onSelectSession,
+    onRegenerateTitleSession,
   });
 
   const groupIds = React.useMemo(() => sortedGroups.map((group) => `group:${group.id}`), [sortedGroups]);
@@ -339,6 +343,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = (props) => {
     onDuplicateSession,
     onOpenExportModal,
     onMoveSessionToGroup,
+    onRegenerateTitleSession: handleRegenerateTitle,
     handleStartEdit: (item: SavedChatSession) => handleStartEdit('session', item),
     handleRenameConfirm,
     handleRenameKeyDown,

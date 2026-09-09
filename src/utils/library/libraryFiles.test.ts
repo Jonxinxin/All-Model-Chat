@@ -8,6 +8,8 @@ import {
   extractLibraryItemsFromSessions,
   filterAndSortLibraryItems,
   libraryItemToUploadedFile,
+  getItemExtensions,
+  matchesLibrarySearchToken,
 } from './libraryFiles';
 import type { SavedChatSession, LibraryItem, LibraryFilterState } from '@/types';
 
@@ -276,5 +278,181 @@ describe('libraryFiles utils', () => {
     expect(converted.fileApiKeyFingerprint).toBe('key-fingerprint-123');
     expect(converted.transferStrategy).toBe('files-api');
     expect(converted.uploadState).toBe('active');
+  });
+
+  describe('file extension extraction and search support', () => {
+    it('matches search tokens directly with matchesLibrarySearchToken', () => {
+      const item: LibraryItem = {
+        id: 'item-1',
+        name: 'Report.pdf',
+        type: 'application/pdf',
+        size: 100,
+        timestamp: 100,
+        source: 'uploaded',
+        sessionTitle: 'Quarterly Sync',
+      };
+      const exts = getItemExtensions(item.name, item.type);
+      expect(matchesLibrarySearchToken(item, 'report', exts)).toBe(true);
+      expect(matchesLibrarySearchToken(item, 'sync', exts)).toBe(true);
+      expect(matchesLibrarySearchToken(item, '.pdf', exts)).toBe(true);
+      expect(matchesLibrarySearchToken(item, 'ext:pdf', exts)).toBe(true);
+      expect(matchesLibrarySearchToken(item, 'ext:png', exts)).toBe(false);
+      expect(matchesLibrarySearchToken(item, '.png', exts)).toBe(false);
+    });
+
+    it('extracts extensions from filename and MIME type with aliases', () => {
+      // From filename with extension
+      const exts1 = getItemExtensions('report.pdf', 'application/pdf');
+      expect(exts1.has('pdf')).toBe(true);
+
+      // From compound extension
+      const exts2 = getItemExtensions('backup.tar.gz', 'application/gzip');
+      expect(exts2.has('gz')).toBe(true);
+      expect(exts2.has('tar.gz')).toBe(true);
+
+      // From file without extension in filename, but with MIME type
+      const exts3 = getItemExtensions('my-photo', 'image/png');
+      expect(exts3.has('png')).toBe(true);
+
+      // Alias expansions: jpg <-> jpeg
+      const exts4 = getItemExtensions('photo.jpeg', 'image/jpeg');
+      expect(exts4.has('jpeg')).toBe(true);
+      expect(exts4.has('jpg')).toBe(true);
+
+      // Alias expansions: docx <-> doc
+      const exts5 = getItemExtensions(
+        'paper.docx',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      );
+      expect(exts5.has('docx')).toBe(true);
+      expect(exts5.has('doc')).toBe(true);
+
+      // Alias expansions: xlsx <-> xls
+      const exts6 = getItemExtensions(
+        'sheet.xlsx',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
+      expect(exts6.has('xlsx')).toBe(true);
+      expect(exts6.has('xls')).toBe(true);
+
+      // Alias expansions: md <-> markdown
+      const exts7 = getItemExtensions('README.md', 'text/markdown');
+      expect(exts7.has('md')).toBe(true);
+      expect(exts7.has('markdown')).toBe(true);
+    });
+
+    it('filters items by file extension with dot prefix, bare extension, and wildcard', () => {
+      const sampleItems: LibraryItem[] = [
+        {
+          id: '1',
+          name: 'Annual Report.pdf',
+          type: 'application/pdf',
+          size: 100,
+          timestamp: 100,
+          source: 'uploaded',
+        },
+        {
+          id: '2',
+          name: 'quarterly_financials', // no extension in filename
+          type: 'application/pdf',
+          size: 200,
+          timestamp: 200,
+          source: 'uploaded',
+        },
+        {
+          id: '3',
+          name: 'company_logo.png',
+          type: 'image/png',
+          size: 300,
+          timestamp: 300,
+          source: 'uploaded',
+        },
+        {
+          id: '4',
+          name: 'budget_overview.xlsx',
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          size: 400,
+          timestamp: 400,
+          source: 'uploaded',
+        },
+        {
+          id: '5',
+          name: 'meeting_notes.md',
+          type: 'text/markdown',
+          size: 500,
+          timestamp: 500,
+          source: 'uploaded',
+          sessionTitle: 'Project Planning',
+        },
+        {
+          id: '6',
+          name: 'pdf_helper.ts', // has 'pdf' in name, but is a TypeScript file
+          type: 'text/javascript',
+          size: 600,
+          timestamp: 600,
+          source: 'uploaded',
+        },
+      ];
+
+      const baseFilter: LibraryFilterState = {
+        category: 'all',
+        source: 'all',
+        fileType: 'all',
+        sort: 'date_desc',
+        searchQuery: '',
+        viewMode: 'list',
+      };
+
+      // 1. Search by dot-prefixed extension: ".pdf"
+      // Should match "Annual Report.pdf" and "quarterly_financials" (by MIME), but NOT "pdf_helper.ts"
+      const dotPdf = filterAndSortLibraryItems(sampleItems, { ...baseFilter, searchQuery: '.pdf' });
+      expect(dotPdf.map((i) => i.id)).toEqual(['2', '1']);
+
+      // 2. Search by bare extension: "pdf"
+      // Matches "Annual Report.pdf", "quarterly_financials" (by MIME), and "pdf_helper.ts" (by name substring)
+      const barePdf = filterAndSortLibraryItems(sampleItems, { ...baseFilter, searchQuery: 'pdf' });
+      expect(barePdf.map((i) => i.id)).toEqual(['6', '2', '1']);
+
+      // 3. Search with explicit extension filter: "ext:pdf"
+      // Only matches PDF files, NOT "pdf_helper.ts"
+      const extPdf = filterAndSortLibraryItems(sampleItems, { ...baseFilter, searchQuery: 'ext:pdf' });
+      expect(extPdf.map((i) => i.id)).toEqual(['2', '1']);
+
+      // 4. Search with wildcard: "*.pdf"
+      const wildPdf = filterAndSortLibraryItems(sampleItems, { ...baseFilter, searchQuery: '*.pdf' });
+      expect(wildPdf.map((i) => i.id)).toEqual(['2', '1']);
+
+      // 5. Incremental dot search: ".pd"
+      const incPd = filterAndSortLibraryItems(sampleItems, { ...baseFilter, searchQuery: '.pd' });
+      expect(incPd.map((i) => i.id)).toEqual(['2', '1']);
+
+      // 6. Search for Excel spreadsheet: "xlsx" and ".xlsx"
+      const searchXlsx = filterAndSortLibraryItems(sampleItems, { ...baseFilter, searchQuery: 'xlsx' });
+      expect(searchXlsx).toHaveLength(1);
+      expect(searchXlsx[0].id).toBe('4');
+
+      const searchDotXlsx = filterAndSortLibraryItems(sampleItems, { ...baseFilter, searchQuery: '.xlsx' });
+      expect(searchDotXlsx).toHaveLength(1);
+      expect(searchDotXlsx[0].id).toBe('4');
+
+      // 7. Search for Markdown: "md" and ".md"
+      const searchMd = filterAndSortLibraryItems(sampleItems, { ...baseFilter, searchQuery: 'md' });
+      expect(searchMd).toHaveLength(1);
+      expect(searchMd[0].id).toBe('5');
+
+      // 8. Multi-token query: "annual .pdf"
+      const multiToken1 = filterAndSortLibraryItems(sampleItems, { ...baseFilter, searchQuery: 'annual .pdf' });
+      expect(multiToken1).toHaveLength(1);
+      expect(multiToken1[0].id).toBe('1');
+
+      // 9. Multi-token query: "planning md" (sessionTitle + extension)
+      const multiToken2 = filterAndSortLibraryItems(sampleItems, { ...baseFilter, searchQuery: 'planning md' });
+      expect(multiToken2).toHaveLength(1);
+      expect(multiToken2[0].id).toBe('5');
+
+      // 10. Non-matching extension: ".gif"
+      const noMatch = filterAndSortLibraryItems(sampleItems, { ...baseFilter, searchQuery: '.gif' });
+      expect(noMatch).toHaveLength(0);
+    });
   });
 });

@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
-import { createPortal } from 'react-dom';
-import { Globe, Check, Terminal, Link, X, Telescope, Calculator, AlertTriangle, MapPin, Wrench } from 'lucide-react';
+import { Globe, Check, Terminal, Link, X, Telescope, Calculator, AlertTriangle, MapPinned, Wrench } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { IconPyodide, IconThinking } from '@/components/icons';
 import { CHAT_INPUT_BUTTON_CLASS } from '@/constants/buttonClasses';
-import { usePortaledMenu } from '@/hooks/ui/usePortaledMenu';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/shared/DropdownMenu';
 import { getCachedModelCapabilities } from '@/stores/modelCapabilitiesStore';
 import {
   getChatToolsForSurface,
@@ -114,7 +118,7 @@ const renderToolIcon = (icon: ChatToolIconKey, size: number) => {
     case 'globe':
       return <Globe size={size} strokeWidth={2} />;
     case 'map':
-      return <MapPin size={size} strokeWidth={2} />;
+      return <MapPinned size={size} strokeWidth={2} />;
     case 'terminal':
       return <Terminal size={size} strokeWidth={2} />;
     case 'pyodide':
@@ -160,14 +164,11 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
     }
   };
 
-  const { isOpen, menuPosition, containerRef, buttonRef, menuRef, targetWindow, closeMenu, toggleMenu } =
-    usePortaledMenu();
   const capabilities = getCachedModelCapabilities(currentModelId);
 
   const handleToggle = (toggleFunc?: () => void) => {
     if (toggleFunc) {
       toggleFunc();
-      closeMenu();
     }
   };
 
@@ -185,7 +186,6 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
       if (toolId === 'tokenCount') {
         toolUtilityActions.onCountTokens();
       }
-      closeMenu();
     };
   };
 
@@ -210,38 +210,35 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
   return (
     <div className="flex flex-col items-start gap-2">
       <div className="flex items-center">
-        <div className="relative" ref={containerRef}>
-          <button
-            ref={buttonRef}
-            type="button"
-            onClick={toggleMenu}
-            disabled={disabled}
-            className={`${CHAT_INPUT_BUTTON_CLASS} text-[var(--theme-icon-attach)] ${isOpen ? 'bg-[var(--theme-bg-tertiary)] text-[var(--theme-text-primary)]' : 'bg-transparent hover:bg-[var(--theme-bg-tertiary)]'}`}
-            aria-label={t('toolsButton')}
-            title={t('toolsButton')}
-            aria-haspopup="true"
-            aria-expanded={isOpen}
-          >
-            <Wrench size={menuIconSize} strokeWidth={2} />
-          </button>
-          {isOpen &&
-            targetWindow &&
-            createPortal(
-              <div
-                ref={menuRef}
-                className="fixed w-60 bg-[var(--theme-bg-primary)] border border-[var(--theme-border-secondary)] rounded-xl shadow-premium py-1.5 custom-scrollbar"
-                style={menuPosition}
-                role="menu"
+        <div className="relative">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                disabled={disabled}
+                className={`${CHAT_INPUT_BUTTON_CLASS} text-[var(--theme-icon-attach)] bg-transparent hover:bg-[var(--theme-bg-tertiary)] data-[state=open]:bg-[var(--theme-bg-tertiary)] data-[state=open]:text-[var(--theme-text-primary)]`}
+                aria-label={t('toolsButton')}
+                title={t('toolsButton')}
+                aria-haspopup="true"
               >
-                {filteredItems.map((item) => {
-                  const isEnabled = isToggleableToolId(item.id) ? !!toolStates[item.id]?.isEnabled : false;
+                <Wrench size={menuIconSize} strokeWidth={2} />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              side="top"
+              align="start"
+              sideOffset={8}
+              className="w-60 max-h-[75vh] overflow-y-auto custom-scrollbar py-1.5 shadow-premium"
+            >
+              {filteredItems.map((item) => {
+                const isEnabled = isToggleableToolId(item.id) ? !!toolStates[item.id]?.isEnabled : false;
 
-                  return (
+                return (
+                  <DropdownMenuItem key={item.id} asChild onClick={getToolAction(item)} className="cursor-pointer">
                     <button
-                      key={item.id}
-                      onClick={getToolAction(item)}
-                      className={`w-full text-left px-4 py-2.5 text-sm hover:bg-[var(--theme-bg-tertiary)] focus:outline-none focus-visible:bg-[var(--theme-bg-tertiary)] flex items-center justify-between transition-colors ${isEnabled ? 'text-[var(--theme-text-link)]' : 'text-[var(--theme-text-primary)]'}`}
+                      type="button"
                       role="menuitem"
+                      className={`w-full text-left px-4 py-2.5 text-sm hover:bg-[var(--theme-bg-tertiary)] focus:outline-none focus-visible:bg-[var(--theme-bg-tertiary)] flex items-center justify-between transition-colors ${isEnabled ? 'text-[var(--theme-text-link)]' : 'text-[var(--theme-text-primary)]'}`}
                     >
                       <div className="flex items-center gap-3.5">
                         <span
@@ -253,11 +250,11 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
                       </div>
                       {isEnabled && <Check size={16} className="text-[var(--theme-text-link)]" strokeWidth={2} />}
                     </button>
-                  );
-                })}
-              </div>,
-              targetWindow.document.body,
-            )}
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
         {filteredItems
           .filter(

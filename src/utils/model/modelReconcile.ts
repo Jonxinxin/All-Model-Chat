@@ -19,10 +19,7 @@ export interface ModelReconcileResult {
  * - Existing models: In both
  * - Stale models: In existing, but missing from remote API
  */
-export const reconcileModels = (
-  remoteModels: ModelOption[],
-  existingModels: ModelOption[],
-): ModelReconcileResult => {
+export const reconcileModels = (remoteModels: ModelOption[], existingModels: ModelOption[]): ModelReconcileResult => {
   const existingMap = new Map<string, ModelOption>();
   for (const model of existingModels) {
     existingMap.set(model.id, model);

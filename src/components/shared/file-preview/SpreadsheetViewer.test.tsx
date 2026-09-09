@@ -42,16 +42,18 @@ describe('SpreadsheetViewer', () => {
     };
   };
 
-  it('renders spreadsheet with sheet tabs, rows, and top clearance card layout', async () => {
+  it('renders spreadsheet with sheet tabs, rows, and full-height layout', async () => {
     const file = createSampleWorkbookFile();
 
     await act(async () => {
       renderer.root.render(<SpreadsheetViewer file={file} />);
     });
 
-    // Verify card wrapper has top clearance
+    // Verify card wrapper fills full height and does not have pt-20 clearance
     const outerContainer = renderer.container.firstChild as HTMLElement;
-    expect(outerContainer.className).toContain('pt-20');
+    expect(outerContainer.className).toContain('w-full');
+    expect(outerContainer.className).toContain('h-full');
+    expect(outerContainer.className).not.toContain('pt-20');
 
     // Verify sheet tabs exist
     expect(renderer.container.textContent).toContain('Models');
@@ -90,5 +92,35 @@ describe('SpreadsheetViewer', () => {
     });
 
     expect(renderer.container.textContent).toContain('gemini-2.5-pro');
+  });
+
+  it('virtualizes large datasets without rendering all rows to DOM', async () => {
+    const wb = XLSX.utils.book_new();
+    const headers = ['ID', 'Name', 'Score'];
+    const rows = Array.from({ length: 500 }, (_, i) => [i + 1, `User ${i + 1}`, (i * 17) % 100]);
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    XLSX.utils.book_append_sheet(wb, ws, 'BigData');
+    const wbArray = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbArray], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+
+    const file: UploadedFile = {
+      id: 'big-data-file',
+      name: 'bigdata.xlsx',
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      size: blob.size,
+      rawFile: blob as File,
+      uploadState: 'active',
+    };
+
+    await act(async () => {
+      renderer.root.render(<SpreadsheetViewer file={file} />);
+    });
+
+    // Renders initial items
+    expect(renderer.container.textContent).toContain('User 1');
+    // Does NOT render row 499 into DOM, proving virtualization
+    expect(renderer.container.textContent).not.toContain('User 499');
   });
 });

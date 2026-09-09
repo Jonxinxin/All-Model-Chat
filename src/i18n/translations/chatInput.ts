@@ -2287,6 +2287,15 @@ export const chatInputTranslations = {
     es: 'Convirtiendo en contexto...',
     ko: '컨텍스트로 변환 중...',
   },
+  zipTextPreviewTooLarge: {
+    en: 'File size exceeds 5MB. Online text preview is not supported, please click download.',
+    zh: '文件大小超过 5MB，暂不支持在线文本预览，请点击右侧下载按钮查看。',
+    ja: 'ファイルサイズが5MBを超えています。オンラインテキストプレビューはサポートされていないため、ダウンロードしてご確認ください。',
+    de: 'Dateigröße überschreitet 5 MB. Online-Textvorschau wird nicht unterstützt, bitte herunterladen.',
+    fr: "La taille du fichier dépasse 5 Mo. L'aperçu texte en ligne n'est pas pris en charge, veuillez télécharger.",
+    es: 'El tamaño del archivo supera los 5 MB. No se admite la vista previa de texto en línea, descargue el archivo.',
+    ko: '파일 크기가 5MB를 초과합니다. 온라인 텍스트 미리보기가 지원되지 않으므로 다운로드하여 확인하세요.',
+  },
   fileProcessingZip: {
     en: 'Processing {filename}...',
     zh: '正在处理 {filename}…',

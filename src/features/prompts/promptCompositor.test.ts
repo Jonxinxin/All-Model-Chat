@@ -2,9 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { composeSystemInstruction, stripLegacyFeatureMarkers } from './promptCompositor';
 
 vi.mock('./promptRegistry', async () => {
-  const actual = await vi.importActual<typeof import('./promptRegistry')>(
-    './promptRegistry',
-  );
+  const actual = await vi.importActual<typeof import('./promptRegistry')>('./promptRegistry');
   return {
     ...actual,
     loadLiveArtifactsSystemPrompt: vi.fn(async (_lang, mode = 'inline') => `[MOCK_LA_${mode.toUpperCase()}]`),
@@ -26,6 +24,18 @@ describe('stripLegacyFeatureMarkers', () => {
 
   it('strips legacy BBox marker if the entire instruction is bbox prompt', () => {
     expect(stripLegacyFeatureMarkers('**任务：** 请作为一位计算机视觉专家\nDetails...')).toBe('');
+  });
+
+  it('preserves user instruction when followed by legacy Live Artifacts protocol', () => {
+    expect(
+      stripLegacyFeatureMarkers('You are a financial analyst.\n\n[Live Artifacts Inline Protocol - zh]\nSome rules...'),
+    ).toBe('You are a financial analyst.');
+  });
+
+  it('preserves user instruction when followed by legacy BBox prompt', () => {
+    expect(
+      stripLegacyFeatureMarkers('Answer in traditional Chinese.\n\n**任务：** 请作为一位计算机视觉专家\nDetails...'),
+    ).toBe('Answer in traditional Chinese.');
   });
 
   it('handles empty or null values', () => {
@@ -55,6 +65,15 @@ describe('composeSystemInstruction', () => {
       liveArtifactsPromptMode: 'inline',
     });
     expect(result).toBe('You are a helpful assistant.\n\n[MOCK_LA_INLINE]');
+  });
+
+  it('uses custom Live Artifacts prompt override when provided', async () => {
+    const result = await composeSystemInstruction({
+      userInstruction: 'You are a helpful assistant.',
+      isLiveArtifactsEnabled: true,
+      customLiveArtifactsPrompt: 'Custom Artifact Rules',
+    });
+    expect(result).toBe('You are a helpful assistant.\n\nCustom Artifact Rules');
   });
 
   it('layers user instruction, vision mode, and tool directives in order', async () => {

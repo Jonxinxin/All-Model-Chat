@@ -23,6 +23,7 @@ import {
   formatLiveArtifactFollowupPrompt,
   type LiveArtifactFollowupPayload,
 } from '@/utils/live-artifacts/liveArtifactFollowup';
+import { isDarkThemeId } from '@/utils/themeMode';
 
 const MessageListComponent: React.FC = () => {
   const appSettings = useSettingsStore((state) => state.appSettings);
@@ -197,7 +198,7 @@ const MessageListComponent: React.FC = () => {
   return (
     <>
       <div
-        className={`relative flex-grow h-full ${themeId === 'pearl' ? 'bg-[var(--theme-bg-primary)]' : 'bg-[var(--theme-bg-secondary)]'}`}
+        className={`relative flex-grow h-full ${!isDarkThemeId(themeId) ? 'bg-[var(--theme-bg-primary)]' : 'bg-[var(--theme-bg-secondary)]'}`}
       >
         {visibleMessages.length === 0 ? (
           <WelcomeScreen />

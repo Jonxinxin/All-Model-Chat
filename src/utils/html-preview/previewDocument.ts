@@ -420,7 +420,7 @@ const ECHARTS_SCRIPT_SRC = '/vendor/echarts.min.js';
 const ECHARTS_SCRIPT_ATTRIBUTE = 'data-amc-echarts-script';
 const ECHARTS_SCRIPT_TAG = `<script ${ECHARTS_SCRIPT_ATTRIBUTE}="true" src="${ECHARTS_SCRIPT_SRC}"></script>`;
 
-export const hasEchartsChart = (htmlOrDoc: string | Document): boolean => {
+const hasEchartsChart = (htmlOrDoc: string | Document): boolean => {
   if (typeof htmlOrDoc === 'string') {
     return /data-amc-(?:chart|echarts)\b/.test(htmlOrDoc);
   }

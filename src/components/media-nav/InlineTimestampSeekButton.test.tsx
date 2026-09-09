@@ -2,10 +2,15 @@ import { render, fireEvent, act } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { InlineTimestampSeekButton } from './InlineTimestampSeekButton';
 import * as seekVideoModule from '@/utils/media-nav/seekVideo';
+import * as seekAudioModule from '@/utils/media-nav/seekAudio';
 import { useMediaNavStore } from '@/stores/mediaNavStore';
 
 vi.mock('@/utils/media-nav/seekVideo', () => ({
   seekSessionVideo: vi.fn(),
+}));
+
+vi.mock('@/utils/media-nav/seekAudio', () => ({
+  seekSessionAudio: vi.fn(),
 }));
 
 describe('InlineTimestampSeekButton', () => {
@@ -97,5 +102,25 @@ describe('InlineTimestampSeekButton', () => {
     });
 
     expect(btn.getAttribute('data-active')).toBeNull();
+  });
+
+  it('triggers seekSessionAudio when clicked with mediaKind="audio"', () => {
+    const { container } = render(
+      <InlineTimestampSeekButton startSeconds={45} endSeconds={90} videoName="speech.mp3" mediaKind="audio">
+        00:45 - 01:30
+      </InlineTimestampSeekButton>,
+    );
+
+    const btn = container.querySelector('[data-testid="inline-timestamp-seek-btn"]')!;
+    fireEvent.click(btn);
+
+    expect(seekAudioModule.seekSessionAudio).toHaveBeenCalledWith(
+      expect.objectContaining({
+        startSeconds: 45,
+        endSeconds: 90,
+        audioName: 'speech.mp3',
+      }),
+    );
+    expect(seekVideoModule.seekSessionVideo).not.toHaveBeenCalled();
   });
 });

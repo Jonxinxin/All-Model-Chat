@@ -1,16 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import {
-  X,
-  Search,
-  Check,
-  Eye,
-  Wrench,
-  Lightbulb,
-  Trash2,
-  RefreshCw,
-  AlertTriangle,
-} from 'lucide-react';
+import { X, Search, Check, Eye, Wrench, Lightbulb, Trash2, RefreshCw, AlertTriangle } from 'lucide-react';
 import type { ModelOption } from '@/types';
+import { useI18n } from '@/contexts/I18nContext';
 import { formatContextWindow } from '@/utils/model/knownModelsCatalog';
 import { reconcileModels, applyModelReconcile } from '@/utils/model/modelReconcile';
 
@@ -33,14 +24,12 @@ export const ModelSyncModal: React.FC<ModelSyncModalProps> = ({
   existingModels,
   onApply,
 }) => {
+  const { t } = useI18n();
   const [filterTab, setFilterTab] = useState<FilterTab>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Reconcile remote with existing
-  const reconcileResult = useMemo(
-    () => reconcileModels(remoteModels, existingModels),
-    [remoteModels, existingModels],
-  );
+  const reconcileResult = useMemo(() => reconcileModels(remoteModels, existingModels), [remoteModels, existingModels]);
 
   const { newModels, existingModels: mergedExisting, staleModels, stats } = reconcileResult;
 
@@ -57,8 +46,6 @@ export const ModelSyncModal: React.FC<ModelSyncModalProps> = ({
     setSelectedNewIds(new Set(newModels.map((m) => m.id)));
     setSelectedStaleRemoveIds(new Set());
   }, [newModels]);
-
-  if (!isOpen) return null;
 
   // Toggle single new model
   const toggleNewModel = (id: string) => {
@@ -150,6 +137,8 @@ export const ModelSyncModal: React.FC<ModelSyncModalProps> = ({
     return items;
   }, [filterTab, newModels, mergedExisting, staleModels, searchQuery]);
 
+  if (!isOpen) return null;
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
@@ -165,12 +154,13 @@ export const ModelSyncModal: React.FC<ModelSyncModalProps> = ({
             </div>
             <div>
               <h2 id="model-sync-title" className="text-base font-semibold leading-tight">
-                同步模型列表 (Model Pull Reconcile)
+                {t('thirdPartySyncModelsTitle')}
               </h2>
               <p className="text-xs text-[var(--theme-text-secondary)] mt-0.5">
-                服务商: <span className="font-medium text-[var(--theme-text-primary)]">{connectionName}</span>
+                {t('thirdPartyProvider')}:{' '}
+                <span className="font-medium text-[var(--theme-text-primary)]">{connectionName}</span>
                 <span className="mx-2">·</span>
-                远端发现 {stats.totalRemote} 个模型
+                {t('thirdPartyRemoteFoundModels', { count: stats.totalRemote })}
               </p>
             </div>
           </div>
@@ -178,7 +168,7 @@ export const ModelSyncModal: React.FC<ModelSyncModalProps> = ({
             type="button"
             onClick={onClose}
             className="p-1.5 text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-secondary)] rounded-lg transition-colors"
-            aria-label="关闭"
+            aria-label={t('close')}
           >
             <X size={18} />
           </button>
@@ -195,7 +185,7 @@ export const ModelSyncModal: React.FC<ModelSyncModalProps> = ({
                   : 'text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)]'
               }`}
             >
-              全部 ({stats.totalRemote + stats.staleCount})
+              {t('settingsOpenAICompatibleTabAll')} ({stats.totalRemote + stats.staleCount})
             </button>
             <button
               type="button"
@@ -206,7 +196,7 @@ export const ModelSyncModal: React.FC<ModelSyncModalProps> = ({
                   : 'text-[var(--theme-text-secondary)] hover:text-emerald-500'
               }`}
             >
-              <span>新增</span>
+              <span>{t('settingsOpenAICompatibleTabNew')}</span>
               <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/15 text-emerald-500 text-[10px] font-bold">
                 {stats.newCount}
               </span>
@@ -220,7 +210,7 @@ export const ModelSyncModal: React.FC<ModelSyncModalProps> = ({
                   : 'text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)]'
               }`}
             >
-              <span>已有</span>
+              <span>{t('settingsOpenAICompatibleTabExisting')}</span>
               <span className="px-1.5 py-0.2 rounded-full bg-[var(--theme-bg-primary)] text-[var(--theme-text-secondary)] text-[10px]">
                 {stats.existingCount}
               </span>
@@ -235,7 +225,7 @@ export const ModelSyncModal: React.FC<ModelSyncModalProps> = ({
                     : 'text-[var(--theme-text-secondary)] hover:text-rose-500'
                 }`}
               >
-                <span>已失效</span>
+                <span>{t('thirdPartyTabStale')}</span>
                 <span className="px-1.5 py-0.2 rounded-full bg-rose-500/15 text-rose-500 text-[10px] font-bold">
                   {stats.staleCount}
                 </span>
@@ -244,15 +234,12 @@ export const ModelSyncModal: React.FC<ModelSyncModalProps> = ({
           </div>
 
           <div className="relative flex-1 max-w-xs">
-            <Search
-              size={14}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--theme-text-secondary)]"
-            />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--theme-text-secondary)]" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="搜索模型名称或 ID..."
+              placeholder={t('settingsOpenAICompatibleModelSearch')}
               className="w-full pl-8.5 pr-8 py-1.5 text-xs rounded-xl bg-[var(--theme-bg-secondary)] border border-[var(--theme-border-primary)] focus:outline-none focus:ring-1 focus:ring-blue-500/50"
             />
             {searchQuery && (
@@ -277,7 +264,7 @@ export const ModelSyncModal: React.FC<ModelSyncModalProps> = ({
                   onChange={toggleAllNew}
                   className="rounded text-blue-600 focus:ring-0 cursor-pointer"
                 />
-                <span>全选所有新增 ({selectedNewIds.size}/{newModels.length})</span>
+                <span>{t('thirdPartySelectAllNew', { selected: selectedNewIds.size, total: newModels.length })}</span>
               </label>
             )}
             {staleModels.length > 0 && (
@@ -288,21 +275,22 @@ export const ModelSyncModal: React.FC<ModelSyncModalProps> = ({
               >
                 <Trash2 size={13} />
                 <span>
-                  {selectedStaleRemoveIds.size === staleModels.length ? '取消清理失效' : '勾选清理所有失效'} ({selectedStaleRemoveIds.size}/{staleModels.length})
+                  {selectedStaleRemoveIds.size === staleModels.length
+                    ? t('thirdPartyUncheckPruneStale')
+                    : t('thirdPartyCheckPruneStale')}{' '}
+                  ({selectedStaleRemoveIds.size}/{staleModels.length})
                 </span>
               </button>
             )}
           </div>
-          <span className="text-[11px] opacity-75">
-            显示 {displayItems.length} 个条目
-          </span>
+          <span className="text-[11px] opacity-75">{t('thirdPartyDisplayItems', { count: displayItems.length })}</span>
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-2 divide-y divide-[var(--theme-border-primary)]/40">
           {displayItems.length === 0 ? (
             <div className="py-14 text-center text-[var(--theme-text-secondary)] flex flex-col items-center gap-2">
               <Search size={28} className="opacity-30" />
-              <p className="text-sm">未找到匹配的模型条目</p>
+              <p className="text-sm">{t('thirdPartyNoMatchingModels')}</p>
             </div>
           ) : (
             displayItems.map(({ model, status }) => {
@@ -365,17 +353,17 @@ export const ModelSyncModal: React.FC<ModelSyncModalProps> = ({
 
                         {isNew && (
                           <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-500 border border-emerald-500/20">
-                            新增
+                            {t('thirdPartyNew')}
                           </span>
                         )}
                         {isStale && (
                           <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/15 text-rose-500 border border-rose-500/20">
-                            失效
+                            {t('thirdPartyStale')}
                           </span>
                         )}
                         {isExisting && (
                           <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--theme-bg-secondary)] text-[var(--theme-text-secondary)]">
-                            已配置
+                            {t('thirdPartyConfigured')}
                           </span>
                         )}
 
@@ -388,7 +376,7 @@ export const ModelSyncModal: React.FC<ModelSyncModalProps> = ({
                         {model.capabilities?.thinking && (
                           <span
                             className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-500/15 text-purple-400 border border-purple-500/20"
-                            title="支持深度思考 / 思考预算"
+                            title={t('thirdPartyThinkingSupported')}
                           >
                             <Lightbulb size={10} />
                             <span>Thinking</span>
@@ -397,7 +385,7 @@ export const ModelSyncModal: React.FC<ModelSyncModalProps> = ({
                         {model.capabilities?.vision && (
                           <span
                             className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-teal-500/15 text-teal-400 border border-teal-500/20"
-                            title="支持多模态图像视觉理解"
+                            title={t('thirdPartyVisionSupported')}
                           >
                             <Eye size={10} />
                             <span>Vision</span>
@@ -406,7 +394,7 @@ export const ModelSyncModal: React.FC<ModelSyncModalProps> = ({
                         {model.capabilities?.tools && (
                           <span
                             className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-500/15 text-blue-400 border border-blue-500/20"
-                            title="支持工具调用 / Function Calling / MCP"
+                            title={t('thirdPartyToolsSupported')}
                           >
                             <Wrench size={10} />
                             <span>Tools</span>
@@ -434,7 +422,7 @@ export const ModelSyncModal: React.FC<ModelSyncModalProps> = ({
                             : 'bg-[var(--theme-bg-secondary)] text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)]'
                         }`}
                       >
-                        {isNewChecked ? '将导入' : '忽略'}
+                        {isNewChecked ? t('thirdPartyWillImport') : t('thirdPartyIgnore')}
                       </button>
                     )}
                     {isStale && (
@@ -450,7 +438,7 @@ export const ModelSyncModal: React.FC<ModelSyncModalProps> = ({
                             : 'bg-[var(--theme-bg-secondary)] text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)]'
                         }`}
                       >
-                        {isStaleChecked ? '将移除' : '保留'}
+                        {isStaleChecked ? t('thirdPartyWillRemove') : t('thirdPartyKeep')}
                       </button>
                     )}
                   </div>
@@ -465,17 +453,17 @@ export const ModelSyncModal: React.FC<ModelSyncModalProps> = ({
             {selectedStaleRemoveIds.size > 0 && (
               <span className="flex items-center gap-1 text-rose-400">
                 <AlertTriangle size={13} />
-                即将清理 {selectedStaleRemoveIds.size} 个失效模型
+                {t('thirdPartyWillPruneCount', { count: selectedStaleRemoveIds.size })}
               </span>
             )}
             {selectedStaleRemoveIds.size > 0 && selectedNewIds.size > 0 && <span>·</span>}
             {selectedNewIds.size > 0 && (
               <span className="text-emerald-400 font-medium">
-                将添加 {selectedNewIds.size} 个新模型
+                {t('thirdPartyWillAddCount', { count: selectedNewIds.size })}
               </span>
             )}
             {selectedStaleRemoveIds.size === 0 && selectedNewIds.size === 0 && (
-              <span>模型列表无变更</span>
+              <span>{t('thirdPartyNoModelChanges')}</span>
             )}
           </div>
 
@@ -485,7 +473,7 @@ export const ModelSyncModal: React.FC<ModelSyncModalProps> = ({
               onClick={onClose}
               className="px-4 py-2 text-xs font-medium rounded-xl border border-[var(--theme-border-primary)] hover:bg-[var(--theme-bg-secondary)] text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)] transition-colors"
             >
-              取消
+              {t('cancel')}
             </button>
             <button
               type="button"
@@ -493,7 +481,7 @@ export const ModelSyncModal: React.FC<ModelSyncModalProps> = ({
               className="px-5 py-2 text-xs font-semibold rounded-xl bg-blue-600 hover:bg-blue-500 text-white shadow-sm transition-colors flex items-center gap-1.5"
             >
               <Check size={14} />
-              <span>应用变更</span>
+              <span>{t('thirdPartyApplyChanges')}</span>
             </button>
           </div>
         </div>

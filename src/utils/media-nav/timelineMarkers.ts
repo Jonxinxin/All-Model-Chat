@@ -1,5 +1,7 @@
 import type { ChatMessage, UploadedFile } from '@/types';
-import { parseLocateMarkers } from './locateMarker';
+import { parseLocateMarkers, stripLocateMarkers } from './locateMarker';
+import { parseTimestamp } from './timestamp';
+import { TIMESTAMP_BRACKET_PATTERN, isFalsePositiveTimestampContext } from './timestampLinks';
 
 export interface TimelineMarker {
   id: string;
@@ -15,7 +17,10 @@ export interface TimelineMarker {
 
 const normalizeName = (name: string): string => {
   const base = name.split('/').pop()?.split('\\').pop() ?? name;
-  return base.toLowerCase().replace(/\.[^/.]+$/, '').trim();
+  return base
+    .toLowerCase()
+    .replace(/\.[^/.]+$/, '')
+    .trim();
 };
 
 const isFileMatch = (markerName: string | undefined, file: UploadedFile | undefined): boolean => {
@@ -23,14 +28,10 @@ const isFileMatch = (markerName: string | undefined, file: UploadedFile | undefi
   const normMarker = normalizeName(markerName);
   const normFile = normalizeName(file.name);
   if (!normMarker || !normFile) return true;
-  return (
-    normMarker === normFile ||
-    normFile.includes(normMarker) ||
-    normMarker.includes(normFile)
-  );
+  return normMarker === normFile || normFile.includes(normMarker) || normMarker.includes(normFile);
 };
 
-const VIDEO_SEEK_LINK_RE = /\[([^\]]*?)\]\(#video-seek\?([^)\s]+)\)/g;
+const MEDIA_SEEK_LINK_RE = /\[([^\]]*?)\]\(#(?:video|audio|time)-seek\?([^)\s]+)\)/g;
 
 /**
  * Extracts all timeline marker points for a specific video or audio file
@@ -88,10 +89,10 @@ export const extractTimelineMarkers = (
       }
     }
 
-    // 2. Parse from markdown #video-seek links
-    VIDEO_SEEK_LINK_RE.lastIndex = 0;
+    // 2. Parse from markdown #video-seek / #audio-seek / #time-seek links
+    MEDIA_SEEK_LINK_RE.lastIndex = 0;
     let match: RegExpExecArray | null;
-    while ((match = VIDEO_SEEK_LINK_RE.exec(msg.content)) !== null) {
+    while ((match = MEDIA_SEEK_LINK_RE.exec(msg.content)) !== null) {
       const linkText = match[1]?.trim();
       const queryStr = match[2];
       const params = new URLSearchParams(queryStr);
@@ -102,18 +103,90 @@ export const extractTimelineMarkers = (
 
       const endStr = params.get('end');
       const end = endStr ? Number.parseFloat(endStr) : undefined;
+      const kindParam = params.get('kind');
+      const isAudioLink = kindParam === 'audio' || params.has('audio');
+      if (kind === 'video' && isAudioLink) continue;
+      if (kind === 'audio' && !isAudioLink && kindParam === 'video') continue;
+
       const videoName = params.get('video') || undefined;
+      const audioName = params.get('audio') || undefined;
+      const mediaName = kind === 'audio' ? audioName || videoName : videoName;
       const snippet = params.get('snippet') || (linkText && !linkText.includes(':') ? linkText : undefined);
 
-      if (isFileMatch(videoName, file)) {
+      if (isFileMatch(mediaName, file)) {
         rawMarkers.push({
           time: start,
           endTime: Number.isFinite(end) ? end : undefined,
           snippet,
           label: linkText,
-          mediaName: videoName,
+          mediaName,
           messageId: msg.id,
         });
+      }
+    }
+
+    // 3. Parse plain timestamps in text (e.g. [01:23] 介绍背景)
+    // Skip if message is explicitly targeting only the other media kind
+    const isOtherKindOnly =
+      (kind === 'video' && parsed.audioLocates.length > 0 && parsed.videoLocates.length === 0) ||
+      (kind === 'audio' && parsed.videoLocates.length > 0 && parsed.audioLocates.length === 0);
+
+    if (!isOtherKindOnly && msg.content.includes(':')) {
+      const cleanText = stripLocateMarkers(msg.content)
+        .replace(/```[\s\S]*?```/g, '')
+        .replace(/`[^`\n]*`/g, '')
+        .replace(/\[((?:\\\]|[^\]])+)\]\([^)]+\)/g, '');
+
+      const lines = cleanText.split('\n');
+      const bracketPattern = new RegExp(TIMESTAMP_BRACKET_PATTERN.source, 'g');
+
+      for (const line of lines) {
+        if (!line.includes(':')) continue;
+        bracketPattern.lastIndex = 0;
+        let tsMatch: RegExpExecArray | null;
+        while ((tsMatch = bracketPattern.exec(line)) !== null) {
+          const fullMatch = tsMatch[0];
+          const matchIndex = tsMatch.index;
+          const preceding = line.slice(0, matchIndex);
+          const succeeding = line.slice(matchIndex + fullMatch.length);
+
+          if (isFalsePositiveTimestampContext(preceding, succeeding)) continue;
+
+          const rawStart = tsMatch[2];
+          const rawEnd = tsMatch[3];
+          const startSec = parseTimestamp(rawStart);
+          if (startSec === null) continue;
+          const endSec = rawEnd ? parseTimestamp(rawEnd) : null;
+
+          // Extract clean snippet
+          let snippet: string | undefined;
+          const afterText = succeeding.replace(/^[:：\-–—~·\s\])]+/, '').trim();
+          const beforeText = preceding.replace(/^[-*•\s\d.)\]>[(]+/, '').trim();
+
+          if (afterText && !afterText.startsWith('(') && !afterText.startsWith('[')) {
+            const cleanAfter = afterText.replace(/^(?:处[，,]?|时[，,]?|点[，,]?)/, '').trim();
+            const firstSentence = cleanAfter.split(/[。！？；\n]/)[0].trim();
+            if (firstSentence) {
+              snippet = firstSentence.length <= 60 ? firstSentence : firstSentence.slice(0, 60).trim();
+            }
+          } else if (beforeText) {
+            const firstSentence =
+              beforeText
+                .split(/[。！？；\n]/)
+                .pop()
+                ?.trim() || beforeText;
+            if (firstSentence) {
+              snippet = firstSentence.length <= 60 ? firstSentence : firstSentence.slice(0, 60).trim();
+            }
+          }
+
+          rawMarkers.push({
+            time: startSec,
+            endTime: endSec !== null && endSec > startSec ? endSec : undefined,
+            snippet: snippet || undefined,
+            messageId: msg.id,
+          });
+        }
       }
     }
   }

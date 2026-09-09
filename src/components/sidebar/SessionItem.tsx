@@ -29,6 +29,7 @@ export interface SessionItemProps {
   onDuplicateSession: (sessionId: string) => void;
   onOpenExportModal: (sessionId?: string) => void | Promise<void>;
   onMoveSessionToGroup: (sessionId: string, groupId: string | null) => void;
+  onRegenerateTitleSession?: (sessionId: string) => void;
   handleStartEdit: (item: SavedChatSession) => void;
   handleRenameConfirm: () => void;
   handleRenameKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
@@ -66,6 +67,7 @@ export const SessionItem: React.FC<SessionItemProps> = (props) => {
     onDuplicateSession,
     onOpenExportModal,
     onMoveSessionToGroup,
+    onRegenerateTitleSession,
     handleStartEdit,
     handleRenameConfirm,
     handleRenameKeyDown,
@@ -320,6 +322,15 @@ export const SessionItem: React.FC<SessionItemProps> = (props) => {
                         onDeleteSession(session.id);
                         setActiveMenu(null);
                       }}
+                      onRegenerateTitle={
+                        onRegenerateTitleSession
+                          ? () => {
+                              onRegenerateTitleSession(session.id);
+                              setActiveMenu(null);
+                            }
+                          : undefined
+                      }
+                      isGeneratingTitle={generatingTitleSessionIds.has(session.id)}
                     />
                   </DropdownMenu>
                 )}
@@ -355,6 +366,15 @@ export const SessionItem: React.FC<SessionItemProps> = (props) => {
           onDeleteSession(session.id);
           setActiveMenu(null);
         }}
+        onRegenerateTitle={
+          onRegenerateTitleSession
+            ? () => {
+                onRegenerateTitleSession(session.id);
+                setActiveMenu(null);
+              }
+            : undefined
+        }
+        isGeneratingTitle={generatingTitleSessionIds.has(session.id)}
       />
     </ContextMenu>
   );

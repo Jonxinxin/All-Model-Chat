@@ -25,6 +25,9 @@ describe('parseTimestamp', () => {
     expect(parseTimestamp('')).toBeNull();
     expect(parseTimestamp(undefined)).toBeNull();
     expect(parseTimestamp(-5)).toBeNull();
+    expect(parseTimestamp('12:88')).toBeNull();
+    expect(parseTimestamp('01:99')).toBeNull();
+    expect(parseTimestamp('1:65:20')).toBeNull();
   });
 });
 

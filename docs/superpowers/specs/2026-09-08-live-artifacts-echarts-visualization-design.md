@@ -6,6 +6,7 @@
 ## 需求背景
 
 当前 AMC-WebUI 的 Live Artifacts 功能使用轻量自研 SVG 渲染器（`data-amc-chart`），存在明显的体验与能力短板：
+
 1. **跨数量级失真**：小数值与大数值（如 0.02 vs 4.0）共用线性 Y 轴时，小数值柱子贴地不可读；缺少对数轴与双 Y 轴支持。
 2. **文字排版缺陷**：中文字符宽度估算不准，导致图例方块与文本紧贴重叠；缺少自动防遮挡与自适应换行。
 3. **缺乏现代交互**：缺乏鼠标悬停 Tooltip 浮窗、数据项高亮与图例点击切换能力。
@@ -70,6 +71,7 @@
 ### 5. Prompt 指令优化（System Prompt Redesign）
 
 修改 `src/features/prompts/liveArtifacts.ts`（中英文双语）：
+
 1. **图表声明更新**：
    - 规定使用 `<div data-amc-chart='{...}' style="height: 280px;"></div>` 输出标准 ECharts Option JSON。
    - 默认启用 `tooltip: { trigger: 'axis' }`。

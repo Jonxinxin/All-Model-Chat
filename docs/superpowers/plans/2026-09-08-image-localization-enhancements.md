@@ -5,6 +5,7 @@
 **Goal:** Implement three progressive image localization capabilities in AMC-WebUI: (1) Coordinate auto-sniffing & annotated snapshot export, (2) Multi-target simultaneous HUD with numbered tags ①②③ & viewport minimap radar, (3) Visual prompting allowing users to drag-select bounding boxes on images to ask AI questions.
 
 **Architecture:**
+
 - Create `coordinateSniffer.ts` to normalize 0-1 floats, percentages, and inverted coordinates into standard `0-1000` integer bounds.
 - Create `exportAnnotatedImage.ts` to composite high-res image + HUD BBox reticles + arrows + badges onto a Canvas and trigger download.
 - Add `ImageMinimap.tsx` to display an interactive viewport radar when zoomed in (`scale > 1.2`).
@@ -19,12 +20,14 @@
 ### Task 1: Coordinate Auto-Sniffing & Normalization Utility
 
 **Files:**
+
 - Create: `src/utils/media-nav/coordinateSniffer.ts`
 - Create: `src/utils/media-nav/coordinateSniffer.test.ts`
 - Modify: `src/utils/media-nav/imageLinks.ts`
 - Modify: `src/utils/media-nav/locateMarker.ts`
 
 **Interfaces:**
+
 - `normalizeBoxCoordinates(raw: string | number[]): [number, number, number, number] | null`
   - Handles 0-1 floats: `[0.12, 0.34, 0.56, 0.78]` -> `[120, 340, 560, 780]`
   - Handles percentages: `['12%', '34%', '56%', '78%']` -> `[120, 340, 560, 780]`
@@ -44,12 +47,14 @@
 ### Task 2: Annotated Image Export Tool (Canvas Snapshot)
 
 **Files:**
+
 - Create: `src/utils/media-nav/exportAnnotatedImage.ts`
 - Create: `src/utils/media-nav/exportAnnotatedImage.test.ts`
 - Modify: `src/i18n/translations/messages.ts`
 - Modify: `src/components/shared/file-preview/ImageViewer.tsx`
 
 **Interfaces:**
+
 - `exportAnnotatedImage(options: { imageSrc: string; fileName: string; highlights: ImageNavHighlight[]; rotation?: number }): Promise<void>`
   - Draws image to hidden canvas at full natural resolution
   - Handles rotation (0, 90, 180, 270)
@@ -69,6 +74,7 @@
 ### Task 3: Multi-Target Grounding HUD (Numbered Indices ① ② ③)
 
 **Files:**
+
 - Modify: `src/stores/mediaNavStore.ts`
 - Modify: `src/utils/media-nav/seekImage.ts`
 - Modify: `src/components/media-nav/ImageHighlightOverlay.tsx`
@@ -76,6 +82,7 @@
 - Modify: `src/components/shared/file-preview/ImageViewer.tsx`
 
 **Interfaces:**
+
 - `ImageNavHighlight`: add optional `index?: number`, `total?: number`, `isActive?: boolean`, `id?: string`
 - `mediaNavStore`: add `allImageHighlights: ImageNavHighlight[]`, `setActiveImageHighlight(index: number): void`
 - In `seekImage.ts`: when seeking an image, collect all `<image-locate>` markers from the active message/session matching `target.name` and assign `index` 1..N.
@@ -96,11 +103,13 @@
 ### Task 4: Interactive Viewport Minimap (Radar View)
 
 **Files:**
+
 - Create: `src/components/shared/file-preview/image/ImageMinimap.tsx`
 - Create: `src/components/shared/file-preview/image/ImageMinimap.test.tsx`
 - Modify: `src/components/shared/file-preview/ImageViewer.tsx`
 
 **Interfaces:**
+
 - `ImageMinimapProps`:
   - `src: string`
   - `scale: number`
@@ -121,11 +130,13 @@
 ### Task 5: Visual Prompting (User Drag-to-Select BBox to Ask AI)
 
 **Files:**
+
 - Create: `src/components/shared/file-preview/image/ImageVisualCropper.tsx`
 - Create: `src/components/shared/file-preview/image/ImageVisualCropper.test.tsx`
 - Modify: `src/components/shared/file-preview/ImageViewer.tsx`
 
 **Interfaces:**
+
 - `ImageVisualCropperProps`:
   - `imageRef: React.RefObject<HTMLImageElement>`
   - `rotation: number`

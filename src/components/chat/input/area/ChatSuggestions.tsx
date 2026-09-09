@@ -36,7 +36,6 @@ interface ChatSuggestionsProps {
   show: boolean;
   onSuggestionClick?: (suggestion: string) => void;
   onOrganizeInfoClick?: (suggestion: string) => void;
-  isLiveArtifactsActive?: boolean;
   onToggleBBox?: () => void;
   isBBoxModeActive?: boolean;
   onToggleGuide?: () => void;
@@ -56,7 +55,6 @@ const ChatSuggestionsComponent: React.FC<ChatSuggestionsProps> = ({
   show,
   onSuggestionClick,
   onOrganizeInfoClick,
-  isLiveArtifactsActive,
   onToggleBBox,
   isBBoxModeActive,
   onToggleGuide,
@@ -116,8 +114,6 @@ const ChatSuggestionsComponent: React.FC<ChatSuggestionsProps> = ({
       >
         {SUGGESTIONS_KEYS.map((suggestion, index) => {
           const isOrganize = suggestion.specialAction === 'organize';
-          const isOrganizeWithState = isOrganize && isLiveArtifactsActive !== undefined;
-          const isOrganizeActive = Boolean(isOrganizeWithState && isLiveArtifactsActive);
 
           return (
             <React.Fragment key={index}>
@@ -131,98 +127,96 @@ const ChatSuggestionsComponent: React.FC<ChatSuggestionsProps> = ({
                     onSuggestionClick(text);
                   }
                 }}
-                className={isOrganizeActive ? SUGGESTION_CHIP_ACTIVE_CLASS : SUGGESTION_CHIP_CLASS}
-                aria-pressed={isOrganizeWithState ? isOrganizeActive : undefined}
+                className={SUGGESTION_CHIP_CLASS}
                 data-testid={isOrganize ? 'organize-info-chip' : undefined}
               >
                 <SuggestionIcon iconName={suggestion.icon} />
                 <span>{t(suggestion.titleKey as keyof typeof translations)}</span>
-                {isOrganizeWithState && <SuggestionToggleDot />}
               </button>
 
-            {suggestion.specialAction === 'organize' && (
-              <>
-                {onToggleImageNav ? (
-                  <NavChip
-                    iconName="MousePointer2"
-                    labelKey="imageNavChipLabel"
-                    missingHintKey="imageNavNoImageHint"
-                    mediaKind="image"
-                    isEnabled={!!isImageNavEnabled}
-                    onToggle={onToggleImageNav}
-                    testId="image-nav-chip"
-                  />
-                ) : (
-                  <>
-                    {onToggleBBox && (
-                      <button
-                        type="button"
-                        onClick={onToggleBBox}
-                        className={isBBoxModeActive ? SUGGESTION_CHIP_ACTIVE_CLASS : SUGGESTION_CHIP_CLASS}
-                        aria-label={t('bboxButtonTitle')}
-                        aria-pressed={!!isBBoxModeActive}
-                        title={t('bboxButtonTitle')}
-                      >
-                        <SuggestionIcon iconName="BoxSelect" />
-                        <span>{t('bboxButtonShort')}</span>
-                        <SuggestionToggleDot />
-                      </button>
-                    )}
-                    {onToggleGuide && (
-                      <button
-                        type="button"
-                        onClick={onToggleGuide}
-                        className={isGuideModeActive ? SUGGESTION_CHIP_ACTIVE_CLASS : SUGGESTION_CHIP_CLASS}
-                        aria-label={t('guideButtonTitle')}
-                        aria-pressed={!!isGuideModeActive}
-                        title={t('guideButtonTitle')}
-                      >
-                        <SuggestionIcon iconName="MousePointer2" />
-                        <span>{t('guideButtonShort')}</span>
-                        <SuggestionToggleDot />
-                      </button>
-                    )}
-                  </>
-                )}
-                {onTogglePdfNav && (
-                  <NavChip
-                    iconName="Pdf"
-                    labelKey="pdfNavLabel"
-                    missingHintKey="pdfNavNoPdfHint"
-                    mediaKind="pdf"
-                    isEnabled={!!isPdfNavEnabled}
-                    onToggle={onTogglePdfNav}
-                    testId="pdf-nav-chip"
-                  />
-                )}
-                {onToggleVideoNav && (
-                  <NavChip
-                    iconName="Clapperboard"
-                    labelKey="videoNavChipLabel"
-                    missingHintKey="videoNavNoVideoHint"
-                    mediaKind="video"
-                    isEnabled={!!isVideoNavEnabled}
-                    onToggle={onToggleVideoNav}
-                    testId="video-nav-chip"
-                  />
-                )}
-                {onToggleAudioNav && (
-                  <NavChip
-                    iconName="AudioLines"
-                    labelKey="audioNavChipLabel"
-                    missingHintKey="audioNavNoAudioHint"
-                    mediaKind="audio"
-                    isEnabled={!!isAudioNavEnabled}
-                    onToggle={onToggleAudioNav}
-                    testId="audio-nav-chip"
-                  />
-                )}
-              </>
-            )}
-          </React.Fragment>
-        );
-      })}
-    </div>
+              {suggestion.specialAction === 'organize' && (
+                <>
+                  {onToggleImageNav ? (
+                    <NavChip
+                      iconName="MousePointer2"
+                      labelKey="imageNavChipLabel"
+                      missingHintKey="imageNavNoImageHint"
+                      mediaKind="image"
+                      isEnabled={!!isImageNavEnabled}
+                      onToggle={onToggleImageNav}
+                      testId="image-nav-chip"
+                    />
+                  ) : (
+                    <>
+                      {onToggleBBox && (
+                        <button
+                          type="button"
+                          onClick={onToggleBBox}
+                          className={isBBoxModeActive ? SUGGESTION_CHIP_ACTIVE_CLASS : SUGGESTION_CHIP_CLASS}
+                          aria-label={t('bboxButtonTitle')}
+                          aria-pressed={!!isBBoxModeActive}
+                          title={t('bboxButtonTitle')}
+                        >
+                          <SuggestionIcon iconName="BoxSelect" />
+                          <span>{t('bboxButtonShort')}</span>
+                          <SuggestionToggleDot />
+                        </button>
+                      )}
+                      {onToggleGuide && (
+                        <button
+                          type="button"
+                          onClick={onToggleGuide}
+                          className={isGuideModeActive ? SUGGESTION_CHIP_ACTIVE_CLASS : SUGGESTION_CHIP_CLASS}
+                          aria-label={t('guideButtonTitle')}
+                          aria-pressed={!!isGuideModeActive}
+                          title={t('guideButtonTitle')}
+                        >
+                          <SuggestionIcon iconName="MousePointer2" />
+                          <span>{t('guideButtonShort')}</span>
+                          <SuggestionToggleDot />
+                        </button>
+                      )}
+                    </>
+                  )}
+                  {onTogglePdfNav && (
+                    <NavChip
+                      iconName="Pdf"
+                      labelKey="pdfNavLabel"
+                      missingHintKey="pdfNavNoPdfHint"
+                      mediaKind="pdf"
+                      isEnabled={!!isPdfNavEnabled}
+                      onToggle={onTogglePdfNav}
+                      testId="pdf-nav-chip"
+                    />
+                  )}
+                  {onToggleVideoNav && (
+                    <NavChip
+                      iconName="Clapperboard"
+                      labelKey="videoNavChipLabel"
+                      missingHintKey="videoNavNoVideoHint"
+                      mediaKind="video"
+                      isEnabled={!!isVideoNavEnabled}
+                      onToggle={onToggleVideoNav}
+                      testId="video-nav-chip"
+                    />
+                  )}
+                  {onToggleAudioNav && (
+                    <NavChip
+                      iconName="AudioLines"
+                      labelKey="audioNavChipLabel"
+                      missingHintKey="audioNavNoAudioHint"
+                      mediaKind="audio"
+                      isEnabled={!!isAudioNavEnabled}
+                      onToggle={onToggleAudioNav}
+                      testId="audio-nav-chip"
+                    />
+                  )}
+                </>
+              )}
+            </React.Fragment>
+          );
+        })}
+      </div>
 
       {showLeftArrow && (
         <button

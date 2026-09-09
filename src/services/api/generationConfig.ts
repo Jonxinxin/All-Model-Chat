@@ -120,8 +120,9 @@ type InternalBuildGenerationConfigOptions = {
   imageOutputMode?: ImageOutputMode;
 };
 
-const buildGoogleSearchToolForModel = (modelId: string): Tool =>
-  normalizeModelId(modelId) === 'gemini-3.1-flash-image-preview'
+const buildGoogleSearchToolForModel = (modelId: string): Tool => {
+  const norm = normalizeModelId(modelId);
+  return norm === 'gemini-3.1-flash-image' || norm === 'gemini-3.1-flash-image-preview'
     ? {
         googleSearch: {
           searchTypes: {
@@ -131,6 +132,7 @@ const buildGoogleSearchToolForModel = (modelId: string): Tool =>
         },
       }
     : { googleSearch: {} };
+};
 
 const buildGoogleMapsTool = (): Tool => ({ googleMaps: {} });
 
@@ -200,10 +202,13 @@ async function buildGenerationConfigFromOptions({
   const normalizedImageSize = normalizeImageSizeForModel(modelId, imageSize);
   const googleSearchTool = buildGoogleSearchToolForModel(modelId);
 
+  const normModelId = normalizeModelId(modelId);
   if (
-    normalizeModelId(modelId) === 'gemini-3-pro-image-preview' ||
-    normalizeModelId(modelId) === 'gemini-3.1-flash-image-preview' ||
-    normalizeModelId(modelId) === 'gemini-3.1-flash-lite-image'
+    normModelId === 'gemini-3-pro-image' ||
+    normModelId === 'gemini-3-pro-image-preview' ||
+    normModelId === 'gemini-3.1-flash-image' ||
+    normModelId === 'gemini-3.1-flash-image-preview' ||
+    normModelId === 'gemini-3.1-flash-lite-image'
   ) {
     const imageConfig: NonNullable<GenerationConfig['imageConfig']> = {
       imageSize: normalizedImageSize || '1K',
@@ -218,8 +223,9 @@ async function buildGenerationConfigFromOptions({
     };
 
     if (
-      normalizeModelId(modelId) === 'gemini-3.1-flash-image-preview' ||
-      normalizeModelId(modelId) === 'gemini-3.1-flash-lite-image'
+      normModelId === 'gemini-3.1-flash-image' ||
+      normModelId === 'gemini-3.1-flash-image-preview' ||
+      normModelId === 'gemini-3.1-flash-lite-image'
     ) {
       generationConfig.thinkingConfig = {
         includeThoughts: true,
@@ -265,9 +271,11 @@ async function buildGenerationConfigFromOptions({
   }
 
   const gemmaThinkingLevel = isGemma
-    ? (thinkingLevel === 'HIGH' || thinkingLevel === 'MINIMAL'
-        ? thinkingLevel
-        : (showThoughts ? 'HIGH' : 'MINIMAL'))
+    ? thinkingLevel === 'HIGH' || thinkingLevel === 'MINIMAL'
+      ? thinkingLevel
+      : showThoughts
+        ? 'HIGH'
+        : 'MINIMAL'
     : undefined;
 
   const generationConfig: GenerationConfig = {

@@ -201,4 +201,39 @@ describe('NavChip', () => {
     const updated = renderer.container.querySelector<HTMLButtonElement>('[data-testid="image-nav-chip"]');
     expect(updated?.getAttribute('title')).not.toContain('No image in this chat yet');
   });
+
+  it('clears missing video hint when YouTube video is attached', () => {
+    const chip = renderChip({
+      labelKey: 'videoNavChipLabel',
+      missingHintKey: 'videoNavNoVideoHint',
+      mediaKind: 'video',
+      testId: 'video-nav-chip',
+      isEnabled: false,
+    });
+    expect(chip?.getAttribute('title')).toContain('No video in this chat yet');
+
+    const ytFile = {
+      id: 'yt-1',
+      name: 'https://youtube.com/watch?v=abc12345678',
+      type: 'video/youtube-link',
+      size: 0,
+      fileUri: 'https://youtube.com/watch?v=abc12345678',
+    };
+    useChatStore.setState({ selectedFiles: [ytFile] });
+    act(() => {
+      renderer.root.render(
+        <NavChip
+          iconName="Clapperboard"
+          labelKey="videoNavChipLabel"
+          missingHintKey="videoNavNoVideoHint"
+          mediaKind="video"
+          isEnabled={false}
+          onToggle={vi.fn()}
+          testId="video-nav-chip"
+        />,
+      );
+    });
+    const updated = renderer.container.querySelector<HTMLButtonElement>('[data-testid="video-nav-chip"]');
+    expect(updated?.getAttribute('title')).not.toContain('No video in this chat yet');
+  });
 });

@@ -3,7 +3,7 @@ import { X } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { useChatStore } from '@/stores/chatStore';
 import { useMediaNavStore, type MediaNavKind } from '@/stores/mediaNavStore';
-import { collectSessionMediaFiles } from '@/utils/media-nav/sessionMediaFiles';
+import { collectSessionMediaFiles, formatMediaNavDisplayName } from '@/utils/media-nav/sessionMediaFiles';
 import { useIsMobile } from '@/hooks/useDevice';
 import { Z_INDEX_SIDE_PANEL_MOBILE, Z_INDEX_TOPMOST_OVERLAY } from '@/constants/layout';
 import { FOCUS_VISIBLE_RING_PRIMARY_OFFSET_CLASS } from '@/constants/focusClasses';
@@ -47,8 +47,7 @@ const MediaNavPanelComponent: React.FC = () => {
 
   const handleClose = useCallback(() => {
     close();
-    setCurrentChatSettings((prev) => applyMediaNavKindToSettings(prev, null));
-  }, [close, setCurrentChatSettings]);
+  }, [close]);
 
   const media = useMemo(() => collectSessionMediaFiles(selectedFiles, activeMessages), [selectedFiles, activeMessages]);
   const entries: MediaEntry[] = useMemo(
@@ -203,7 +202,7 @@ const MediaNavPanelComponent: React.FC = () => {
                   <optgroup label={t('pdfNavLabel')}>
                     {media.pdfs.map((file) => (
                       <option key={file.id} value={file.id}>
-                        {file.name}
+                        {formatMediaNavDisplayName(file)}
                       </option>
                     ))}
                   </optgroup>
@@ -212,7 +211,7 @@ const MediaNavPanelComponent: React.FC = () => {
                   <optgroup label={t('videoNavLabel')}>
                     {media.videos.map((file) => (
                       <option key={file.id} value={file.id}>
-                        {file.name}
+                        {formatMediaNavDisplayName(file)}
                       </option>
                     ))}
                   </optgroup>
@@ -221,7 +220,7 @@ const MediaNavPanelComponent: React.FC = () => {
                   <optgroup label={t('audioNavLabel')}>
                     {media.audios.map((file) => (
                       <option key={file.id} value={file.id}>
-                        {file.name}
+                        {formatMediaNavDisplayName(file)}
                       </option>
                     ))}
                   </optgroup>
@@ -230,7 +229,7 @@ const MediaNavPanelComponent: React.FC = () => {
                   <optgroup label={t('imageNavLabel')}>
                     {media.images.map((file) => (
                       <option key={file.id} value={file.id}>
-                        {file.name}
+                        {formatMediaNavDisplayName(file)}
                       </option>
                     ))}
                   </optgroup>
@@ -240,9 +239,9 @@ const MediaNavPanelComponent: React.FC = () => {
             {entries.length === 1 && (
               <span
                 className="min-w-0 truncate text-xs text-[var(--theme-text-tertiary)]"
-                title={activeEntry?.file.name}
+                title={activeEntry ? formatMediaNavDisplayName(activeEntry.file) : undefined}
               >
-                {activeEntry?.file.name}
+                {activeEntry ? formatMediaNavDisplayName(activeEntry.file) : ''}
               </span>
             )}
           </div>

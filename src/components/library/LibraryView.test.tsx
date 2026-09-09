@@ -142,6 +142,24 @@ describe('LibraryView', () => {
     expect(screen.queryByText('quarterly_report.pdf')).not.toBeInTheDocument();
   });
 
+  it('filters items by file extension search query', async () => {
+    useChatStore.setState({ savedSessions: [mockSession] });
+
+    await act(async () => {
+      renderer.root.render(<LibraryView />);
+      await Promise.resolve();
+    });
+
+    const searchInput = screen.getByPlaceholderText(/Search/i);
+    await act(async () => {
+      fireEvent.change(searchInput, { target: { value: '.png' } });
+    });
+
+    expect(screen.getByText('revenue_graph.png')).toBeInTheDocument();
+    expect(screen.queryByText('quarterly_report.pdf')).not.toBeInTheDocument();
+    expect(screen.queryByText('demo_video.mp4')).not.toBeInTheDocument();
+  });
+
   it('selects items and starts a new chat with selected files', async () => {
     const onNewChat = vi.fn();
     useChatStore.setState({ savedSessions: [mockSession] });

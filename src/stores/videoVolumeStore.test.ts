@@ -33,17 +33,11 @@ describe('videoVolumeStore', () => {
   });
 
   it('safely handles corrupted or out-of-range storage values', () => {
-    localStorage.setItem(
-      VIDEO_VOLUME_STORAGE_KEY,
-      'invalid-json-data',
-    );
+    localStorage.setItem(VIDEO_VOLUME_STORAGE_KEY, 'invalid-json-data');
     resetVideoVolumeStoreForTest();
     expect(useVideoVolumeStore.getState().volume).toBe(DEFAULT_VIDEO_VOLUME);
 
-    localStorage.setItem(
-      VIDEO_VOLUME_STORAGE_KEY,
-      JSON.stringify({ volume: 999, isMuted: 'not-a-bool' }),
-    );
+    localStorage.setItem(VIDEO_VOLUME_STORAGE_KEY, JSON.stringify({ volume: 999, isMuted: 'not-a-bool' }));
     resetVideoVolumeStoreForTest();
     expect(useVideoVolumeStore.getState().volume).toBe(1);
     expect(useVideoVolumeStore.getState().isMuted).toBe(false);

@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  normalizeBoxCoordinates,
-  normalizePointCoordinates,
-} from './coordinateSniffer';
+import { normalizeBoxCoordinates, normalizePointCoordinates } from './coordinateSniffer';
 
 describe('coordinateSniffer', () => {
   describe('normalizeBoxCoordinates', () => {

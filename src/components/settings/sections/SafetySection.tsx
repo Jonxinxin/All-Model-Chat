@@ -16,6 +16,7 @@ const ALL_CATEGORIES: HarmCategory[] = [
   HarmCategory.HARM_CATEGORY_HATE_SPEECH,
   HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
   HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+  HarmCategory.HARM_CATEGORY_JAILBREAK,
 ];
 
 const CATEGORY_TRANSLATION_KEYS: Record<HarmCategory, string> = {
@@ -23,6 +24,7 @@ const CATEGORY_TRANSLATION_KEYS: Record<HarmCategory, string> = {
   [HarmCategory.HARM_CATEGORY_HATE_SPEECH]: 'safetyCategoryHateSpeech',
   [HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT]: 'safetyCategorySexuallyExplicit',
   [HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT]: 'safetyCategoryDangerousContent',
+  [HarmCategory.HARM_CATEGORY_JAILBREAK]: 'safetyCategoryJailbreak',
 };
 
 const DEFAULT_THRESHOLD_INDEX = 3;

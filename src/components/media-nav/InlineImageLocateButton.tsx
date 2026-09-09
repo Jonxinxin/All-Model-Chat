@@ -62,10 +62,7 @@ export const InlineImageLocateButton: React.FC<InlineImageLocateButtonProps> = (
         if (label && hl.label && label === hl.label) return true;
         if (box2d && hl.box2d) {
           return (
-            box2d[0] === hl.box2d[0] &&
-            box2d[1] === hl.box2d[1] &&
-            box2d[2] === hl.box2d[2] &&
-            box2d[3] === hl.box2d[3]
+            box2d[0] === hl.box2d[0] && box2d[1] === hl.box2d[1] && box2d[2] === hl.box2d[2] && box2d[3] === hl.box2d[3]
           );
         }
         if (point && hl.point) {
@@ -151,9 +148,7 @@ export const InlineImageLocateButton: React.FC<InlineImageLocateButtonProps> = (
                 }}
               />
             </div>
-            <span className="text-[10px] text-[var(--theme-text-tertiary)] opacity-80">
-              精准视觉框选
-            </span>
+            <span className="text-[10px] text-[var(--theme-text-tertiary)] opacity-80">精准视觉框选</span>
           </div>
         )
       )}
@@ -163,9 +158,7 @@ export const InlineImageLocateButton: React.FC<InlineImageLocateButtonProps> = (
           {snippet}
         </div>
       )}
-      <div className="text-[10px] text-[var(--theme-text-tertiary)] opacity-80">
-        点击展开大图定位
-      </div>
+      <div className="text-[10px] text-[var(--theme-text-tertiary)] opacity-80">点击展开大图定位</div>
     </div>
   );
 

@@ -80,7 +80,8 @@ describe('linkifyPdfLocates', () => {
   });
 
   it('does not duplicate page prefix when snippet mentions page number in mid-phrase', () => {
-    const input = '详见分析 <pdf-locate page="5">报告第 5 页结论</pdf-locate> 以及 <pdf-locate page="8">P.8 架构图</pdf-locate>。';
+    const input =
+      '详见分析 <pdf-locate page="5">报告第 5 页结论</pdf-locate> 以及 <pdf-locate page="8">P.8 架构图</pdf-locate>。';
     const output = linkifyPdfLocates(input);
 
     expect(output).toContain('[报告第 5 页结论](#pdf-seek?page=5');

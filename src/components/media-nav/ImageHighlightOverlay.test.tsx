@@ -203,11 +203,7 @@ describe('ImageHighlightOverlay', () => {
     ];
 
     const { container } = render(
-      <ImageHighlightOverlay
-        visible={true}
-        highlights={highlights}
-        onSelectHighlight={onSelectHighlight}
-      />,
+      <ImageHighlightOverlay visible={true} highlights={highlights} onSelectHighlight={onSelectHighlight} />,
     );
 
     const switcher = container.querySelector('[data-testid="image-multi-highlight-switcher"]');
@@ -227,4 +223,3 @@ describe('ImageHighlightOverlay', () => {
     expect(onSelectHighlight).toHaveBeenCalledWith(1);
   });
 });
-

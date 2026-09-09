@@ -209,7 +209,7 @@ export const BaseMarkdownRenderer: React.FC<BaseMarkdownRendererProps> = React.m
         table: (props: MarkdownTableProps) => <TableBlock {...props} />,
         a: (props: MarkdownAnchorProps) => {
           const { href, children, ...rest } = props;
-          if (href?.startsWith('#video-seek')) {
+          if (href?.startsWith('#video-seek') || href?.startsWith('#audio-seek') || href?.startsWith('#time-seek')) {
             const queryIndex = href.indexOf('?');
             const queryStr = queryIndex !== -1 ? href.slice(queryIndex + 1) : '';
             const searchParams = new URLSearchParams(queryStr);
@@ -218,8 +218,15 @@ export const BaseMarkdownRenderer: React.FC<BaseMarkdownRendererProps> = React.m
             const end = endParam ? Number.parseFloat(endParam) : undefined;
             const pointParam = searchParams.get('point');
             const boxParam = searchParams.get('box');
-            const videoParam = searchParams.get('video') || undefined;
+            const kindParam = searchParams.get('kind');
+            const videoParam = searchParams.get('video') || searchParams.get('audio') || undefined;
             const snippetParam = searchParams.get('snippet') || undefined;
+            const mediaKind =
+              kindParam === 'audio' || href.startsWith('#audio-seek')
+                ? ('audio' as const)
+                : kindParam === 'video'
+                  ? ('video' as const)
+                  : undefined;
 
             let annotation:
               { point?: [number, number]; box2d?: [number, number, number, number]; snippet?: string } | undefined;
@@ -271,6 +278,7 @@ export const BaseMarkdownRenderer: React.FC<BaseMarkdownRendererProps> = React.m
                 startSeconds={start}
                 endSeconds={end}
                 videoName={videoParam}
+                mediaKind={mediaKind}
                 annotation={annotation}
                 messageId={messageId}
               >

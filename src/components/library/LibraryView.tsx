@@ -261,6 +261,28 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onNewChat, onSelectSes
     setPreviewFile(null);
   };
 
+  const previewIndex = previewFile ? filteredItems.findIndex((item) => item.id === previewFile.id) : -1;
+  const hasPrevPreview = previewIndex > 0;
+  const hasNextPreview = previewIndex !== -1 && previewIndex < filteredItems.length - 1;
+
+  const handlePrevPreview = useCallback(() => {
+    if (previewIndex > 0) {
+      if (previewFile?.dataUrl) {
+        cleanupFilePreviewUrl(previewFile);
+      }
+      void handlePreviewItem(filteredItems[previewIndex - 1]);
+    }
+  }, [previewIndex, previewFile, filteredItems, handlePreviewItem]);
+
+  const handleNextPreview = useCallback(() => {
+    if (previewIndex !== -1 && previewIndex < filteredItems.length - 1) {
+      if (previewFile?.dataUrl) {
+        cleanupFilePreviewUrl(previewFile);
+      }
+      void handlePreviewItem(filteredItems[previewIndex + 1]);
+    }
+  }, [previewIndex, previewFile, filteredItems, handlePreviewItem]);
+
   const handleClearFilters = () => {
     setCategoryFilter('all');
     setSourceFilter('all');
@@ -330,7 +352,16 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onNewChat, onSelectSes
         )}
       </div>
 
-      {previewFile && <FilePreviewModal file={previewFile} onClose={handleClosePreview} />}
+      {previewFile && (
+        <FilePreviewModal
+          file={previewFile}
+          onClose={handleClosePreview}
+          onPrev={handlePrevPreview}
+          onNext={handleNextPreview}
+          hasPrev={hasPrevPreview}
+          hasNext={hasNextPreview}
+        />
+      )}
 
       {deleteConfirmTarget && (
         <ConfirmationModal

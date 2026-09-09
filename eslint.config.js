@@ -90,6 +90,8 @@ export default tseslint.config(
       'src/components/shared/ContextMenu.tsx',
       'src/components/shared/Dialog.tsx',
       'src/components/shared/DropdownMenu.tsx',
+      'src/components/shared/Popover.tsx',
+      'src/components/shared/Select.tsx',
       'src/components/shared/file-preview/TextFileViewer.tsx',
       'src/components/shared/ModelIcon.tsx',
       'src/components/message/code/LanguageIcon.tsx',

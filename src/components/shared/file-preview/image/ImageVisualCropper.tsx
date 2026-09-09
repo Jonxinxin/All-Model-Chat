@@ -5,6 +5,7 @@ import { useI18n } from '@/contexts/I18nContext';
 export interface ImageVisualCropperProps {
   fileName: string;
   imageDimensions: { width: number; height: number };
+  rotation?: number;
   onConfirmSelection: (box2d: [number, number, number, number]) => void;
   onCancel: () => void;
 }
@@ -22,7 +23,8 @@ interface DragRect {
  */
 export const ImageVisualCropper: React.FC<ImageVisualCropperProps> = ({
   fileName,
-  imageDimensions: _imageDimensions,
+  imageDimensions,
+  rotation = 0,
   onConfirmSelection,
   onCancel,
 }) => {
@@ -33,20 +35,53 @@ export const ImageVisualCropper: React.FC<ImageVisualCropperProps> = ({
   const [confirmedBox, setConfirmedBox] = useState<[number, number, number, number] | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const getRelativeCoords = useCallback((clientX: number, clientY: number) => {
-    const rect = surfaceRef.current?.getBoundingClientRect();
-    if (!rect || rect.width <= 0 || rect.height <= 0) return { x: 0, y: 0 };
-    const rawX = Math.max(0, Math.min(rect.width, clientX - rect.left));
-    const rawY = Math.max(0, Math.min(rect.height, clientY - rect.top));
-    return {
-      x: (rawX / rect.width) * 1000,
-      y: (rawY / rect.height) * 1000,
-    };
-  }, []);
+  const getRelativeCoords = useCallback(
+    (clientX: number, clientY: number) => {
+      const el = surfaceRef.current;
+      if (!el) return { x: 0, y: 0 };
+      const rect = el.getBoundingClientRect();
+      if (!rect || rect.width <= 0 || rect.height <= 0) return { x: 0, y: 0 };
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.stopPropagation();
-    const coords = getRelativeCoords(e.clientX, e.clientY);
+      // The unrotated dimensions of the element in local coordinates
+      const unrotatedWidth = el.offsetWidth > 0 ? el.offsetWidth : (imageDimensions?.width ?? rect.width);
+      const unrotatedHeight = el.offsetHeight > 0 ? el.offsetHeight : (imageDimensions?.height ?? rect.height);
+
+      if (unrotatedWidth <= 0 || unrotatedHeight <= 0) return { x: 0, y: 0 };
+
+      // Invariant center of rotation
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+
+      const dx = clientX - centerX;
+      const dy = clientY - centerY;
+
+      // Rotate vector back by -rotation
+      const normalizedRotation = ((rotation % 360) + 360) % 360;
+      const rad = (-normalizedRotation * Math.PI) / 180;
+      const localDx = dx * Math.cos(rad) - dy * Math.sin(rad);
+      const localDy = dx * Math.sin(rad) + dy * Math.cos(rad);
+
+      // Map back to [0, unrotatedWidth] and [0, unrotatedHeight]
+      const localX = Math.max(0, Math.min(unrotatedWidth, localDx + unrotatedWidth / 2));
+      const localY = Math.max(0, Math.min(unrotatedHeight, localDy + unrotatedHeight / 2));
+
+      return {
+        x: (localX / unrotatedWidth) * 1000,
+        y: (localY / unrotatedHeight) * 1000,
+      };
+    },
+    [imageDimensions?.height, imageDimensions?.width, rotation],
+  );
+
+  const handleStart = (clientX: number, clientY: number, pointerId?: number, target?: HTMLElement) => {
+    if (pointerId !== undefined && target?.setPointerCapture) {
+      try {
+        target.setPointerCapture(pointerId);
+      } catch {
+        // Safe fallback in test or unsupported env
+      }
+    }
+    const coords = getRelativeCoords(clientX, clientY);
     setDragState({
       startX: coords.x,
       startY: coords.y,
@@ -58,19 +93,24 @@ export const ImageVisualCropper: React.FC<ImageVisualCropperProps> = ({
     setCopied(false);
   };
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleMove = (clientX: number, clientY: number) => {
     if (!isDragging || !dragState) return;
-    e.stopPropagation();
-    const coords = getRelativeCoords(e.clientX, e.clientY);
+    const coords = getRelativeCoords(clientX, clientY);
     setDragState((prev) => (prev ? { ...prev, currentX: coords.x, currentY: coords.y } : null));
   };
 
-  const handleMouseUp = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleEnd = (clientX: number, clientY: number, pointerId?: number, target?: HTMLElement) => {
     if (!isDragging || !dragState) return;
-    e.stopPropagation();
+    if (pointerId !== undefined && target?.releasePointerCapture) {
+      try {
+        target.releasePointerCapture(pointerId);
+      } catch {
+        // Safe fallback
+      }
+    }
     setIsDragging(false);
 
-    const coords = getRelativeCoords(e.clientX, e.clientY);
+    const coords = getRelativeCoords(clientX, clientY);
     const xmin = Math.round(Math.min(dragState.startX, coords.x));
     const xmax = Math.round(Math.max(dragState.startX, coords.x));
     const ymin = Math.round(Math.min(dragState.startY, coords.y));
@@ -84,7 +124,58 @@ export const ImageVisualCropper: React.FC<ImageVisualCropperProps> = ({
     }
   };
 
-  // Compute bounding box percentage for rendering
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    handleStart(e.clientX, e.clientY, e.pointerId, e.currentTarget);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+    e.stopPropagation();
+    handleMove(e.clientX, e.clientY);
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+    e.stopPropagation();
+    handleEnd(e.clientX, e.clientY, e.pointerId, e.currentTarget);
+  };
+
+  const handlePointerCancel = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+    e.stopPropagation();
+    if (e.currentTarget?.releasePointerCapture) {
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {
+        // Safe fallback
+      }
+    }
+    setIsDragging(false);
+    setDragState(null);
+  };
+
+  // Fallback handlers for legacy mouse events / testing
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (isDragging || e.button !== 0) return;
+    e.stopPropagation();
+    handleStart(e.clientX, e.clientY);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+    e.stopPropagation();
+    handleMove(e.clientX, e.clientY);
+  };
+
+  const handleMouseUp = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+    e.stopPropagation();
+    handleEnd(e.clientX, e.clientY);
+  };
+
+  // Compute bounding box percentage for rendering in local coordinates
   let boxStyle: React.CSSProperties | null = null;
   if (dragState) {
     const xmin = Math.min(dragState.startX, dragState.currentX);
@@ -120,15 +211,24 @@ export const ImageVisualCropper: React.FC<ImageVisualCropperProps> = ({
     <div
       ref={surfaceRef}
       data-testid="visual-cropper-surface"
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerCancel}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
-      className="absolute inset-0 z-30 cursor-crosshair select-none touch-none bg-black/30"
+      className="absolute inset-0 z-30 cursor-crosshair select-none touch-none bg-black/30 panzoom-exclude"
     >
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 pointer-events-auto flex items-center gap-2">
+      <div
+        className="absolute top-4 left-1/2 z-40 pointer-events-auto flex items-center gap-2 panzoom-exclude"
+        style={{
+          transform: rotation ? `translate(-50%, 0) rotate(${-rotation}deg)` : 'translate(-50%, 0)',
+        }}
+      >
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-950/85 backdrop-blur-md border border-red-500/40 text-zinc-100 text-xs shadow-2xl">
           <Sparkles size={13} className="text-amber-400 animate-pulse" />
-          <span>在图片上拖拽拉取矩形框，向 AI 进行视觉精准提问</span>
+          <span>{t('filePreviewVisualSelectHint')}</span>
         </div>
         <button
           type="button"
@@ -157,9 +257,10 @@ export const ImageVisualCropper: React.FC<ImageVisualCropperProps> = ({
 
           {confirmedBox && !isDragging && (
             <div
-              className="absolute left-1/2 -translate-x-1/2 z-50 pointer-events-auto flex items-center gap-1.5 p-1 rounded-lg bg-zinc-900/95 backdrop-blur-xl border border-white/20 shadow-2xl whitespace-nowrap"
+              className="absolute left-1/2 z-50 pointer-events-auto flex items-center gap-1.5 p-1 rounded-lg bg-zinc-900/95 backdrop-blur-xl border border-white/20 shadow-2xl whitespace-nowrap panzoom-exclude"
               style={{
                 top: confirmedBox[0] > 120 ? '-48px' : 'calc(100% + 10px)',
+                transform: rotation ? `translateX(-50%) rotate(${-rotation}deg)` : 'translateX(-50%)',
               }}
             >
               <button
@@ -180,7 +281,7 @@ export const ImageVisualCropper: React.FC<ImageVisualCropperProps> = ({
                 title={t('filePreviewCopyLocateTag')}
               >
                 {copied ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
-                <span>{copied ? '已复制' : t('filePreviewCopyLocateTag')}</span>
+                <span>{copied ? t('copied') : t('filePreviewCopyLocateTag')}</span>
               </button>
 
               <button
@@ -191,7 +292,7 @@ export const ImageVisualCropper: React.FC<ImageVisualCropperProps> = ({
                   setDragState(null);
                 }}
                 className="p-1 rounded text-zinc-400 hover:text-white hover:bg-white/15 transition-all cursor-pointer"
-                title="重新框选"
+                title={t('filePreviewReselect')}
               >
                 <X size={13} />
               </button>

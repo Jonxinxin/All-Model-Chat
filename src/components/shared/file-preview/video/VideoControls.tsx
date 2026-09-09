@@ -88,58 +88,58 @@ export const VideoControls: React.FC<VideoControlsProps> = ({
           />
         )}
 
-        {timelineMarkers && duration > 0 && timelineMarkers.map((marker) => {
-          const markerPercent = Math.min(100, Math.max(0, (marker.time / duration) * 100));
-          const isMarkerActive =
-            Math.abs(currentTime - marker.time) <= 1.0 ||
-            (marker.endTime !== undefined && currentTime >= marker.time - 0.5 && currentTime <= marker.endTime + 0.5);
+        {timelineMarkers &&
+          duration > 0 &&
+          timelineMarkers.map((marker) => {
+            const markerPercent = Math.min(100, Math.max(0, (marker.time / duration) * 100));
+            const isMarkerActive =
+              Math.abs(currentTime - marker.time) <= 1.0 ||
+              (marker.endTime !== undefined && currentTime >= marker.time - 0.5 && currentTime <= marker.endTime + 0.5);
 
-          return (
-            <div
-              key={marker.id}
-              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-25 pointer-events-auto"
-              style={{ left: `${markerPercent}%` }}
-              data-testid="timeline-marker-pin"
-            >
-              <Tooltip
-                variant="dark"
-                text={
-                  <div className="flex flex-col gap-1 max-w-[220px] text-xs select-none">
-                    <div className="flex items-center gap-1.5 font-semibold">
-                      <span className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.9)] flex-shrink-0" />
-                      <span className="font-mono text-amber-300 font-bold">
-                        {formatTimestamp(marker.time)}
-                        {marker.endTime ? ` - ${formatTimestamp(marker.endTime)}` : ''}
-                      </span>
-                    </div>
-                    {marker.snippet && (
-                      <span className="text-zinc-100 font-medium truncate tracking-wide">
-                        {marker.snippet}
-                      </span>
-                    )}
-                  </div>
-                }
-                side="top"
-                align="center"
+            return (
+              <div
+                key={marker.id}
+                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-25 pointer-events-auto"
+                style={{ left: `${markerPercent}%` }}
+                data-testid="timeline-marker-pin"
               >
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSeek(marker.time);
-                  }}
-                  className={`w-2.5 h-2.5 rounded-full border border-white/90 shadow-[0_0_6px_rgba(251,191,36,0.9)] cursor-pointer transition-all hover:scale-150 active:scale-110 flex items-center justify-center ${
-                    isMarkerActive
-                      ? 'bg-amber-400 scale-125 ring-2 ring-amber-300 ring-offset-1 ring-offset-black'
-                      : 'bg-amber-400/90 hover:bg-amber-300'
-                  }`}
-                  aria-label={`Jump to ${formatTimestamp(marker.time)}: ${marker.snippet || ''}`}
-                  title={`${formatTimestamp(marker.time)} ${marker.snippet || ''}`}
-                />
-              </Tooltip>
-            </div>
-          );
-        })}
+                <Tooltip
+                  variant="dark"
+                  text={
+                    <div className="flex flex-col gap-1 max-w-[220px] text-xs select-none">
+                      <div className="flex items-center gap-1.5 font-semibold">
+                        <span className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.9)] flex-shrink-0" />
+                        <span className="font-mono text-amber-300 font-bold">
+                          {formatTimestamp(marker.time)}
+                          {marker.endTime ? ` - ${formatTimestamp(marker.endTime)}` : ''}
+                        </span>
+                      </div>
+                      {marker.snippet && (
+                        <span className="text-zinc-100 font-medium truncate tracking-wide">{marker.snippet}</span>
+                      )}
+                    </div>
+                  }
+                  side="top"
+                  align="center"
+                >
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSeek(marker.time);
+                    }}
+                    className={`w-2.5 h-2.5 rounded-full border border-white/90 shadow-[0_0_6px_rgba(251,191,36,0.9)] cursor-pointer transition-all hover:scale-150 active:scale-110 flex items-center justify-center ${
+                      isMarkerActive
+                        ? 'bg-amber-400 scale-125 ring-2 ring-amber-300 ring-offset-1 ring-offset-black'
+                        : 'bg-amber-400/90 hover:bg-amber-300'
+                    }`}
+                    aria-label={`Jump to ${formatTimestamp(marker.time)}: ${marker.snippet || ''}`}
+                    title={`${formatTimestamp(marker.time)} ${marker.snippet || ''}`}
+                  />
+                </Tooltip>
+              </div>
+            );
+          })}
 
         <input
           type="range"
@@ -257,7 +257,11 @@ export const VideoControls: React.FC<VideoControlsProps> = ({
             </Tooltip>
           )}
 
-          <Tooltip variant="dark" text={`${isFullscreen ? t('videoExitFullscreen') : t('videoFullscreen')} (F)`} asChild>
+          <Tooltip
+            variant="dark"
+            text={`${isFullscreen ? t('videoExitFullscreen') : t('videoFullscreen')} (F)`}
+            asChild
+          >
             <button
               type="button"
               onClick={onToggleFullscreen}

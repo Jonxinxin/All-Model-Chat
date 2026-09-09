@@ -12,6 +12,15 @@ const appearanceSettings = {
   settingsThemeDark: { en: 'Dark', zh: '暗色', ja: 'ダーク', ko: '다크', es: 'Oscuro', fr: 'Sombre', de: 'Dunkel' },
   settingsThemeGray: { en: 'Gray', zh: '灰色', ja: 'グレー', ko: '그레이', es: 'Gris', fr: 'Gris', de: 'Grau' },
   settingsThemeLight: { en: 'Light', zh: '浅色', ja: 'ライト', ko: '라이트', es: 'Claro', fr: 'Clair', de: 'Hell' },
+  settingsThemeSepia: {
+    en: 'Sepia',
+    zh: '羊皮纸',
+    ja: 'セピア',
+    ko: '세피아',
+    es: 'Sepia',
+    fr: 'Sépia',
+    de: 'Sepia',
+  },
   settingsFontSize: {
     en: 'Reading Size',
     zh: '阅读字号',

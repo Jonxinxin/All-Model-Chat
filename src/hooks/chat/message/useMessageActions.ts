@@ -191,7 +191,7 @@ export const useMessageActions = ({
         }
       } else if (isGenerationLeaseHeldByOther(activeSessionId)) {
         logService.warn('Retry blocked: generation lease held by another tab', { sessionId: activeSessionId });
-        const errorMsg = 'This chat is generating in another tab. Stop it there first, or wait for it to finish.';
+        const errorMsg = t('chatGeneratingInOtherTab');
         setAppFileError(errorMsg);
         toastError(errorMsg);
         return;
@@ -297,7 +297,7 @@ export const useMessageActions = ({
           return;
         }
       } else if (isGenerationLeaseHeldByOther(activeSessionId)) {
-        setAppFileError('This chat is generating in another tab. Stop it there first, or wait for it to finish.');
+        setAppFileError(t('chatGeneratingInOtherTab'));
         return;
       }
 

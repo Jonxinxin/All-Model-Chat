@@ -1,11 +1,10 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import { type ChatMessage, type UploadedFile, type AppSettings, type SideViewContent } from '@/types';
+import { type ChatMessage, type UploadedFile, type MessageAppSettings, type SideViewContent } from '@/types';
 import type { OpenHtmlPreviewHandler } from '@/utils/html-preview/previewPrivilege';
 import { useI18n } from '@/contexts/I18nContext';
 import { LazyMarkdownRenderer } from '@/components/message/LazyMarkdownRenderer';
 import { isCodeExecutionPendingInContent } from '@/features/chat-streaming/messageStreamParts';
 import { GroundedResponse } from '@/components/message/GroundedResponse';
-import { GoogleSpinner } from '@/components/icons/GoogleSpinner';
 import { extractAutoPreviewableBlock, normalizePreviewableMarkdownContent } from '@/utils/previewableMarkdown';
 import { useSmoothStreaming } from '@/hooks/ui/useSmoothStreaming';
 import { useMessageStream } from '@/hooks/ui/useMessageStream';
@@ -31,7 +30,7 @@ import { collectSessionMediaFiles } from '@/utils/media-nav/sessionMediaFiles';
 interface MessageTextProps {
   message: ChatMessage;
   showThoughts: boolean;
-  appSettings: AppSettings;
+  appSettings: MessageAppSettings;
   themeId: string;
   baseFontSize: number;
   onImageClick: (file: UploadedFile) => void;
@@ -148,7 +147,11 @@ export const MessageText: React.FC<MessageTextProps> = ({
   const isUserMessageCollapsed = shouldOfferUserMessageCollapse && !isUserMessageExpanded;
   const userMessageCollapseRegionId = `${message.id}-message-text`;
   const collapsedMaxHeight = baseFontSize * USER_MESSAGE_COLLAPSED_LINE_HEIGHT * USER_MESSAGE_COLLAPSE_LINE_THRESHOLD;
-  const liveArtifactFontSize = useMemo(() => resolveLiveArtifactsFontSize(appSettings), [appSettings]);
+  const liveArtifactsCustomFontSize = appSettings.liveArtifactsCustomFontSize;
+  const liveArtifactFontSize = useMemo(
+    () => resolveLiveArtifactsFontSize({ liveArtifactsCustomFontSize }),
+    [liveArtifactsCustomFontSize],
+  );
   // LA mode must match the header button, which tracks the ACTIVE session's
   // systemInstruction (currentChatSettings), not the global default. The
   // message list only renders the active session's messages, so reading the
@@ -228,9 +231,6 @@ export const MessageText: React.FC<MessageTextProps> = ({
     <>
       {showPrimaryThinkingIndicator && (
         <div className="flex items-center text-sm text-[var(--theme-bg-model-message-text)] py-1 px-1 opacity-80 animate-pulse">
-          <div className="mr-2.5 flex-shrink-0">
-            <GoogleSpinner size={14} />
-          </div>
           <span className="font-medium">{t('thinkingText')}</span>
         </div>
       )}

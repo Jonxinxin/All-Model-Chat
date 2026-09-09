@@ -539,4 +539,3 @@ describe('compensateCjkNodeWidths and CJK metrics', () => {
     expect(processed).toMatch(/battery\[label="中央能量电池 \(离子鲨 \/ 意志之力\)" shape=box width="[0-9.]+"\]/);
   });
 });
-

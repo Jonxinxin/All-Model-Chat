@@ -72,9 +72,7 @@ export const InlinePdfLocateButton: React.FC<InlinePdfLocateButtonProps> = ({
         <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />
         <span>第 {pageNumber} 页</span>
         {docName && (
-          <span className="text-[10px] text-[var(--theme-text-tertiary)] truncate font-normal">
-            ({docName})
-          </span>
+          <span className="text-[10px] text-[var(--theme-text-tertiary)] truncate font-normal">({docName})</span>
         )}
       </div>
       {snippet && (
@@ -95,16 +93,10 @@ export const InlinePdfLocateButton: React.FC<InlinePdfLocateButtonProps> = ({
               }}
             />
           </div>
-          <span className="text-[10px] text-[var(--theme-text-tertiary)] opacity-80">
-            区域定位 · 点击展开
-          </span>
+          <span className="text-[10px] text-[var(--theme-text-tertiary)] opacity-80">区域定位 · 点击展开</span>
         </div>
       )}
-      {!box2d && (
-        <div className="text-[10px] text-[var(--theme-text-tertiary)] opacity-80 mt-0.5">
-          点击跳转阅读
-        </div>
-      )}
+      {!box2d && <div className="text-[10px] text-[var(--theme-text-tertiary)] opacity-80 mt-0.5">点击跳转阅读</div>}
     </div>
   );
 
@@ -135,4 +127,3 @@ export const InlinePdfLocateButton: React.FC<InlinePdfLocateButtonProps> = ({
     </Tooltip>
   );
 };
-

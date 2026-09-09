@@ -2,6 +2,7 @@ import React, { useCallback } from 'react';
 import { Play } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { seekSessionVideo } from '@/utils/media-nav/seekVideo';
+import { seekSessionAudio } from '@/utils/media-nav/seekAudio';
 import { extractTextFromNode } from '@/utils/reactNodeText';
 import { formatTimestamp } from '@/utils/media-nav/timestamp';
 import { Tooltip } from '@/components/shared/Tooltip';
@@ -14,6 +15,7 @@ interface InlineTimestampSeekButtonProps {
   startSeconds: number;
   endSeconds?: number;
   videoName?: string;
+  mediaKind?: 'video' | 'audio';
   annotation?: {
     point?: [number, number];
     box2d?: [number, number, number, number];
@@ -33,12 +35,15 @@ export const InlineTimestampSeekButton: React.FC<InlineTimestampSeekButtonProps>
   startSeconds,
   endSeconds,
   videoName,
+  mediaKind,
   annotation,
   messageId,
   children,
 }) => {
   const { t } = useI18n();
   const isAudio = useChatStore((state) => {
+    if (mediaKind === 'audio') return true;
+    if (mediaKind === 'video') return false;
     const store = useMediaNavStore.getState();
     if (store.isOpen && store.openKind === 'audio') return true;
     const { videos, audios } = collectSessionMediaFiles(state.selectedFiles, state.activeMessages);
@@ -77,13 +82,25 @@ export const InlineTimestampSeekButton: React.FC<InlineTimestampSeekButtonProps>
 
     e.preventDefault();
     e.stopPropagation();
-    seekSessionVideo({
-      startSeconds,
-      endSeconds,
-      videoName,
-      annotation,
-      messageId,
-    });
+
+    if (isAudio) {
+      seekSessionAudio({
+        startSeconds,
+        endSeconds,
+        audioName: videoName,
+        messageId,
+        snippet: annotation?.snippet,
+      });
+    } else {
+      seekSessionVideo({
+        startSeconds,
+        endSeconds,
+        videoName,
+        annotation,
+        messageId,
+        kind: mediaKind,
+      });
+    }
   };
 
   const labelText = extractTextFromNode(children);
@@ -93,27 +110,21 @@ export const InlineTimestampSeekButton: React.FC<InlineTimestampSeekButtonProps>
   const tooltipPreview = (
     <div className="flex flex-col gap-1 max-w-[220px] text-xs select-none">
       <div className="flex items-center gap-1.5 font-semibold text-[var(--theme-text-primary)]">
+        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isAudio ? 'bg-amber-500' : 'bg-emerald-500'}`} />
         <span
-          className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-            isAudio ? 'bg-amber-500' : 'bg-emerald-500'
-          }`}
-        />
-        <span className={`font-mono font-semibold ${isAudio ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+          className={`font-mono font-semibold ${isAudio ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}
+        >
           {formatTimestamp(startSeconds)}
           {endSeconds ? ` - ${formatTimestamp(endSeconds)}` : ''}
         </span>
-        <span className="text-[10px] text-[var(--theme-text-tertiary)] font-sans">
-          ({isAudio ? '音频' : '视频'})
-        </span>
+        <span className="text-[10px] text-[var(--theme-text-tertiary)] font-sans">({isAudio ? '音频' : '视频'})</span>
       </div>
       {annotation?.snippet && (
         <div className="text-[var(--theme-text-primary)] text-[11px] leading-tight font-normal line-clamp-2">
           {annotation.snippet}
         </div>
       )}
-      <div className="text-[10px] text-[var(--theme-text-tertiary)] mt-0.5">
-        点击跳转播放
-      </div>
+      <div className="text-[10px] text-[var(--theme-text-tertiary)] mt-0.5">点击跳转播放</div>
     </div>
   );
 

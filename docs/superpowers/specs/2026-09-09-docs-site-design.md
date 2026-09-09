@@ -10,6 +10,7 @@
 AMC-WebUI（All-in-one Model Console WebUI）是一款以 Google Gemini 原生能力为主、兼顾 OpenAI 兼容协议、遵循 Local-First 理念的现代化 Web 控制台。随着 Thinking 深度推理、Live API 双向音视频、Live Artifacts、本地 Python 沙箱 (Pyodide)、MCP (Model Context Protocol) 协议、高级音频压缩以及多服务商双路由架构等复杂功能的全面落地，用户与开发者迫切需要一个体系化、交互友好、支持中英双语的官方文档站点。
 
 ### 核心目标
+
 1. **完整功能覆盖**：全面覆盖从新手快速上手、BYOK/代理配置，到深度思考、实时音视频、本地沙箱、MCP 扩展与 Docker 部署的全部技术细节。
 2. **极速与轻量 (Zero-JS by default)**：采用 Astro Starlight 架构，默认输出零客户端 JS 的纯静态页面，构建毫秒级，SEO 与离线阅读体验极佳。
 3. **原生 React 孤岛支持**：借助 `@astrojs/react`，在关键文档中嵌入实用的 React 18 交互小组件（如环境变量生成器、斜杠命令速查器）。
@@ -22,6 +23,7 @@ AMC-WebUI（All-in-one Model Console WebUI）是一款以 Google Gemini 原生�
 ## 2. 系统架构与工程组织 (Project Architecture)
 
 ### 2.1 目录结构
+
 在主仓库根目录下新建 `docs-site/` 独立子应用：
 
 ```text
@@ -59,6 +61,7 @@ AMC-WebUI/
 ```
 
 ### 2.2 依赖声明 (`docs-site/package.json`)
+
 - `astro`: `^5.x`
 - `@astrojs/starlight`: `^0.32.x`
 - `@astrojs/react`: `^4.x`
@@ -68,13 +71,17 @@ AMC-WebUI/
 - `sharp`: 用于图片自动优化与元数据提取
 
 ### 2.3 工作区集成 (`pnpm-workspace.yaml` & `package.json`)
+
 在根目录 `pnpm-workspace.yaml` 中声明：
+
 ```yaml
 packages:
   - '.'
   - 'docs-site'
 ```
+
 在根目录 `package.json` 中配置便捷脚本：
+
 - `"docs:dev": "pnpm --filter docs-site dev"`
 - `"docs:build": "pnpm --filter docs-site build"`
 - `"docs:preview": "pnpm --filter docs-site preview"`
@@ -93,7 +100,11 @@ sidebar: [
     items: [
       { label: '项目简介', slug: 'getting-started/introduction', translations: { en: 'Introduction' } },
       { label: '快速启动', slug: 'getting-started/quickstart', translations: { en: 'Quickstart' } },
-      { label: '服务商与 API 配置', slug: 'getting-started/api-configuration', translations: { en: 'API Configuration' } },
+      {
+        label: '服务商与 API 配置',
+        slug: 'getting-started/api-configuration',
+        translations: { en: 'API Configuration' },
+      },
       { label: 'PWA 与多端体验', slug: 'getting-started/pwa', translations: { en: 'PWA & Desktop' } },
     ],
   },
@@ -111,7 +122,11 @@ sidebar: [
     label: '🛠️ 生产力工具箱',
     translations: { en: '🛠️ Productivity Tools' },
     items: [
-      { label: '联网检索 (Search & Maps)', slug: 'tools/web-search-maps', translations: { en: 'Search & Maps Grounding' } },
+      {
+        label: '联网检索 (Search & Maps)',
+        slug: 'tools/web-search-maps',
+        translations: { en: 'Search & Maps Grounding' },
+      },
       { label: '代码执行与本地沙箱', slug: 'tools/code-and-sandbox', translations: { en: 'Code & Python Sandbox' } },
       { label: 'Live Artifacts 构件', slug: 'tools/live-artifacts', translations: { en: 'Live Artifacts' } },
       { label: '高级文件与多模态', slug: 'tools/files-multimodal', translations: { en: 'Files & Multimodal' } },
@@ -125,14 +140,22 @@ sidebar: [
       { label: '斜杠命令速查', slug: 'power-user/slash-commands', translations: { en: 'Slash Commands' } },
       { label: '快捷键与快速切换', slug: 'power-user/shortcuts', translations: { en: 'Shortcuts & Gestures' } },
       { label: '语音合成与转写', slug: 'power-user/tts-transcribe', translations: { en: 'TTS & Transcribe' } },
-      { label: '会话与数据管理', slug: 'power-user/data-management', translations: { en: 'Data & Session Management' } },
+      {
+        label: '会话与数据管理',
+        slug: 'power-user/data-management',
+        translations: { en: 'Data & Session Management' },
+      },
     ],
   },
   {
     label: '🚢 架构与私有化部署',
     translations: { en: '🚢 Deployment & Architecture' },
     items: [
-      { label: '架构原理与 Local-First', slug: 'deployment/architecture', translations: { en: 'Architecture & Local-First' } },
+      {
+        label: '架构原理与 Local-First',
+        slug: 'deployment/architecture',
+        translations: { en: 'Architecture & Local-First' },
+      },
       { label: 'Docker Compose 双容器部署', slug: 'deployment/docker', translations: { en: 'Docker Compose' } },
       { label: '静态托管 + 独立 API', slug: 'deployment/static-and-api', translations: { en: 'Static Hosting + API' } },
       { label: '环境变量与安全边界', slug: 'deployment/environment-variables', translations: { en: 'Env & Security' } },
@@ -148,7 +171,7 @@ sidebar: [
       { label: '缓存维护与数据迁移', slug: 'faq/storage-and-reset', translations: { en: 'Storage & Reset' } },
     ],
   },
-]
+];
 ```
 
 ---
@@ -156,6 +179,7 @@ sidebar: [
 ## 4. 视觉主题与官网级首页设计 (Visual Design & Splash)
 
 ### 4.1 视觉主题定制 (`src/styles/custom.css`)
+
 - **暗黑背景 (Onyx)**：
   - 页面背景：`--sl-color-bg: #090d16;`
   - 侧边栏与卡片底色：`--sl-color-bg-sidebar: #0e1422;`、`--sl-color-bg-nav: #090d16;`
@@ -166,7 +190,9 @@ sidebar: [
 - **高对比度浅色模式 (Pearl)**：保证白底黑字、对比清晰的日间阅读体验。
 
 ### 4.2 官网级欢迎页 (Hero & Feature Grid)
+
 中英文首页 `index.md` 采用 `template: splash`：
+
 - **Hero 核心区**：
   - 标题：`AMC WebUI`
   - Tagline：以 Gemini 原生能力为主，兼具 OpenAI 兼容生态的极客级 AI 控制台
@@ -201,10 +227,12 @@ sidebar: [
 ## 6. 构建与 Cloudflare Pages 部署 (Build & Deployment)
 
 ### 6.1 产物输出
+
 - 运行 `pnpm run docs:build`，Astro 生成纯静态文件至 `docs-site/dist/`。
 - Pagefind 自动遍历静态 HTML 完成中文与英文双语的分词索引构建，生成离线搜索库。
 
 ### 6.2 Cloudflare Pages 自动化流水线
+
 - **Build command**: `pnpm --filter docs-site build`
 - **Build output directory**: `docs-site/dist`
 - **Root directory**: `/` (或在 Pages 控制台指定单仓构建)
@@ -216,14 +244,14 @@ sidebar: [
 
 ## 7. 分阶段实施计划 (Implementation Milestones)
 
-* **阶段 1：工程基建与双语 Splash 首页**
+- **阶段 1：工程基建与双语 Splash 首页**
   1. 初始化 `docs-site/` 基础配置、依赖安装与 pnpm workspace 关联。
   2. 配置 `astro.config.mjs`（i18n 中英双语、侧边栏路由定义、React 集成、Pagefind）。
   3. 配置 `custom.css` 主题色变量，构建中英文欢迎页 `index.md`。
-* **阶段 2：全量中文核心文档编写与 React 交互组件落地**
+- **阶段 2：全量中文核心文档编写与 React 交互组件落地**
   1. 依次编写 6 大板块全量中文 MDX 文档。
   2. 实现 `<EnvConfigGenerator />`、`<SlashCommandFinder />` 与 `<ModelBadgeList />` 交互孤岛。
-* **阶段 3：英文对照补齐、离线搜索验证与构建验收**
+- **阶段 3：英文对照补齐、离线搜索验证与构建验收**
   1. 对应补齐 `src/content/docs/en/` 下的全量英文 MDX。
   2. 验证本地开发服务 (`docs:dev`) 与生产构建 (`docs:build`)，检查 Pagefind 中英文检索能力。
   3. 提交 Git 变更并准备上线部署。

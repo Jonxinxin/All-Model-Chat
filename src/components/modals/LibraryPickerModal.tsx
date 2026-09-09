@@ -14,7 +14,7 @@ import { formatFileSize } from '@/utils/file/fileSize';
 import { LibraryItemThumbnail } from '@/components/library/LibraryItemThumbnail';
 import { FilePreviewModal } from './FilePreviewModal';
 import { cleanupFilePreviewUrl } from '@/utils/file/filePreviewUrls';
-import { useClickOutside } from '@/hooks/useClickOutside';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/shared/Popover';
 import {
   Library,
   Search,
@@ -81,9 +81,6 @@ export const LibraryPickerModal: React.FC<LibraryPickerModalProps> = ({
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const filterMenuRef = useRef<HTMLDivElement>(null);
-
-  useClickOutside(filterMenuRef, () => setIsFilterMenuOpen(false), isFilterMenuOpen);
 
   // Load files when modal opens
   useEffect(() => {
@@ -305,6 +302,28 @@ export const LibraryPickerModal: React.FC<LibraryPickerModalProps> = ({
     });
   }, [allItems, categoryFilter, sourceFilter, fileTypeFilter, sortOption, searchQuery, viewMode]);
 
+  const previewIndex = previewFile ? filteredItems.findIndex((item) => item.id === previewFile.id) : -1;
+  const hasPrevPreview = previewIndex > 0;
+  const hasNextPreview = previewIndex !== -1 && previewIndex < filteredItems.length - 1;
+
+  const handlePrevPreview = useCallback(() => {
+    if (previewIndex > 0) {
+      if (previewFile?.dataUrl) {
+        cleanupFilePreviewUrl(previewFile);
+      }
+      void handlePreviewItem(filteredItems[previewIndex - 1]);
+    }
+  }, [previewIndex, previewFile, filteredItems, handlePreviewItem]);
+
+  const handleNextPreview = useCallback(() => {
+    if (previewIndex !== -1 && previewIndex < filteredItems.length - 1) {
+      if (previewFile?.dataUrl) {
+        cleanupFilePreviewUrl(previewFile);
+      }
+      void handlePreviewItem(filteredItems[previewIndex + 1]);
+    }
+  }, [previewIndex, previewFile, filteredItems, handlePreviewItem]);
+
   const toggleSelectItem = useCallback((id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -475,165 +494,168 @@ export const LibraryPickerModal: React.FC<LibraryPickerModalProps> = ({
               })}
             </div>
 
-            <div className="relative" ref={filterMenuRef}>
-              <button
-                type="button"
-                onClick={() => setIsFilterMenuOpen((prev) => !prev)}
-                aria-label={t('librarySort')}
-                title={t('librarySort')}
-                className={`p-1.5 rounded-xl border transition-colors cursor-pointer ${
-                  hasAdvancedFilters || isFilterMenuOpen
-                    ? 'bg-[var(--theme-bg-tertiary)] border-[var(--theme-border-focus)] text-[var(--theme-text-primary)] shadow-xs'
-                    : 'border-[var(--theme-border-secondary)] bg-[var(--theme-bg-secondary)] text-[var(--theme-text-tertiary)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)]'
-                }`}
+            <Popover open={isFilterMenuOpen} onOpenChange={setIsFilterMenuOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  aria-label={t('librarySort')}
+                  title={t('librarySort')}
+                  className={`p-1.5 rounded-xl border transition-colors cursor-pointer ${
+                    hasAdvancedFilters || isFilterMenuOpen
+                      ? 'bg-[var(--theme-bg-tertiary)] border-[var(--theme-border-focus)] text-[var(--theme-text-primary)] shadow-xs'
+                      : 'border-[var(--theme-border-secondary)] bg-[var(--theme-bg-secondary)] text-[var(--theme-text-tertiary)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)]'
+                  }`}
+                >
+                  <SlidersHorizontal size={15} strokeWidth={2} />
+                </button>
+              </PopoverTrigger>
+
+              <PopoverContent
+                align="end"
+                sideOffset={8}
+                className="w-64 rounded-2xl p-2 text-xs max-h-[calc(80vh-180px)] overflow-y-auto custom-scrollbar"
               >
-                <SlidersHorizontal size={15} strokeWidth={2} />
-              </button>
-
-              {isFilterMenuOpen && (
-                <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-[var(--theme-bg-primary)] border border-[var(--theme-border-secondary)] shadow-xl p-2 z-50 text-xs animate-in fade-in zoom-in-95 duration-100 max-h-[calc(80vh-180px)] overflow-y-auto custom-scrollbar">
-                  <div className="px-2.5 py-1 text-[11px] font-semibold text-[var(--theme-text-tertiary)] uppercase tracking-wider">
-                    {t('librarySource')}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSourceFilter('all');
-                      setIsFilterMenuOpen(false);
-                    }}
-                    className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors cursor-pointer"
-                  >
-                    <span className="flex items-center gap-2">
-                      <Layers size={14} className="text-[var(--theme-text-secondary)]" />
-                      <span>{t('librarySourceAll')}</span>
-                    </span>
-                    {sourceFilter === 'all' && <Check size={14} className="text-[var(--theme-accent)]" />}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSourceFilter('uploaded');
-                      setIsFilterMenuOpen(false);
-                    }}
-                    className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors cursor-pointer"
-                  >
-                    <span className="flex items-center gap-2">
-                      <Upload size={14} className="text-[var(--theme-text-secondary)]" />
-                      <span>{t('librarySourceUploaded')}</span>
-                    </span>
-                    {sourceFilter === 'uploaded' && <Check size={14} className="text-[var(--theme-accent)]" />}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSourceFilter('generated');
-                      setIsFilterMenuOpen(false);
-                    }}
-                    className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors cursor-pointer"
-                  >
-                    <span className="flex items-center gap-2">
-                      <Sparkles size={14} className="text-[var(--theme-text-secondary)]" />
-                      <span>{t('librarySourceGenerated')}</span>
-                    </span>
-                    {sourceFilter === 'generated' && <Check size={14} className="text-[var(--theme-accent)]" />}
-                  </button>
-
-                  <div className="my-1.5 border-t border-[var(--theme-border-secondary)]" />
-
-                  <div className="px-2.5 py-1 text-[11px] font-semibold text-[var(--theme-text-tertiary)] uppercase tracking-wider">
-                    {t('libraryDocFormats')}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleSelectSubtype('all')}
-                    className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors cursor-pointer"
-                  >
-                    <span className="flex items-center gap-2">
-                      <FileText size={14} className="text-[var(--theme-text-secondary)]" />
-                      <span>{t('libraryDocFormatAll')}</span>
-                    </span>
-                    {fileTypeFilter === 'all' && <Check size={14} className="text-[var(--theme-accent)]" />}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleSelectSubtype('pdf')}
-                    className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors cursor-pointer"
-                  >
-                    <span className="flex items-center gap-2">
-                      <FileText size={14} className="text-red-500" />
-                      <span>PDF</span>
-                    </span>
-                    {fileTypeFilter === 'pdf' && <Check size={14} className="text-[var(--theme-accent)]" />}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleSelectSubtype('spreadsheet')}
-                    className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors cursor-pointer"
-                  >
-                    <span className="flex items-center gap-2">
-                      <FileSpreadsheet size={14} className="text-emerald-500" />
-                      <span>{t('libraryFileTypeSpreadsheet')}</span>
-                    </span>
-                    {fileTypeFilter === 'spreadsheet' && <Check size={14} className="text-[var(--theme-accent)]" />}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleSelectSubtype('presentation')}
-                    className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors cursor-pointer"
-                  >
-                    <span className="flex items-center gap-2">
-                      <Presentation size={14} className="text-amber-500" />
-                      <span>{t('libraryFileTypePresentation')}</span>
-                    </span>
-                    {fileTypeFilter === 'presentation' && <Check size={14} className="text-[var(--theme-accent)]" />}
-                  </button>
-
-                  <div className="my-1.5 border-t border-[var(--theme-border-secondary)]" />
-
-                  <div className="px-2.5 py-1 text-[11px] font-semibold text-[var(--theme-text-tertiary)] uppercase tracking-wider flex items-center gap-1.5">
-                    <ArrowUpDown size={12} />
-                    <span>{t('librarySort')}</span>
-                  </div>
-                  {(
-                    [
-                      { key: 'date_desc', labelKey: 'librarySortDateDesc' },
-                      { key: 'date_asc', labelKey: 'librarySortDateAsc' },
-                      { key: 'size_desc', labelKey: 'librarySortSizeDesc' },
-                      { key: 'size_asc', labelKey: 'librarySortSizeAsc' },
-                      { key: 'name_asc', labelKey: 'librarySortNameAsc' },
-                      { key: 'name_desc', labelKey: 'librarySortNameDesc' },
-                    ] as { key: LibrarySortOption; labelKey: string }[]
-                  ).map((sort) => (
-                    <button
-                      key={sort.key}
-                      type="button"
-                      onClick={() => {
-                        setSortOption(sort.key);
-                        setIsFilterMenuOpen(false);
-                      }}
-                      className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors cursor-pointer"
-                    >
-                      <span>{t(sort.labelKey)}</span>
-                      {sortOption === sort.key && <Check size={14} className="text-[var(--theme-accent)]" />}
-                    </button>
-                  ))}
-
-                  {hasAdvancedFilters && (
-                    <>
-                      <div className="my-1.5 border-t border-[var(--theme-border-secondary)]" />
-                      <button
-                        type="button"
-                        onClick={handleResetFilters}
-                        className="w-full flex items-center justify-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--theme-text-secondary)] hover:text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
-                      >
-                        <RotateCcw size={13} />
-                        <span>{t('libraryResetFilters')}</span>
-                      </button>
-                    </>
-                  )}
+                <div className="px-2.5 py-1 text-[11px] font-semibold text-[var(--theme-text-tertiary)] uppercase tracking-wider">
+                  {t('librarySource')}
                 </div>
-              )}
-            </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSourceFilter('all');
+                    setIsFilterMenuOpen(false);
+                  }}
+                  className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors cursor-pointer"
+                >
+                  <span className="flex items-center gap-2">
+                    <Layers size={14} className="text-[var(--theme-text-secondary)]" />
+                    <span>{t('librarySourceAll')}</span>
+                  </span>
+                  {sourceFilter === 'all' && <Check size={14} className="text-[var(--theme-accent)]" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSourceFilter('uploaded');
+                    setIsFilterMenuOpen(false);
+                  }}
+                  className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors cursor-pointer"
+                >
+                  <span className="flex items-center gap-2">
+                    <Upload size={14} className="text-[var(--theme-text-secondary)]" />
+                    <span>{t('librarySourceUploaded')}</span>
+                  </span>
+                  {sourceFilter === 'uploaded' && <Check size={14} className="text-[var(--theme-accent)]" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSourceFilter('generated');
+                    setIsFilterMenuOpen(false);
+                  }}
+                  className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors cursor-pointer"
+                >
+                  <span className="flex items-center gap-2">
+                    <Sparkles size={14} className="text-[var(--theme-text-secondary)]" />
+                    <span>{t('librarySourceGenerated')}</span>
+                  </span>
+                  {sourceFilter === 'generated' && <Check size={14} className="text-[var(--theme-accent)]" />}
+                </button>
+
+                <div className="my-1.5 border-t border-[var(--theme-border-secondary)]" />
+
+                <div className="px-2.5 py-1 text-[11px] font-semibold text-[var(--theme-text-tertiary)] uppercase tracking-wider">
+                  {t('libraryDocFormats')}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleSelectSubtype('all')}
+                  className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors cursor-pointer"
+                >
+                  <span className="flex items-center gap-2">
+                    <FileText size={14} className="text-[var(--theme-text-secondary)]" />
+                    <span>{t('libraryDocFormatAll')}</span>
+                  </span>
+                  {fileTypeFilter === 'all' && <Check size={14} className="text-[var(--theme-accent)]" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelectSubtype('pdf')}
+                  className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors cursor-pointer"
+                >
+                  <span className="flex items-center gap-2">
+                    <FileText size={14} className="text-red-500" />
+                    <span>PDF</span>
+                  </span>
+                  {fileTypeFilter === 'pdf' && <Check size={14} className="text-[var(--theme-accent)]" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelectSubtype('spreadsheet')}
+                  className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors cursor-pointer"
+                >
+                  <span className="flex items-center gap-2">
+                    <FileSpreadsheet size={14} className="text-emerald-500" />
+                    <span>{t('libraryFileTypeSpreadsheet')}</span>
+                  </span>
+                  {fileTypeFilter === 'spreadsheet' && <Check size={14} className="text-[var(--theme-accent)]" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelectSubtype('presentation')}
+                  className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors cursor-pointer"
+                >
+                  <span className="flex items-center gap-2">
+                    <Presentation size={14} className="text-amber-500" />
+                    <span>{t('libraryFileTypePresentation')}</span>
+                  </span>
+                  {fileTypeFilter === 'presentation' && <Check size={14} className="text-[var(--theme-accent)]" />}
+                </button>
+
+                <div className="my-1.5 border-t border-[var(--theme-border-secondary)]" />
+
+                <div className="px-2.5 py-1 text-[11px] font-semibold text-[var(--theme-text-tertiary)] uppercase tracking-wider flex items-center gap-1.5">
+                  <ArrowUpDown size={12} />
+                  <span>{t('librarySort')}</span>
+                </div>
+                {(
+                  [
+                    { key: 'date_desc', labelKey: 'librarySortDateDesc' },
+                    { key: 'date_asc', labelKey: 'librarySortDateAsc' },
+                    { key: 'size_desc', labelKey: 'librarySortSizeDesc' },
+                    { key: 'size_asc', labelKey: 'librarySortSizeAsc' },
+                    { key: 'name_asc', labelKey: 'librarySortNameAsc' },
+                    { key: 'name_desc', labelKey: 'librarySortNameDesc' },
+                  ] as { key: LibrarySortOption; labelKey: string }[]
+                ).map((sort) => (
+                  <button
+                    key={sort.key}
+                    type="button"
+                    onClick={() => {
+                      setSortOption(sort.key);
+                      setIsFilterMenuOpen(false);
+                    }}
+                    className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors cursor-pointer"
+                  >
+                    <span>{t(sort.labelKey)}</span>
+                    {sortOption === sort.key && <Check size={14} className="text-[var(--theme-accent)]" />}
+                  </button>
+                ))}
+
+                {hasAdvancedFilters && (
+                  <>
+                    <div className="my-1.5 border-t border-[var(--theme-border-secondary)]" />
+                    <button
+                      type="button"
+                      onClick={handleResetFilters}
+                      className="w-full flex items-center justify-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--theme-text-secondary)] hover:text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
+                    >
+                      <RotateCcw size={13} />
+                      <span>{t('libraryResetFilters')}</span>
+                    </button>
+                  </>
+                )}
+              </PopoverContent>
+            </Popover>
 
             <div className="flex items-center bg-[var(--theme-bg-secondary)] p-1 rounded-xl border border-[var(--theme-border-secondary)]">
               <button
@@ -886,7 +908,16 @@ export const LibraryPickerModal: React.FC<LibraryPickerModalProps> = ({
           </div>
         </div>
 
-        {previewFile && <FilePreviewModal file={previewFile} onClose={handleClosePreview} />}
+        {previewFile && (
+          <FilePreviewModal
+            file={previewFile}
+            onClose={handleClosePreview}
+            onPrev={handlePrevPreview}
+            onNext={handleNextPreview}
+            hasPrev={hasPrevPreview}
+            hasNext={hasNextPreview}
+          />
+        )}
       </div>
     </Modal>
   );

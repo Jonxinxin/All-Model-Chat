@@ -14,6 +14,9 @@ export const parseTimestamp = (raw: string | number | undefined | null): number 
   if (parts.some((segment) => Number.isNaN(segment))) return null;
 
   const [seconds, minutes = 0, hours = 0] = [...parts].reverse();
+  if (seconds >= 60) return null;
+  if (parts.length > 2 && minutes >= 60) return null;
+
   const total = hours * 3600 + minutes * 60 + seconds;
   return Math.floor(total);
 };

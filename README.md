@@ -41,7 +41,7 @@
 ## 界面预览
 
 <p align="center">
-  <img src="./docs/screenshots/app-desktop-20260426.png" alt="AMC WebUI 桌面端界面预览" width="100%">
+  <img src="./docs/screenshots/app-desktop-20260909.png" alt="AMC WebUI 桌面端界面预览" width="100%">
 </p>
 
 ## 项目简介
@@ -121,6 +121,14 @@
 - **语音转录**：通过 Gemini 3.5 Transcribe 模型进行语音转文字
 - **Gemini 原生图片生成（Nano Banana）**：支持宽高比、尺寸与四图生成
 
+### Model Context Protocol (MCP)
+
+- 支持标准 Model Context Protocol (MCP)，通过 Node API（`/api/mcp/*`）提供服务端桥接
+- 支持 **stdio**、**SSE** 及 **Streamable HTTP** 三种传输协议（HTTP/SSE 连接受 `ENABLE_MCP_PRIVATE_HTTP` 私网安全策略保护）
+- 人在回路（Human-in-the-loop）工具调用授权机制：执行外部 MCP 工具调用前弹窗征得用户授权
+- 完整的 MCP 工具、提示词（Prompts）、资源（Resources）管理与连接状态展示
+- 支持开发者日志监控与实时错误排查
+
 ### 企业级 API 管理
 
 - **双 API 模式**：支持在 Gemini 原生 与 OpenAI 兼容 两条请求路径之间切换
@@ -159,13 +167,13 @@
 
 ### 安全设置
 
-- 4 个安全过滤类别：骚扰、仇恨言论、色情内容、危险内容
+- 5 个安全过滤类别：骚扰内容、仇恨言论、色情内容、危险内容、越狱防护 (Jailbreak)
 - 每个类别可独立配置过滤级别（关闭 / 不拦截 / 拦截少量 / 拦截部分 / 拦截大部分）
 - 默认全部为「关闭」，与 Gemini 2.5 / 3 系列模型的官方默认值一致
 
 ### 主题系统
 
-- 内置 Onyx（暗色）、Graphite（灰色）、Pearl（亮色）主题
+- 内置 Onyx（暗色）、Graphite（灰色）、Pearl（亮色，默认）与 Sepia（暖米色）4 款精选主题
 - 支持跟随系统主题自动切换
 
 ### 数据管理
@@ -188,8 +196,8 @@
 git clone https://github.com/yeahhe365/AMC-WebUI.git
 cd AMC-WebUI
 
-# 安装依赖
-npm ci
+# 安装依赖（推荐使用 pnpm，亦兼容 npm ci）
+pnpm install
 
 # 启动开发服务器
 pnpm dev
@@ -469,6 +477,7 @@ AMC-WebUI/
 ├── public/                     # 静态资源与 runtime-config.js 模板
 ├── e2e/                        # Playwright 端到端测试
 ├── docs/                       # 截图、model-logos 等文档资源（运行时图标见 src/assets/model-icons/）
+├── docs-site/                  # Astro Starlight 官方文档站点源码
 ├── docker/                     # 部署辅助脚本（如 web-server.js）
 ├── Dockerfile.api              # Node API 容器镜像构建配置
 ├── Dockerfile.web              # Web 前端容器镜像构建配置
@@ -490,14 +499,14 @@ AMC-WebUI/
 
 OpenAI 兼容模式使用独立模型列表，可在设置中手动维护或从兼容端点拉取；下表列出应用内置的 Gemini 原生默认模型。
 
-| 类型                | 模型                                                                                                                              |
-| :------------------ | :-------------------------------------------------------------------------------------------------------------------------------- |
-| **Gemini 3.x**      | gemini-3.8-flash, gemini-3.5-flash-lite, gemini-3.1-flash-live-preview, gemini-3.5-live-translate-preview, gemini-3.1-pro-preview |
-| **Robotics**        | gemini-robotics-er-2-preview                                                                                                      |
-| **Gemma 4**         | gemma-4-31b-it, gemma-4-26b-a4b-it                                                                                                |
-| **图片生成**        | gemini-3-pro-image-preview, gemini-3.1-flash-image-preview, gemini-3.1-flash-lite-image                                           |
-| **TTS**             | gemini-3.1-flash-tts-preview (30 种语音)                                                                                          |
-| **转写 / 实时转写** | gemini-3.5-transcribe, gemini-3.5-transcribe-live                                                                                 |
+| 类型                | 模型                                                                                                                                                |
+| :------------------ | :-------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Gemini 3.x**      | gemini-3.8-flash, gemini-3.7-flash, gemini-3.5-flash-lite, gemini-3.1-flash-live-preview, gemini-3.5-live-translate-preview, gemini-3.1-pro-preview |
+| **Robotics**        | gemini-robotics-er-2-preview                                                                                                                        |
+| **Gemma 4**         | gemma-4-31b-it, gemma-4-26b-a4b-it                                                                                                                  |
+| **图片生成**        | gemini-3-pro-image, gemini-3.1-flash-image, gemini-3.1-flash-lite-image                                                                             |
+| **TTS**             | gemini-3.1-flash-tts-preview (30 种语音)                                                                                                            |
+| **转写 / 实时转写** | gemini-3.5-transcribe, gemini-3.5-transcribe-live                                                                                                   |
 
 ---
 

@@ -299,6 +299,26 @@ describe('chatStore', () => {
       expect(useChatStore.getState().activeMessages).toHaveLength(1);
     });
 
+    it('synchronizes active session messages between activeMessages and savedSessions upon refresh', async () => {
+      const freshMessage = { id: 'm1', role: 'user' as const, content: 'Fresh from DB', timestamp: new Date() };
+      const staleMessage = { id: 'm0', role: 'user' as const, content: 'Stale in memory', timestamp: new Date() };
+      const fullSession = makeSession({
+        id: 's1',
+        messages: [freshMessage],
+      });
+      vi.mocked(dbService.getAllSessionMetadata).mockResolvedValue([{ ...fullSession, messages: [] }]);
+      vi.mocked(dbService.getSession).mockResolvedValue(fullSession);
+
+      useChatStore.getState().setActiveSessionId('s1');
+      useChatStore.getState().setActiveMessages([staleMessage]);
+      useChatStore.getState().setSavedSessions([makeSession({ id: 's1', messages: [staleMessage] })]);
+
+      await useChatStore.getState().refreshSessions();
+
+      expect(useChatStore.getState().activeMessages).toEqual([freshMessage]);
+      expect(useChatStore.getState().savedSessions[0].messages).toEqual([freshMessage]);
+    });
+
     it('does not overwrite active session runtime messages while that session is still loading', async () => {
       const persistedSession = makeSession({
         id: 's1',

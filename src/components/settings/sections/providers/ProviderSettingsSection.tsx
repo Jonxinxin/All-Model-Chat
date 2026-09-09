@@ -98,18 +98,18 @@ export const ProviderSettingsSection: React.FC<ProviderSettingsSectionProps> = (
     updateThirdPartyApi(addThirdPartyConnection(currentSettings, connection));
     setSelectedConnectionId(connection.id);
     setIsAddOpen(false);
-    toastSuccess(`已添加服务商: ${connection.name}`);
+    toastSuccess(t('thirdPartyProviderAdded', { name: connection.name }));
   };
 
   const handleDuplicate = (conn: ThirdPartyConnection) => {
     const duplicated: ThirdPartyConnection = {
       ...conn,
       id: createConnectionId(),
-      name: `${conn.name} 副本`,
+      name: t('thirdPartyCopySuffix', { name: conn.name }),
     };
     updateThirdPartyApi(addThirdPartyConnection(currentSettings, duplicated));
     setSelectedConnectionId(duplicated.id);
-    toastSuccess(`已创建副本: ${duplicated.name}`);
+    toastSuccess(t('thirdPartyCopyCreated', { name: duplicated.name }));
   };
 
   const handleDelete = (id: string) => {
@@ -120,7 +120,7 @@ export const ProviderSettingsSection: React.FC<ProviderSettingsSectionProps> = (
       setSelectedConnectionId(remaining[0]?.id ?? null);
     }
     if (target) {
-      toastSuccess(`已移除服务商: ${target.name}`);
+      toastSuccess(t('thirdPartyProviderRemoved', { name: target.name }));
     }
   };
 
@@ -132,9 +132,9 @@ export const ProviderSettingsSection: React.FC<ProviderSettingsSectionProps> = (
     try {
       const res = await probeThirdPartyConnection(conn);
       if (res.status === 'success') {
-        toastSuccess(`${conn.name}: 连接成功 (${formatLatency(res.latencyMs)})`);
+        toastSuccess(t('thirdPartyTestSuccess', { name: conn.name, latency: formatLatency(res.latencyMs) }));
       } else {
-        toastError(`${conn.name}: 连接失败 - ${res.errorMessage}`);
+        toastError(t('thirdPartyTestFailed', { name: conn.name, error: res.errorMessage || '' }));
       }
     } catch (probeError: any) {
       toastError(`${conn.name}: ${probeError.message}`);
@@ -201,7 +201,7 @@ export const ProviderSettingsSection: React.FC<ProviderSettingsSectionProps> = (
       <div className="flex items-center justify-between px-4 py-2 border-b border-[var(--theme-border-secondary)]/30 bg-[var(--theme-bg-secondary)]/40 text-xs flex-shrink-0">
         <div className="flex items-center gap-2">
           <Server size={14} className="text-[var(--theme-text-secondary)]" />
-          <span className="font-semibold text-[var(--theme-text-primary)]">模型平台与服务商管理</span>
+          <span className="font-semibold text-[var(--theme-text-primary)]">{t('thirdPartyManagementTitle')}</span>
           <span className="text-[var(--theme-text-secondary)]">({connections.length})</span>
         </div>
         <div className="flex items-center gap-2">
@@ -209,20 +209,20 @@ export const ProviderSettingsSection: React.FC<ProviderSettingsSectionProps> = (
             type="button"
             onClick={() => fileInputRef.current?.click()}
             className="flex items-center gap-1 px-2 py-1 rounded-md text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors"
-            title="导入配置"
+            title={t('thirdPartyImportConfig')}
           >
             <Upload size={13} />
-            <span>导入</span>
+            <span>{t('import')}</span>
           </button>
           <button
             type="button"
             onClick={handleExportClick}
             disabled={connections.length === 0}
             className="flex items-center gap-1 px-2 py-1 rounded-md text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors disabled:opacity-40"
-            title="导出配置"
+            title={t('thirdPartyExportConfig')}
           >
             <Download size={13} />
-            <span>导出</span>
+            <span>{t('export')}</span>
           </button>
         </div>
       </div>
@@ -259,7 +259,7 @@ export const ProviderSettingsSection: React.FC<ProviderSettingsSectionProps> = (
                   className="flex items-center gap-1 text-xs text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)]"
                 >
                   <ChevronLeft size={14} />
-                  <span>返回列表</span>
+                  <span>{t('thirdPartyBackToList')}</span>
                 </button>
               </div>
               <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 max-w-3xl w-full mx-auto">
@@ -288,7 +288,7 @@ export const ProviderSettingsSection: React.FC<ProviderSettingsSectionProps> = (
                   className="flex items-center gap-1 text-xs text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)]"
                 >
                   <ChevronLeft size={14} />
-                  <span>返回列表</span>
+                  <span>{t('thirdPartyBackToList')}</span>
                 </button>
               </div>
 
@@ -304,7 +304,7 @@ export const ProviderSettingsSection: React.FC<ProviderSettingsSectionProps> = (
             </div>
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-xs text-[var(--theme-text-secondary)]">
-              <p>请从左侧选择一个服务商以查看和编辑详情</p>
+              <p>{t('thirdPartySelectConnectionHelp')}</p>
             </div>
           )}
         </div>

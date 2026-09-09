@@ -65,7 +65,7 @@ const isVisionSupportedModel = (modelId: string): boolean => {
   return false;
 };
 
-export const isAudioSupportedModel = (modelId: string): boolean => {
+const isAudioSupportedModel = (modelId: string): boolean => {
   const lower = modelId.toLowerCase();
   if (
     lower.includes('tts') ||
@@ -87,7 +87,7 @@ export const isAudioSupportedModel = (modelId: string): boolean => {
   return false;
 };
 
-export const isVideoSupportedModel = (modelId: string): boolean => {
+const isVideoSupportedModel = (modelId: string): boolean => {
   const lower = modelId.toLowerCase();
   if (
     lower.includes('tts') ||
@@ -106,7 +106,7 @@ export const isVideoSupportedModel = (modelId: string): boolean => {
   return false;
 };
 
-export const isPdfSupportedModel = (modelId: string): boolean => {
+const isPdfSupportedModel = (modelId: string): boolean => {
   const lower = modelId.toLowerCase();
   if (
     lower.includes('tts') ||
@@ -275,7 +275,7 @@ const resolveContextWindow = (modelId: string): { contextWindow: string; maxOutp
   return { contextWindow: '32,000 ~ 128,000' };
 };
 
-export const resolveThinkingLevelSpec = (modelId: string): ThinkingLevelSpec | undefined => {
+const resolveThinkingLevelSpec = (modelId: string): ThinkingLevelSpec | undefined => {
   const lower = modelId.toLowerCase();
 
   // Models that do NOT support thinking
@@ -363,8 +363,8 @@ export const formatThinkingLevelSpec = (
     return translated && translated !== key ? translated : l;
   };
   const defaultPrefix = spec.isRecommended
-    ? (t('modelCardThinkingRecommended') || '推荐')
-    : (t('thinkingDefault') || '默认');
+    ? t('modelCardThinkingRecommended') || '推荐'
+    : t('thinkingDefault') || '默认';
 
   if (spec.type === 'discrete' && spec.levels) {
     const names = spec.levels.map((l) => levelText(l)).join(' / ');
@@ -417,7 +417,7 @@ const resolveThinkingBudget = (modelId: string): string | undefined => {
   return undefined;
 };
 
-export const resolveModelDescriptionKey = (modelId: string): string | undefined => {
+const resolveModelDescriptionKey = (modelId: string): string | undefined => {
   const lower = modelId.toLowerCase();
   if (lower.includes('gemini-3.1-pro')) return 'modelDescGemini31Pro';
   if (

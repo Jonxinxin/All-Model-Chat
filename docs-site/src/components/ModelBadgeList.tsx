@@ -40,16 +40,16 @@ const MODELS: ModelInfo[] = [
     id: 'gemini-3.1-pro-preview',
     name: 'Gemini 3.1 Pro Preview',
     category: 'core',
-    contextWindow: '2M Tokens',
+    contextWindow: '1M Tokens',
     features: ['高阶数理', '超大上下文', '32K Token 思考预算'],
     description: '针对深度复杂学术论文分析、大仓代码重构与前沿数理逻辑设计的高阶大模型。',
-    descriptionEn: 'High-capability model with 2M context and up to 32K thinking budget for complex math and coding.',
+    descriptionEn: 'High-capability model with 1M context and up to 32K thinking budget for complex math and coding.',
   },
   {
     id: 'gemini-robotics-er-2-preview',
     name: 'Gemini Robotics-ER 2',
     category: 'special',
-    contextWindow: '1M Tokens',
+    contextWindow: '128K Tokens',
     features: ['具身空间推理', '需绑定 API 限制', '建议思考 Medium'],
     description: '具身智能与三维空间几何理解专属模型，API Key 必须在 AI Studio 配置域名/IP 限制。',
     descriptionEn: 'Embodied spatial reasoning model requiring API key domain/IP restrictions in Google AI Studio.',
@@ -67,16 +67,17 @@ const MODELS: ModelInfo[] = [
     id: 'gemini-3-pro-image-preview',
     name: 'Gemini 3 Pro Image (Nano Banana)',
     category: 'media',
-    contextWindow: '32K Tokens',
+    contextWindow: '64K Tokens',
     features: ['原生生图', '比例定制 (1:1 / 16:9)', '四图并发'],
     description: 'Gemini 原生高质量绘图模型，支持自然语言指令精准控制构图、材质与光影。',
-    descriptionEn: 'Native high-quality text-to-image model supporting custom aspect ratios and multi-image generation.',
+    descriptionEn:
+      'Native high-quality text-to-image model supporting custom aspect ratios and multi-image generation.',
   },
   {
     id: 'gemini-3.1-flash-tts-preview',
     name: 'Gemini 3.1 Flash TTS',
     category: 'media',
-    contextWindow: '32K Tokens',
+    contextWindow: '8K Tokens',
     features: ['30 种拟真音色', '语速动态微调', '多语种自然重音'],
     description: '高表现力语音合成模型，内置 Zephyr、Aoede 等 30 种角色音色。',
     descriptionEn: 'Expressive speech synthesis with 30 lifelike voices and real-time speed adjustment.',
@@ -155,14 +156,14 @@ export const ModelBadgeList: React.FC<ModelBadgeListProps> = ({ locale = 'zh' })
       </div>
 
       <div style={{ position: 'relative', marginBottom: '12px' }}>
-        <Search
-          size={16}
-          color="var(--sl-color-gray-4)"
-          style={{ position: 'absolute', left: '10px', top: '10px' }}
-        />
+        <Search size={16} color="var(--sl-color-gray-4)" style={{ position: 'absolute', left: '10px', top: '10px' }} />
         <input
           type="text"
-          placeholder={isEn ? 'Search model name, model ID, or capability tags...' : '搜索模型名称、ID 或能力特性 (如 flash, 思考, live)...'}
+          placeholder={
+            isEn
+              ? 'Search model name, model ID, or capability tags...'
+              : '搜索模型名称、ID 或能力特性 (如 flash, 思考, live)...'
+          }
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           style={{

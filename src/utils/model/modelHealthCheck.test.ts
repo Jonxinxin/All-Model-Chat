@@ -37,10 +37,13 @@ describe('modelHealthCheck', () => {
 
     const result = await probeSingleModel(MOCK_CONNECTION, 'gpt-4o');
 
-    expect(probeSpy).toHaveBeenCalledWith(MOCK_CONNECTION, expect.objectContaining({
-      modelId: 'gpt-4o',
-      timeoutMs: 12000,
-    }));
+    expect(probeSpy).toHaveBeenCalledWith(
+      MOCK_CONNECTION,
+      expect.objectContaining({
+        modelId: 'gpt-4o',
+        timeoutMs: 12000,
+      }),
+    );
     expect(result.status).toBe('success');
     expect(result.latencyMs).toBe(150);
   });
@@ -116,11 +119,9 @@ describe('modelHealthCheck', () => {
     const controller = new AbortController();
     controller.abort();
 
-    const summary = await runBatchModelHealthCheck(
-      MOCK_CONNECTION,
-      [{ id: 'gpt-4o', name: 'GPT-4o' }],
-      { signal: controller.signal }
-    );
+    const summary = await runBatchModelHealthCheck(MOCK_CONNECTION, [{ id: 'gpt-4o', name: 'GPT-4o' }], {
+      signal: controller.signal,
+    });
 
     expect(summary.successCount).toBe(0);
   });

@@ -89,9 +89,7 @@ export const ProviderEditDialog: React.FC<ProviderEditDialogProps> = ({
         <div className="flex items-center justify-between border-b border-[var(--theme-border-secondary)]/40 pb-3 flex-shrink-0">
           <div className="flex items-center gap-2">
             <Settings size={18} className="text-[var(--theme-text-secondary)]" />
-            <h3 className="text-base font-semibold text-[var(--theme-text-primary)]">
-              {t('settingsEditProvider') || '配置服务商属性'}
-            </h3>
+            <h3 className="text-base font-semibold text-[var(--theme-text-primary)]">{t('settingsEditProvider')}</h3>
           </div>
           <button
             type="button"
@@ -139,17 +137,13 @@ export const ProviderEditDialog: React.FC<ProviderEditDialogProps> = ({
           </div>
           <div className="flex items-center justify-between p-3 rounded-lg border border-[var(--theme-border-secondary)]/40 bg-[var(--theme-bg-secondary)]/30">
             <div>
-              <div className="text-sm font-medium text-[var(--theme-text-primary)]">
-                {t('thirdPartyAuthOptional') || '免 API 密钥认证 (本地/免密接口)'}
-              </div>
-              <div className="text-xs text-[var(--theme-text-secondary)] mt-0.5">
-                {t('thirdPartyAuthOptionalHelp') || '适用于 Ollama、LM Studio 等不需要 API Key 的本地推理引擎'}
-              </div>
+              <div className="text-sm font-medium text-[var(--theme-text-primary)]">{t('thirdPartyAuthOptional')}</div>
+              <div className="text-xs text-[var(--theme-text-secondary)] mt-0.5">{t('thirdPartyAuthOptionalHelp')}</div>
             </div>
             <Toggle
               checked={authOptional}
               onChange={() => setAuthOptional(!authOptional)}
-              ariaLabel={t('thirdPartyAuthOptional') || '免 API 密钥认证'}
+              ariaLabel={t('thirdPartyAuthOptional')}
             />
           </div>
           <div className="space-y-2 pt-2 border-t border-[var(--theme-border-secondary)]/30">
@@ -170,9 +164,7 @@ export const ProviderEditDialog: React.FC<ProviderEditDialogProps> = ({
             </div>
 
             {headerRows.length === 0 ? (
-              <p className="text-xs text-[var(--theme-text-secondary)] italic">
-                {t('thirdPartyNoCustomHeaders') || '无自定义请求头'}
-              </p>
+              <p className="text-xs text-[var(--theme-text-secondary)] italic">{t('thirdPartyNoCustomHeaders')}</p>
             ) : (
               <div className="space-y-2">
                 {headerRows.map((row, index) => (
@@ -225,7 +217,7 @@ export const ProviderEditDialog: React.FC<ProviderEditDialogProps> = ({
               className="flex items-center gap-1.5 text-xs text-[var(--theme-text-danger)] hover:underline cursor-pointer"
             >
               <Trash2 size={13} />
-              <span>删除该服务商</span>
+              <span>{t('thirdPartyDeleteProvider')}</span>
             </button>
           ) : (
             <div />

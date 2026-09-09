@@ -293,16 +293,18 @@ const FilePreviewModalContent: React.FC<FilePreviewModalContentProps> = ({
           ) : isDocx ? (
             docxViewMode === 'rich' && file.rawFile && !isEditing ? (
               <div className="w-full h-full flex flex-col relative">
-                <div className="absolute top-3 sm:top-4 right-4 sm:right-6 z-20">
+                <div className="flex-shrink-0 flex items-center justify-end px-4 py-2 border-b border-[var(--theme-border-secondary)]/50 bg-[var(--theme-bg-secondary)]/40 backdrop-blur-xs z-20">
                   <button
                     type="button"
                     onClick={() => setDocxViewMode('text')}
-                    className="px-3 py-1.5 text-xs rounded-lg bg-[var(--theme-bg-secondary)] border border-[var(--theme-border-secondary)] text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] shadow-md transition-all font-medium"
+                    className="px-2.5 py-1 text-xs rounded-lg bg-[var(--theme-bg-secondary)] border border-[var(--theme-border-secondary)] text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] shadow-2xs transition-all font-medium cursor-pointer"
                   >
                     切换至纯文本模式
                   </button>
                 </div>
-                <DocxViewer file={previewFile} />
+                <div className="flex-1 min-h-0 overflow-hidden">
+                  <DocxViewer file={previewFile} />
+                </div>
               </div>
             ) : isDocxPreviewLoading ? (
               <div className="w-full h-full flex items-center justify-center text-white/70">
@@ -315,24 +317,26 @@ const FilePreviewModalContent: React.FC<FilePreviewModalContentProps> = ({
             ) : (
               <div className="w-full h-full flex flex-col relative">
                 {file.rawFile && !isEditing && (
-                  <div className="absolute top-3 sm:top-4 right-4 sm:right-6 z-20">
+                  <div className="flex-shrink-0 flex items-center justify-end px-4 py-2 border-b border-[var(--theme-border-secondary)]/50 bg-[var(--theme-bg-secondary)]/40 backdrop-blur-xs z-20">
                     <button
                       type="button"
                       onClick={() => setDocxViewMode('rich')}
-                      className="px-3 py-1.5 text-xs rounded-lg bg-[var(--theme-bg-secondary)] border border-[var(--theme-border-secondary)] text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] shadow-md transition-all font-medium"
+                      className="px-2.5 py-1 text-xs rounded-lg bg-[var(--theme-bg-secondary)] border border-[var(--theme-border-secondary)] text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] shadow-2xs transition-all font-medium cursor-pointer"
                     >
                       切换至高保真排版
                     </button>
                   </div>
                 )}
-                <TextFileViewer
-                  file={previewFile}
-                  renderMode="plain"
-                  themeId={currentThemeId}
-                  isEditable={isEditing}
-                  onChange={setEditedContent}
-                  content={isEditing ? editedContent : docxPreviewContent}
-                />
+                <div className="flex-1 min-h-0 overflow-hidden">
+                  <TextFileViewer
+                    file={previewFile}
+                    renderMode="plain"
+                    themeId={currentThemeId}
+                    isEditable={isEditing}
+                    onChange={setEditedContent}
+                    content={isEditing ? editedContent : docxPreviewContent}
+                  />
+                </div>
               </div>
             )
           ) : isSpreadsheet ? (
@@ -389,7 +393,7 @@ const FilePreviewModalContent: React.FC<FilePreviewModalContentProps> = ({
               )}
             </div>
           ) : isYoutube ? (
-            <div className="w-full h-full flex items-center justify-center p-4 pt-20 pb-20">
+            <div className="w-full h-full flex items-center justify-center p-2 sm:p-6 lg:p-8">
               {youtubeEmbedUrl ? (
                 <iframe
                   src={youtubeEmbedUrl}

@@ -5,7 +5,7 @@ import type { ModelOption } from '@/types';
 import { ModelSyncModal } from './ModelSyncModal';
 
 describe('ModelSyncModal', () => {
-  const renderer = setupTestRenderer();
+  const renderer = setupTestRenderer({ providers: { language: 'zh' } });
 
   afterEach(() => {
     vi.clearAllMocks();

@@ -122,7 +122,10 @@ export const normalizeEchartsOption = (raw: unknown): Record<string, unknown> | 
       Array.isArray(record.slices) ||
       (Array.isArray(record.series) &&
         (record.series as unknown[]).some(
-          (s) => s && typeof s === 'object' && ('y' in (s as Record<string, unknown>) || 'points' in (s as Record<string, unknown>)),
+          (s) =>
+            s &&
+            typeof s === 'object' &&
+            ('y' in (s as Record<string, unknown>) || 'points' in (s as Record<string, unknown>)),
         )));
 
   const titleObj = typeof record.title === 'string' && record.title ? { text: record.title } : undefined;
@@ -174,11 +177,7 @@ export const normalizeEchartsOption = (raw: unknown): Record<string, unknown> | 
     if (!xData || !rawSeries || !rawSeries.length) {
       return null;
     }
-    if (
-      rawSeries.some(
-        (s) => !s || typeof s !== 'object' || !Array.isArray((s as Record<string, unknown>).y),
-      )
-    ) {
+    if (rawSeries.some((s) => !s || typeof s !== 'object' || !Array.isArray((s as Record<string, unknown>).y))) {
       return null;
     }
 

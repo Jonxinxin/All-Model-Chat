@@ -24,18 +24,21 @@
 ### Task 1: 工作区配置与文档站包初始化 (Workspace Setup & Package Init)
 
 **Files:**
+
 - Modify: `pnpm-workspace.yaml`
 - Modify: `package.json:30-40`
 - Create: `docs-site/package.json`
 - Create: `docs-site/tsconfig.json`
 
 **Interfaces:**
+
 - Consumes: 主仓库根目录 pnpm 工作区配置
 - Produces: `docs-site` 子包与根目录快捷脚本 (`docs:dev`, `docs:build`, `docs:preview`)
 
 - [ ] **Step 1: 更新 `pnpm-workspace.yaml` 引入 packages 声明**
 
 修改 `/Volumes/WD_BLACK/Code/AMC-WebUI/pnpm-workspace.yaml`，在文件顶部添加 `packages` 列表：
+
 ```yaml
 packages:
   - '.'
@@ -52,6 +55,7 @@ allowBuilds:
 - [ ] **Step 2: 在根 `package.json` 中添加透传脚本**
 
 在根 `/Volumes/WD_BLACK/Code/AMC-WebUI/package.json` 的 `scripts` 中增加：
+
 ```json
     "docs:dev": "pnpm --filter docs-site dev",
     "docs:build": "pnpm --filter docs-site build",
@@ -61,6 +65,7 @@ allowBuilds:
 - [ ] **Step 3: 创建 `docs-site/package.json`**
 
 创建 `/Volumes/WD_BLACK/Code/AMC-WebUI/docs-site/package.json`：
+
 ```json
 {
   "name": "docs-site",
@@ -93,6 +98,7 @@ allowBuilds:
 - [ ] **Step 4: 创建 `docs-site/tsconfig.json`**
 
 创建 `/Volumes/WD_BLACK/Code/AMC-WebUI/docs-site/tsconfig.json`：
+
 ```json
 {
   "extends": "astro/tsconfigs/strict",
@@ -110,9 +116,11 @@ allowBuilds:
 - [ ] **Step 5: 执行 pnpm install 依赖安装与工作区联动校验**
 
 运行命令：
+
 ```bash
 pnpm install
 ```
+
 验证 `docs-site/node_modules` 软链正确，依赖解析无错误。
 
 - [ ] **Step 6: 提交工作区与包基础代码**
@@ -127,17 +135,20 @@ git commit -m "chore(docs): initialize docs-site package and pnpm workspace conf
 ### Task 2: Starlight 配置、Onyx 主题与静态资源准备 (Starlight Config & Onyx Theme)
 
 **Files:**
+
 - Create: `docs-site/astro.config.mjs`
 - Create: `docs-site/src/styles/custom.css`
 - Create: `docs-site/public/favicon.svg`
 
 **Interfaces:**
+
 - Consumes: Task 1 安装的 `@astrojs/starlight` 与 `@astrojs/react`
 - Produces: 具备中英双语、6 大板块侧边栏、Onyx 暗黑视觉的主题架构
 
 - [ ] **Step 1: 编写 `docs-site/astro.config.mjs`**
 
 创建 `/Volumes/WD_BLACK/Code/AMC-WebUI/docs-site/astro.config.mjs`：
+
 ```javascript
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
@@ -169,7 +180,11 @@ export default defineConfig({
           items: [
             { label: '项目简介', slug: 'getting-started/introduction', translations: { en: 'Introduction' } },
             { label: '快速启动', slug: 'getting-started/quickstart', translations: { en: 'Quickstart' } },
-            { label: '服务商与 API 配置', slug: 'getting-started/api-configuration', translations: { en: 'API Configuration' } },
+            {
+              label: '服务商与 API 配置',
+              slug: 'getting-started/api-configuration',
+              translations: { en: 'API Configuration' },
+            },
             { label: 'PWA 与多端体验', slug: 'getting-started/pwa', translations: { en: 'PWA & Desktop' } },
           ],
         },
@@ -187,8 +202,16 @@ export default defineConfig({
           label: '🛠️ 生产力工具箱',
           translations: { en: '🛠️ Productivity Tools' },
           items: [
-            { label: '联网检索 (Search & Maps)', slug: 'tools/web-search-maps', translations: { en: 'Search & Maps Grounding' } },
-            { label: '代码执行与本地沙箱', slug: 'tools/code-and-sandbox', translations: { en: 'Code & Python Sandbox' } },
+            {
+              label: '联网检索 (Search & Maps)',
+              slug: 'tools/web-search-maps',
+              translations: { en: 'Search & Maps Grounding' },
+            },
+            {
+              label: '代码执行与本地沙箱',
+              slug: 'tools/code-and-sandbox',
+              translations: { en: 'Code & Python Sandbox' },
+            },
             { label: 'Live Artifacts 构件', slug: 'tools/live-artifacts', translations: { en: 'Live Artifacts' } },
             { label: '高级文件与多模态', slug: 'tools/files-multimodal', translations: { en: 'Files & Multimodal' } },
             { label: 'MCP 协议生态', slug: 'tools/mcp', translations: { en: 'Model Context Protocol' } },
@@ -201,18 +224,38 @@ export default defineConfig({
             { label: '斜杠命令速查', slug: 'power-user/slash-commands', translations: { en: 'Slash Commands' } },
             { label: '快捷键与快速切换', slug: 'power-user/shortcuts', translations: { en: 'Shortcuts & Gestures' } },
             { label: '语音合成与转写', slug: 'power-user/tts-transcribe', translations: { en: 'TTS & Transcribe' } },
-            { label: '会话与数据管理', slug: 'power-user/data-management', translations: { en: 'Data & Session Management' } },
+            {
+              label: '会话与数据管理',
+              slug: 'power-user/data-management',
+              translations: { en: 'Data & Session Management' },
+            },
           ],
         },
         {
           label: '🚢 架构与私有化部署',
           translations: { en: '🚢 Deployment & Architecture' },
           items: [
-            { label: '架构原理与 Local-First', slug: 'deployment/architecture', translations: { en: 'Architecture & Local-First' } },
+            {
+              label: '架构原理与 Local-First',
+              slug: 'deployment/architecture',
+              translations: { en: 'Architecture & Local-First' },
+            },
             { label: 'Docker Compose 双容器部署', slug: 'deployment/docker', translations: { en: 'Docker Compose' } },
-            { label: '静态托管 + 独立 API', slug: 'deployment/static-and-api', translations: { en: 'Static Hosting + API' } },
-            { label: '环境变量与安全边界', slug: 'deployment/environment-variables', translations: { en: 'Env & Security' } },
-            { label: '精确计费与开发者日志', slug: 'deployment/pricing-and-logs', translations: { en: 'Pricing & Logs' } },
+            {
+              label: '静态托管 + 独立 API',
+              slug: 'deployment/static-and-api',
+              translations: { en: 'Static Hosting + API' },
+            },
+            {
+              label: '环境变量与安全边界',
+              slug: 'deployment/environment-variables',
+              translations: { en: 'Env & Security' },
+            },
+            {
+              label: '精确计费与开发者日志',
+              slug: 'deployment/pricing-and-logs',
+              translations: { en: 'Pricing & Logs' },
+            },
           ],
         },
         {
@@ -234,6 +277,7 @@ export default defineConfig({
 - [ ] **Step 2: 编写 `docs-site/src/styles/custom.css`**
 
 创建 `/Volumes/WD_BLACK/Code/AMC-WebUI/docs-site/src/styles/custom.css`，配置 Onyx 暗黑风格与 Gemini 品牌强调色：
+
 ```css
 :root {
   --sl-color-accent-low: #2e1065;
@@ -279,6 +323,7 @@ starlight-menu-button {
 - [ ] **Step 3: 创建 `docs-site/public/favicon.svg`**
 
 生成与主应用风格一致的 SVG 图标：
+
 ```xml
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
   <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
@@ -297,16 +342,19 @@ git commit -m "feat(docs): configure Astro Starlight with bilingual sidebar and 
 ### Task 3: 中英文官网级 Splash 欢迎首页 (Bilingual Splash Landing Pages)
 
 **Files:**
+
 - Create: `docs-site/src/content/docs/index.md`
 - Create: `docs-site/src/content/docs/en/index.md`
 
 **Interfaces:**
+
 - Consumes: Task 2 的 Starlight 路由与主题
 - Produces: 具有 Hero 大标题、核心特性卡片网格的官网主页
 
 - [ ] **Step 1: 编写中文欢迎页 `docs-site/src/content/docs/index.md`**
 
 创建 `/Volumes/WD_BLACK/Code/AMC-WebUI/docs-site/src/content/docs/index.md`，使用 `template: splash` 与 CardGrid：
+
 ```markdown
 ---
 title: AMC WebUI
@@ -357,6 +405,7 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
 - [ ] **Step 2: 编写英文欢迎页 `docs-site/src/content/docs/en/index.md`**
 
 创建 `/Volumes/WD_BLACK/Code/AMC-WebUI/docs-site/src/content/docs/en/index.md`：
+
 ```markdown
 ---
 title: AMC WebUI
@@ -407,9 +456,11 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
 - [ ] **Step 3: 验证首页构建**
 
 运行：
+
 ```bash
 pnpm --filter docs-site build
 ```
+
 验证无构建报错，首页 HTML 正确生成。
 
 - [ ] **Step 4: 提交欢迎页代码**
@@ -424,11 +475,13 @@ git commit -m "feat(docs): add bilingual splash landing pages with feature grid"
 ### Task 4: React 交互孤岛组件开发 (Interactive React Islands)
 
 **Files:**
+
 - Create: `docs-site/src/components/EnvConfigGenerator.tsx`
 - Create: `docs-site/src/components/SlashCommandFinder.tsx`
 - Create: `docs-site/src/components/ModelBadgeList.tsx`
 
 **Interfaces:**
+
 - Consumes: React 18, `lucide-react`
 - Produces: 3 个在 MDX 中可直接调用的交互组件
 
@@ -450,9 +503,11 @@ git commit -m "feat(docs): add bilingual splash landing pages with feature grid"
 - [ ] **Step 4: 构建并验证 React 组件集成**
 
 运行：
+
 ```bash
 pnpm --filter docs-site build
 ```
+
 确保 React JSX 编译无类型报错。
 
 - [ ] **Step 5: 提交交互孤岛组件代码**
@@ -467,6 +522,7 @@ git commit -m "feat(docs): implement interactive React islands for config genera
 ### Task 5: 核心中文文档编写 - 基础与模型篇 (Chinese Docs: Getting Started & Models)
 
 **Files:**
+
 - Create: `docs-site/src/content/docs/getting-started/introduction.mdx`
 - Create: `docs-site/src/content/docs/getting-started/quickstart.mdx`
 - Create: `docs-site/src/content/docs/getting-started/api-configuration.mdx`
@@ -477,6 +533,7 @@ git commit -m "feat(docs): implement interactive React islands for config genera
 - Create: `docs-site/src/content/docs/models/openai-compatible.mdx`
 
 **Interfaces:**
+
 - Consumes: 源码 `src/constants/modelConfiguration.ts`、`src/utils/model/modelCapabilities.ts`、`README.md`
 - Produces: 8 篇结构严密、代码与图例清晰的中文指南
 
@@ -510,6 +567,7 @@ git commit -m "docs: add getting started and models guide chapters"
 ### Task 6: 核心中文文档编写 - 工具、极客、部署与排错篇 (Chinese Docs: Tools, Power User, Deployment & FAQ)
 
 **Files:**
+
 - Create: `docs-site/src/content/docs/tools/web-search-maps.mdx`
 - Create: `docs-site/src/content/docs/tools/code-and-sandbox.mdx`
 - Create: `docs-site/src/content/docs/tools/live-artifacts.mdx`
@@ -529,6 +587,7 @@ git commit -m "docs: add getting started and models guide chapters"
 - Create: `docs-site/src/content/docs/faq/storage-and-reset.mdx`
 
 **Interfaces:**
+
 - Consumes: Task 4 的 React 孤岛组件（`<SlashCommandFinder />`, `<EnvConfigGenerator />`）
 - Produces: 17 篇高质量中文功能与技术剖析文档
 
@@ -560,6 +619,7 @@ git commit -m "docs: add getting started and models guide chapters"
 - [ ] **Step 5: 验证中文全量文档构建**
 
 运行：
+
 ```bash
 pnpm --filter docs-site build
 ```
@@ -576,6 +636,7 @@ git commit -m "docs: complete full Chinese documentation suite across all 6 modu
 ### Task 7: 英文双语对应文档建设 (English Documentation Parity)
 
 **Files:**
+
 - Create: `docs-site/src/content/docs/en/getting-started/*.mdx`
 - Create: `docs-site/src/content/docs/en/models/*.mdx`
 - Create: `docs-site/src/content/docs/en/tools/*.mdx`
@@ -584,6 +645,7 @@ git commit -m "docs: complete full Chinese documentation suite across all 6 modu
 - Create: `docs-site/src/content/docs/en/faq/*.mdx`
 
 **Interfaces:**
+
 - Consumes: Task 5 与 Task 6 的中文文档体系
 - Produces: 结构、slug 与内容完全对齐的英文 MDX 文档集
 
@@ -596,9 +658,11 @@ git commit -m "docs: complete full Chinese documentation suite across all 6 modu
 - [ ] **Step 3: 运行完整双语构建并检查未翻译回退**
 
 运行：
+
 ```bash
 pnpm --filter docs-site build
 ```
+
 确保全量中英文路由均正确生成静态 HTML。
 
 - [ ] **Step 4: 提交英文文档代码**
@@ -613,20 +677,25 @@ git commit -m "docs: achieve full English bilingual parity for all chapters"
 ### Task 8: 全量构建验收、离线检索验证与提交 (Verification & Final Acceptance)
 
 **Files:**
+
 - Modify: `README.md:1-50` (添加官方文档站点入口链接)
 - Modify: `README.en.md:1-50`
 
 **Interfaces:**
+
 - Consumes: Task 1 到 Task 7 的全部构建产物
 - Produces: 具备离线检索能力的发布包 `docs-site/dist/`，并在 README 中更新入口
 
 - [ ] **Step 1: 验证生产环境纯静态全量构建**
 
 在仓库根目录执行：
+
 ```bash
 pnpm run docs:build
 ```
+
 预期结果：
+
 1. Astro 成功生成 `docs-site/dist/`。
 2. Pagefind 自动完成多语言索引构建，在输出中看到 `[pagefind] Indexed ... pages`。
 3. 零 TypeScript 类型报错。
@@ -634,10 +703,13 @@ pnpm run docs:build
 - [ ] **Step 2: 验证离线本地预览**
 
 在仓库根目录执行：
+
 ```bash
 pnpm run docs:preview
 ```
+
 打开本地地址，验证：
+
 1. 首页 Splash 视觉效果及按钮跳转正确。
 2. 侧边栏 6 大板块折叠与跳转正常。
 3. 中英文一键平滑切换，URL 正确由 `/` 切换为 `/en/`。
@@ -647,6 +719,7 @@ pnpm run docs:preview
 - [ ] **Step 3: 在 `README.md` 与 `README.en.md` 顶部增加文档站点 Badge**
 
 在徽章区域增加：
+
 ```markdown
 <a href="https://all-model-chat-docs.pages.dev/" target="_blank">
   <img src="https://img.shields.io/badge/官方文档-Documentation-8b5cf6?style=for-the-badge&logo=astro&logoColor=white" alt="Documentation">

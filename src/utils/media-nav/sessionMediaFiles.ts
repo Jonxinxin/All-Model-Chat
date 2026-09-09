@@ -8,9 +8,16 @@ import {
   isVideoFile,
   isVideoMimeType,
 } from '@/utils/file/fileTypeClassification';
+import { extractYoutubeVideoId, isYoutubeUrl } from '@/utils/file/youtubeUrl';
 import type { ChatMessage, ContentPart, UploadedFile } from '@/types';
 
 export { isAudioFile, isImageFile, isPdfFile, isVideoFile };
+
+export const isYoutubeVideoFile = (file: { name?: string; type?: string; fileUri?: string }): boolean =>
+  file.type === 'video/youtube-link' || isYoutubeUrl(file.fileUri) || isYoutubeUrl(file.name);
+
+export const isNavigableVideoFile = (file: { name?: string; type?: string; fileUri?: string }): boolean =>
+  isVideoFile(file) || isYoutubeVideoFile(file);
 
 const partMimeType = (part: ContentPart): string | undefined =>
   'inlineData' in part ? part.inlineData?.mimeType : 'fileData' in part ? part.fileData?.mimeType : undefined;
@@ -37,9 +44,9 @@ const collectDeduped = (
 const collectSessionPdfFiles = (selectedFiles: UploadedFile[], activeMessages: ChatMessage[]): UploadedFile[] =>
   collectDeduped(selectedFiles, activeMessages, isPdfFile);
 
-/** Collect every video attachment of the current session, same ordering rules. */
+/** Collect every video attachment of the current session, same ordering rules (including YouTube). */
 const collectSessionVideoFiles = (selectedFiles: UploadedFile[], activeMessages: ChatMessage[]): UploadedFile[] =>
-  collectDeduped(selectedFiles, activeMessages, isVideoFile);
+  collectDeduped(selectedFiles, activeMessages, isNavigableVideoFile);
 
 /** Collect every audio attachment of the current session, same ordering rules. */
 export const collectSessionAudioFiles = (
@@ -67,9 +74,14 @@ export const collectSessionMediaFiles = (
 export const partsContainPdf = (parts: ContentPart[] | undefined): boolean =>
   !!parts?.some((part) => isPdfMimeType(partMimeType(part)));
 
-/** True when any API part carries a video payload (inline or Files-API reference). */
+/** True when any API part carries a video payload (inline, Files-API reference, or YouTube URI). */
 export const partsContainVideo = (parts: ContentPart[] | undefined): boolean =>
-  !!parts?.some((part) => isVideoMimeType(partMimeType(part)));
+  !!parts?.some((part) => {
+    const mime = partMimeType(part);
+    if (isVideoMimeType(mime)) return true;
+    if ('fileData' in part && isYoutubeUrl(part.fileData?.fileUri)) return true;
+    return false;
+  });
 
 /** True when any API part carries an audio payload (inline or Files-API reference). */
 export const partsContainAudio = (parts: ContentPart[] | undefined): boolean =>
@@ -84,7 +96,7 @@ export const partsContainImage = (parts: ContentPart[] | undefined): boolean =>
  * (from locate markers or seek URLs) and an optional active file id.
  * Handles path prefixes, case insensitivity, missing extensions, and bidirectional substring matches.
  */
-export const resolveNamedFile = <T extends { id: string; name: string }>(
+export const resolveNamedFile = <T extends { id: string; name: string; fileUri?: string }>(
   files: T[],
   locateName?: string,
   activeFileId?: string | null,
@@ -97,6 +109,21 @@ export const resolveNamedFile = <T extends { id: string; name: string }>(
     const lowerRaw = raw.toLowerCase();
     const lowerBase = base.toLowerCase();
     const baseWithoutExt = lowerBase.replace(/\.[^/.]+$/, '');
+
+    // 0. YouTube Video ID or URL match
+    const locateYoutubeId = extractYoutubeVideoId(raw);
+    if (locateYoutubeId) {
+      const matchById = files.find((file) => {
+        const fileId = extractYoutubeVideoId(file.fileUri) || extractYoutubeVideoId(file.name);
+        return fileId === locateYoutubeId;
+      });
+      if (matchById) return matchById;
+    }
+
+    const matchByUri = files.find(
+      (file) => file.fileUri && (file.fileUri === raw || file.fileUri.toLowerCase() === lowerRaw),
+    );
+    if (matchByUri) return matchByUri;
 
     // 1. Exact match (raw or base name)
     const exact = files.find((file) => file.name === raw || file.name === base);
@@ -136,4 +163,13 @@ export const resolveNamedFile = <T extends { id: string; name: string }>(
   }
 
   return files[0];
+};
+
+/** Returns a human-friendly display name for a media file (e.g. "YouTube (videoId)" for YouTube links). */
+export const formatMediaNavDisplayName = (file: { name: string; fileUri?: string }): string => {
+  const ytId = extractYoutubeVideoId(file.fileUri) || extractYoutubeVideoId(file.name);
+  if (ytId) {
+    return `YouTube (${ytId})`;
+  }
+  return file.name;
 };

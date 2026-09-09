@@ -21,6 +21,14 @@ const mockAudioFile: UploadedFile = {
   dataUrl: 'blob:mock-audio-url',
 };
 
+const mockYoutubeFile: UploadedFile = {
+  id: 'test-yt-1',
+  name: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+  type: 'video/youtube-link',
+  fileUri: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+  size: 0,
+};
+
 describe('MediaNavView', () => {
   const renderer = setupTestRenderer({ providers: { language: 'en' } });
 
@@ -42,6 +50,14 @@ describe('MediaNavView', () => {
     // Controls play button
     const playBtn = renderer.container.querySelector('button[aria-label="Play"]');
     expect(playBtn).not.toBeNull();
+  });
+
+  it('renders YoutubeNavPlayer when file is YouTube video', () => {
+    renderer.render(<MediaNavView file={mockYoutubeFile} kind="video" />);
+    const ytPlayer = renderer.container.querySelector('[data-testid="youtube-nav-player"]');
+    expect(ytPlayer).not.toBeNull();
+    const iframe = renderer.container.querySelector('[data-testid="youtube-nav-iframe"]');
+    expect(iframe).not.toBeNull();
   });
 
   it('renders audio player when kind is audio', () => {

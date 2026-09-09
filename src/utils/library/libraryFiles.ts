@@ -1,6 +1,7 @@
 import type { SavedChatSession, UploadedFile, LibraryItem, LibraryFilterState, LibraryFileTypeFilter } from '@/types';
 import { getFileKindFlags } from '@/utils/file/fileTypeClassification';
 import { fileToBlobUrl } from '@/utils/file/filePreviewUrls';
+import { EXTENSION_TO_MIME, MIME_TO_EXTENSION_MAP } from '@/constants/fileTypeSupport';
 
 export const getLibraryFileType = (type: string, name: string): LibraryFileTypeFilter => {
   const flags = getFileKindFlags({ type, name });
@@ -134,6 +135,173 @@ export const extractLibraryItemsFromSessions = (sessions: SavedChatSession[]): L
   return Array.from(itemMap.values());
 };
 
+// Build precomputed MIME-to-extensions lookup
+const MIME_TO_ALL_EXTENSIONS: Map<string, Set<string>> = new Map();
+
+for (const [ext, mime] of Object.entries(EXTENSION_TO_MIME)) {
+  const normMime = mime.toLowerCase();
+  const cleanExt = ext.replace(/^\./, '').toLowerCase();
+  let set = MIME_TO_ALL_EXTENSIONS.get(normMime);
+  if (!set) {
+    set = new Set();
+    MIME_TO_ALL_EXTENSIONS.set(normMime, set);
+  }
+  set.add(cleanExt);
+}
+
+for (const [mime, ext] of Object.entries(MIME_TO_EXTENSION_MAP)) {
+  const normMime = mime.toLowerCase();
+  const cleanExt = ext.replace(/^\./, '').toLowerCase();
+  let set = MIME_TO_ALL_EXTENSIONS.get(normMime);
+  if (!set) {
+    set = new Set();
+    MIME_TO_ALL_EXTENSIONS.set(normMime, set);
+  }
+  set.add(cleanExt);
+}
+
+// Common extension aliases / family mappings
+const EXTENSION_ALIASES: Record<string, string[]> = {
+  jpg: ['jpeg'],
+  jpeg: ['jpg'],
+  yml: ['yaml'],
+  yaml: ['yml'],
+  htm: ['html'],
+  html: ['htm'],
+  md: ['markdown'],
+  markdown: ['md'],
+  doc: ['docx'],
+  docx: ['doc'],
+  xls: ['xlsx'],
+  xlsx: ['xls'],
+  ppt: ['pptx'],
+  pptx: ['ppt'],
+  js: ['jsx', 'mjs', 'cjs'],
+  ts: ['tsx'],
+};
+
+/**
+ * Extracts all relevant extensions associated with a library item (from its filename and MIME type).
+ * Returns extensions in lowercase, without a leading dot.
+ */
+export const getItemExtensions = (name: string, type?: string): Set<string> => {
+  const exts = new Set<string>();
+
+  // 1. Extract extension from filename
+  const nameLower = (name || '').trim().toLowerCase();
+  const lastDot = nameLower.lastIndexOf('.');
+  if (lastDot > 0 && lastDot < nameLower.length - 1) {
+    const ext = nameLower.slice(lastDot + 1);
+    if (/^[a-z0-9]{1,16}$/.test(ext)) {
+      exts.add(ext);
+
+      // Check compound extension (e.g., tar.gz)
+      const secondLastDot = nameLower.lastIndexOf('.', lastDot - 1);
+      if (secondLastDot > 0) {
+        const compoundExt = nameLower.slice(secondLastDot + 1);
+        if (/^[a-z0-9]+\.[a-z0-9]+$/.test(compoundExt)) {
+          exts.add(compoundExt);
+        }
+      }
+    }
+  }
+
+  // 2. Extract extensions from MIME type
+  if (type) {
+    const normMime = type.trim().toLowerCase().split(';')[0];
+    const mapped = MIME_TO_ALL_EXTENSIONS.get(normMime);
+    if (mapped) {
+      mapped.forEach((e) => exts.add(e));
+    }
+
+    const slashIdx = normMime.indexOf('/');
+    if (slashIdx !== -1) {
+      const sub = normMime
+        .slice(slashIdx + 1)
+        .split('+')[0]
+        .replace(/^x-/, '');
+      if (/^[a-z0-9]{1,16}$/.test(sub)) {
+        exts.add(sub);
+      }
+    }
+  }
+
+  // 3. Add aliases
+  for (const ext of Array.from(exts)) {
+    const aliases = EXTENSION_ALIASES[ext];
+    if (aliases) {
+      for (const alias of aliases) {
+        exts.add(alias);
+      }
+    }
+  }
+
+  return exts;
+};
+
+/**
+ * Checks if a library item matches a single search token.
+ * Supports:
+ * - Direct substring match on item.name or item.sessionTitle
+ * - Explicit extension filter ("ext:pdf", "extension:pdf", "ext:.pdf")
+ * - Dot-prefixed extension match (".pdf", ".png", ".tar.gz", ".p")
+ * - Wildcard patterns ("*.pdf", "*pdf")
+ * - Bare extension match ("pdf", "docx", "xlsx", etc.) against filename extensions or MIME types
+ */
+export const matchesLibrarySearchToken = (item: LibraryItem, token: string, itemExts: Set<string>): boolean => {
+  const nameLower = (item.name || '').toLowerCase();
+  const sessionTitleLower = (item.sessionTitle || '').toLowerCase();
+
+  // Normalize wildcards: e.g. *.pdf -> .pdf, *pdf -> pdf
+  let normalizedToken = token;
+  if (normalizedToken.startsWith('*.')) {
+    normalizedToken = normalizedToken.slice(1);
+  } else if (normalizedToken.startsWith('*') && normalizedToken.length > 1) {
+    normalizedToken = normalizedToken.slice(1);
+  }
+
+  // 1. Explicit extension filter: "ext:pdf", "extension:pdf", "ext:.pdf"
+  if (normalizedToken.startsWith('ext:') || normalizedToken.startsWith('extension:')) {
+    const targetExt = normalizedToken
+      .replace(/^(ext|extension):/, '')
+      .replace(/^\./, '')
+      .toLowerCase();
+    if (!targetExt) return true;
+    for (const ext of itemExts) {
+      if (ext === targetExt || ext.startsWith(targetExt)) return true;
+    }
+    return false;
+  }
+
+  // 2. Dot-prefixed query: ".pdf", ".png", ".tar.gz", ".p"
+  if (normalizedToken.startsWith('.')) {
+    const cleanToken = normalizedToken.slice(1);
+    if (!cleanToken) return itemExts.size > 0;
+
+    // Check if filename ends with or contains the dot string
+    if (nameLower.endsWith(normalizedToken) || nameLower.includes(normalizedToken)) return true;
+    if (sessionTitleLower.includes(normalizedToken)) return true;
+
+    // Check extension matching (exact or prefix match, e.g. .pd -> .pdf)
+    for (const ext of itemExts) {
+      if (ext === cleanToken || ext.startsWith(cleanToken)) return true;
+    }
+    return false;
+  }
+
+  // 3. Normal token: match filename or sessionTitle substring
+  if (nameLower.includes(normalizedToken) || sessionTitleLower.includes(normalizedToken)) {
+    return true;
+  }
+
+  // 4. Extension / file format match
+  if (itemExts.has(normalizedToken)) {
+    return true;
+  }
+
+  return false;
+};
+
 export const filterAndSortLibraryItems = (items: LibraryItem[], filters: LibraryFilterState): LibraryItem[] => {
   let filtered = items;
 
@@ -158,14 +326,14 @@ export const filterAndSortLibraryItems = (items: LibraryItem[], filters: Library
     filtered = filtered.filter((item) => getLibraryFileType(item.type, item.name) === filters.fileType);
   }
 
-  // Search query filter
-  if (filters.searchQuery.trim()) {
-    const query = filters.searchQuery.trim().toLowerCase();
-    filtered = filtered.filter(
-      (item) =>
-        item.name.toLowerCase().includes(query) ||
-        (item.sessionTitle && item.sessionTitle.toLowerCase().includes(query)),
-    );
+  // Search query filter (supports filename, session title, file extension, and multi-token queries)
+  const rawSearch = filters.searchQuery.trim().toLowerCase();
+  if (rawSearch) {
+    const tokens = rawSearch.split(/\s+/).filter(Boolean);
+    filtered = filtered.filter((item) => {
+      const itemExts = getItemExtensions(item.name, item.type);
+      return tokens.every((token) => matchesLibrarySearchToken(item, token, itemExts));
+    });
   }
 
   // Sort

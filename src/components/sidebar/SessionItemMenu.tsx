@@ -1,6 +1,6 @@
 import React, { type RefObject } from 'react';
 import { useI18n } from '@/contexts/I18nContext';
-import { SquarePen, Trash2, Pin, PinOff, Download, Copy, FolderInput, Folder, Check } from 'lucide-react';
+import { SquarePen, Trash2, Pin, PinOff, Download, Copy, FolderInput, Folder, Check, Sparkles } from 'lucide-react';
 import { type ChatGroup, type SavedChatSession } from '@/types';
 import {
   DropdownMenuContent,
@@ -22,6 +22,8 @@ export interface SessionItemMenuProps {
   onDuplicate: () => void;
   onExport: () => void;
   onDelete: () => void;
+  onRegenerateTitle?: () => void;
+  isGeneratingTitle?: boolean;
 }
 
 export const SessionItemMenu: React.FC<SessionItemMenuProps> = ({
@@ -34,8 +36,16 @@ export const SessionItemMenu: React.FC<SessionItemMenuProps> = ({
   onDuplicate,
   onExport,
   onDelete,
+  onRegenerateTitle,
+  isGeneratingTitle = false,
 }) => {
   const { t } = useI18n();
+  const isStartingEditRef = React.useRef(false);
+
+  const handleStartEdit = () => {
+    isStartingEditRef.current = true;
+    onStartEdit();
+  };
 
   return (
     <DropdownMenuContent
@@ -44,12 +54,25 @@ export const SessionItemMenu: React.FC<SessionItemMenuProps> = ({
       sideOffset={4}
       className="w-52 p-1.5"
       onClick={(e) => e.stopPropagation()}
+      onCloseAutoFocus={(e) => {
+        if (isStartingEditRef.current) {
+          e.preventDefault();
+          isStartingEditRef.current = false;
+        }
+      }}
     >
-      <DropdownMenuItem onSelect={onStartEdit}>
+      <DropdownMenuItem onSelect={handleStartEdit}>
         <SquarePen size={14} className="text-[var(--theme-text-secondary)]" />
         <span>{t('edit')}</span>
         <DropdownMenuShortcut>Enter</DropdownMenuShortcut>
       </DropdownMenuItem>
+
+      {onRegenerateTitle && (
+        <DropdownMenuItem onSelect={onRegenerateTitle} disabled={isGeneratingTitle}>
+          <Sparkles size={14} className="text-[var(--theme-text-secondary)]" />
+          <span>{t('regenerateTitle')}</span>
+        </DropdownMenuItem>
+      )}
 
       <DropdownMenuItem onSelect={onTogglePin}>
         {session.isPinned ? (

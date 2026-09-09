@@ -45,7 +45,10 @@ vi.mock('@/utils/chatApiRoute', () => ({
   isUnavailableThirdPartyRoute: (route: { unavailable?: string }) => route.unavailable !== undefined,
 }));
 vi.mock('@/services/api/geminiApiBaseUrl', () => ({ isGeminiProxyRelativePath: mocks.isGeminiProxyRelativePath }));
-vi.mock('@/utils/chat/builder', () => ({ createChatHistoryForApi: mocks.createChatHistoryForApi }));
+vi.mock('@/utils/chat/builder', () => ({
+  createChatHistoryForApi: mocks.createChatHistoryForApi,
+  appendTurnToHistory: (history: unknown[], role: string, parts: unknown[]) => [...(history || []), { role, parts }],
+}));
 vi.mock('@/services/api/generationConfig', () => ({
   buildGenerationConfig: mocks.buildGenerationConfig,
   appendFunctionDeclarationsToTools: mocks.appendFunctionDeclarationsToTools,

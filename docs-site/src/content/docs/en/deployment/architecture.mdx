@@ -26,7 +26,7 @@ Understanding AMC WebUI's architecture and request pipelines is essential for se
    │  • /api/gemini/*    -> Gemini proxy & key fallback │
    │  • /api/openai/*    -> Third-party provider routing│
    │  • /api/live (WS)   -> Live bidirectional WS proxy │
-   │  • stdio MCP bridge (Controlled environment)       │
+   │  • /api/mcp/*       -> MCP Bridge (stdio/SSE/HTTP) │
    └───────────┬────────────────────────────────────────┘
                │
    ┌───────────▼────────────────────────────────────────┐

@@ -207,9 +207,15 @@ const supportsThinkingLevel = (modelId: string): boolean => {
   );
 };
 
-const isGemini3ImageModel = (modelId: string): boolean =>
-  normalizeModelId(modelId) === 'gemini-3-pro-image-preview' ||
-  normalizeModelId(modelId) === 'gemini-3.1-flash-image-preview';
+const isGemini3ImageModel = (modelId: string): boolean => {
+  const norm = normalizeModelId(modelId);
+  return (
+    norm === 'gemini-3-pro-image' ||
+    norm === 'gemini-3-pro-image-preview' ||
+    norm === 'gemini-3.1-flash-image' ||
+    norm === 'gemini-3.1-flash-image-preview'
+  );
+};
 
 export const isImageGenerationModel = (modelId: string): boolean => modelId.toLowerCase().includes('image');
 

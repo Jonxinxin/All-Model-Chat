@@ -5,7 +5,7 @@ import type { SupportedLanguage } from '@/i18n/languageRegistry';
 
 type LiveArtifactsPromptModule = typeof import('./liveArtifacts');
 
-const LIVE_ARTIFACTS_PROMPT_MARKERS = [
+export const LIVE_ARTIFACTS_PROMPT_MARKERS = [
   '[Live Artifacts Inline Protocol - zh]',
   '[Live Artifacts Inline Protocol - en]',
   // Legacy Live Artifacts markers are recognized so old saved settings can still be toggled off.
@@ -24,8 +24,8 @@ const LIVE_ARTIFACTS_PROMPT_MARKERS = [
   '<title>Canvas 助手：响应式视觉指南</title>',
   '<title>Canvas Assistant: Responsive Visual Guide</title>',
 ];
-const BBOX_PROMPT_MARKER = '**任务：** 请作为一位计算机视觉专家';
-const HD_GUIDE_PROMPT_MARKER = '### 系统提示词：高清引导标注专家';
+export const BBOX_PROMPT_MARKER = '**任务：** 请作为一位计算机视觉专家';
+export const HD_GUIDE_PROMPT_MARKER = '### 系统提示词：高清引导标注专家';
 
 export const isLiveArtifactsSystemInstruction = (instruction?: string | null) =>
   !!instruction && LIVE_ARTIFACTS_PROMPT_MARKERS.some((marker) => instruction.includes(marker));

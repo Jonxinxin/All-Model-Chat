@@ -33,4 +33,3 @@ describe('Tooltip', () => {
     expect(screen.getByRole('button', { name: 'Dark hover' })).toBeInTheDocument();
   });
 });
-

@@ -119,7 +119,13 @@ export const SettingsContent: React.FC<SettingsContentProps> = ({
   };
 
   return (
-    <div className={activeTab === 'providers' ? 'w-full h-full flex-1 flex flex-col min-h-0 overflow-hidden' : 'max-w-3xl mx-auto w-full'}>
+    <div
+      className={
+        activeTab === 'providers'
+          ? 'w-full h-full flex-1 flex flex-col min-h-0 overflow-hidden'
+          : 'max-w-3xl mx-auto w-full'
+      }
+    >
       {activeTab === 'models' && (
         <div className={animClass}>
           <ModelsSection

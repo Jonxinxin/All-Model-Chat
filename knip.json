@@ -1,7 +1,12 @@
 {
-  "entry": ["server/src/index.ts"],
+  "workspaces": {
+    ".": {
+      "entry": ["server/src/index.ts"]
+    }
+  },
   "ignore": ["docker/web-server.js", "public/runtime-config.js", "e2e/fixtures/mcp-test-server.mjs"],
   "ignoreDependencies": ["pdfjs-dist", "pyodide", "lamejs", "@iconify-json/material-icon-theme"],
+  "ignoreBinaries": ["wrangler"],
   "ignoreExportsUsedInFile": {
     "interface": true,
     "type": true
@@ -11,7 +16,10 @@
     "src/components/shared/ContextMenu.tsx": ["exports"],
     "src/components/shared/Dialog.tsx": ["exports"],
     "src/components/shared/DropdownMenu.tsx": ["exports"],
+    "src/components/shared/Popover.tsx": ["exports"],
+    "src/components/shared/Select.tsx": ["exports"],
     "src/utils/export/**": ["exports"],
-    "src/stores/syncedPersist.ts": ["types"]
+    "src/stores/syncedPersist.ts": ["types"],
+    "vite/staticAssets.ts": ["exports"]
   }
 }

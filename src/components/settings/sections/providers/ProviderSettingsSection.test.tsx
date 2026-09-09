@@ -8,7 +8,7 @@ import type { AppSettings } from '@/types';
 import { ProviderSettingsSection } from './ProviderSettingsSection';
 
 describe('ProviderSettingsSection', () => {
-  const renderer = setupTestRenderer();
+  const renderer = setupTestRenderer({ providers: { language: 'zh' } });
   setupStoreStateReset();
 
   afterEach(() => {

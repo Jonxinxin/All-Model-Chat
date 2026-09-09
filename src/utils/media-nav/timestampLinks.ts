@@ -2,20 +2,47 @@ import { formatTimestamp, parseTimestamp } from './timestamp';
 import { parseTagAttributes } from './tagAttributes';
 import { transformMarkdownTextSegments } from '@/utils/markdownSegments';
 
+// Valid timestamp segment: mm:ss (where ss is 00-59) or hh:mm:ss (where mm and ss are 00-59)
+const TIME_SEGMENT_PATTERN = '(?:\\d{1,2}:[0-5]\\d:[0-5]\\d|\\d{1,3}:[0-5]\\d)';
+
 // Matches mm:ss or hh:mm:ss, with optional range separator (- ~ – — 至 到 to)
-const TIMESTAMP_PATTERN =
-  /(?<![:\d])(\b\d{1,2}:\d{2}(?::\d{2})?)(?:\s*(?:[-–—~至到]|to)\s*(\d{1,2}:\d{2}(?::\d{2})?))?(?![:\d])\b/g;
+const TIMESTAMP_PATTERN = new RegExp(
+  `(?<![:\\d])(${TIME_SEGMENT_PATTERN})(?:\\s*(?:[-–—~至到]|to)\\s*(${TIME_SEGMENT_PATTERN}))?(?![:\\d])`,
+  'g',
+);
 
 // Matches timestamps optionally enclosed in [brackets] or (parentheses), including Chinese full-width （） and 【】
-const TIMESTAMP_BRACKET_PATTERN =
-  /(?:([[(（【])(?<![:\d]))?(\b\d{1,2}:\d{2}(?::\d{2})?)(?:\s*(?:[-–—~至到]|to)\s*(\d{1,2}:\d{2}(?::\d{2})?))?(?![:\d])\b(?:([\])）】]))?/g;
+export const TIMESTAMP_BRACKET_PATTERN = new RegExp(
+  `(?<![:\\d])(?:([[(（【]))?(${TIME_SEGMENT_PATTERN})(?:\\s*(?:[-–—~至到]|to)\\s*(${TIME_SEGMENT_PATTERN}))?(?![:\\d])(?:([\\])）】]))?`,
+  'g',
+);
+
+/** Checks whether a matched timestamp pattern appears in non-timestamp contexts like ratios, scores, or AM/PM times. */
+export const isFalsePositiveTimestampContext = (preceding: string, succeeding: string): boolean => {
+  // 1. Ratio / Aspect Ratio / Scale (e.g., "比例 1:20", "长宽比 16:10", "缩放比例 1:50", "aspect ratio 16:10")
+  if (/(?:比例|长宽比|纵横比|比例尺|比值|宽高比|ratio|scale|aspect\s*ratio)\s*(?:为|是|：|:)?\s*$/i.test(preceding)) {
+    return true;
+  }
+
+  // 2. Scores (e.g., "比分 2:10", "总比分 1:20", "战成 1:10")
+  if (/(?:比分|总比分|局分|战成|打成|领先|落后|score|scores)\s*(?:为|是|：|:)?\s*$/i.test(preceding)) {
+    return true;
+  }
+
+  // 3. Explicit clock times of day (e.g., "上午 10:30", "下午 02:30", "晚上 08:00", "09:30 am", "04:15 pm")
+  if (/(?:上午|下午|晚上|早晨|清晨|中午|凌晨)\s*$/i.test(preceding) || /^\s*(?:am|pm)\b/i.test(succeeding)) {
+    return true;
+  }
+
+  return false;
+};
 
 // Matches markdown links so we don't transform timestamps inside existing links [text](url)
 const MARKDOWN_LINK_PATTERN = /\[((?:\\\]|[^\]])+)\]\(([^)]+)\)/g;
 
-const TIME_LOCATE_TAG_RE = /<(?:video|audio)-locate\b([^>]*?)(?:\/>|>([\s\S]*?)<\/(?:video|audio)-locate>)/gi;
+const TIME_LOCATE_TAG_RE = /<(video|audio)-locate\b([^>]*?)(?:\/>|>([\s\S]*?)<\/\1-locate>)/gi;
 const INLINE_TIME_LOCATE_RE =
-  /(?:(\r?\n[ \t]*)|([ \t]*))<(?:video|audio)-locate\b([^>]*?)(?:\/>|>([\s\S]*?)<\/(?:video|audio)-locate>)/gi;
+  /(?:(\r?\n[ \t]*)|([ \t]*))<(video|audio)-locate\b([^>]*?)(?:\/>|>([\s\S]*?)<\/\3-locate>)/gi;
 const PARTIAL_TIME_LOCATE_RE = /<(?:video|audio)-locate\b[^>]*(?:>[^<]*)?$/i;
 
 // Matches lone timestamps wrapped in inline backticks outside fenced code blocks, e.g. `[00:00-00:09]` or `00:15`
@@ -25,6 +52,7 @@ const LONE_TIMESTAMP_BACKTICK_RE =
 interface OmittedLocateMeta {
   start: number;
   end: number | null;
+  kind?: 'video' | 'audio';
   point?: string;
   box?: string;
   video?: string;
@@ -73,7 +101,11 @@ const checkPrecedingTextHasMatchingTimestamp = (precedingText: string, startSec:
   return false;
 };
 
-const buildVideoSeekMarkdownLink = (attrs: Record<string, string>, inner: string): string | null => {
+const buildVideoSeekMarkdownLink = (
+  attrs: Record<string, string>,
+  inner: string,
+  tagKind?: 'video' | 'audio',
+): string | null => {
   const rawStart = attrs.start ?? attrs.ts ?? attrs.time;
   const startSeconds = parseTimestamp(rawStart);
   if (startSeconds === null) return null;
@@ -88,8 +120,18 @@ const buildVideoSeekMarkdownLink = (attrs: Record<string, string>, inner: string
   if (normalizedPoint) query.set('point', normalizedPoint);
   const normalizedBox = normalizeCoordinates(attrs.box);
   if (normalizedBox) query.set('box', normalizedBox);
-  if (attrs.video) query.set('video', attrs.video.trim());
-  if (attrs.audio) query.set('video', attrs.audio.trim());
+
+  const isAudio = tagKind === 'audio' || Boolean(attrs.audio);
+  if (isAudio) {
+    query.set('kind', 'audio');
+    if (attrs.audio) {
+      query.set('audio', attrs.audio.trim());
+      query.set('video', attrs.audio.trim());
+    }
+  } else if (attrs.video) {
+    query.set('video', attrs.video.trim());
+  }
+
   const cleanSnippet = inner.trim();
   if (cleanSnippet) query.set('snippet', cleanSnippet);
 
@@ -126,7 +168,7 @@ export const linkifyTimestamps = (text: string): string => {
     let processedText = plainText;
     const omittedLocateMetas: OmittedLocateMeta[] = [];
 
-    const recordOmittedLocate = (attrs: Record<string, string>, inner?: string) => {
+    const recordOmittedLocate = (attrs: Record<string, string>, inner?: string, tagKind?: 'video' | 'audio') => {
       const rawStart = attrs.start ?? attrs.ts ?? attrs.time;
       const sec = parseTimestamp(rawStart);
       if (sec === null) return;
@@ -136,10 +178,11 @@ export const linkifyTimestamps = (text: string): string => {
       const video = attrs.video?.trim() || attrs.audio?.trim() || undefined;
       const snippet = inner?.trim() || undefined;
 
-      if (point || box) {
+      if (point || box || tagKind === 'audio' || attrs.audio) {
         omittedLocateMetas.push({
           start: sec,
           end: endSec,
+          kind: tagKind ?? (attrs.audio ? 'audio' : undefined),
           point,
           box,
           video,
@@ -174,6 +217,7 @@ export const linkifyTimestamps = (text: string): string => {
           _full,
           leadingNewline: string | undefined,
           leadingSpace: string | undefined,
+          tagKind: string,
           attrStr: string,
           inner: string | undefined,
           offset: number,
@@ -183,13 +227,15 @@ export const linkifyTimestamps = (text: string): string => {
           const sec = parseTimestamp(attrs.start ?? attrs.ts ?? attrs.time);
           if (sec === null) return '';
 
+          const normalizedKind = tagKind.toLowerCase() === 'audio' ? 'audio' : 'video';
+
           if (existingTimestamps.has(sec) || checkPrecedingTextHasMatchingTimestamp(fullStr.slice(0, offset), sec)) {
             // Already represented by an inline timestamp in the preceding sentence or bullet!
-            recordOmittedLocate(attrs, inner);
+            recordOmittedLocate(attrs, inner, normalizedKind);
             return '';
           }
 
-          const link = buildVideoSeekMarkdownLink(attrs, inner || '');
+          const link = buildVideoSeekMarkdownLink(attrs, inner || '', normalizedKind);
           if (link) {
             existingTimestamps.add(sec);
             const prefix = leadingNewline || leadingSpace || '';
@@ -209,14 +255,15 @@ export const linkifyTimestamps = (text: string): string => {
       TIME_LOCATE_TAG_RE.lastIndex = 0;
       let trailingMatchItem: RegExpExecArray | null;
       while ((trailingMatchItem = TIME_LOCATE_TAG_RE.exec(trailingPart)) !== null) {
-        const attrs = parseTagAttributes(trailingMatchItem[1]);
+        const normalizedKind = trailingMatchItem[1].toLowerCase() === 'audio' ? 'audio' : 'video';
+        const attrs = parseTagAttributes(trailingMatchItem[2]);
         const sec = parseTimestamp(attrs.start ?? attrs.ts ?? attrs.time);
         if (sec !== null && (existingTimestamps.has(sec) || checkPrecedingTextHasMatchingTimestamp(bodyPart, sec))) {
           // Already represented by an inline button in the body text
-          recordOmittedLocate(attrs, trailingMatchItem[2]);
+          recordOmittedLocate(attrs, trailingMatchItem[3], normalizedKind);
           continue;
         }
-        const link = buildVideoSeekMarkdownLink(attrs, trailingMatchItem[2] || '');
+        const link = buildVideoSeekMarkdownLink(attrs, trailingMatchItem[3] || '', normalizedKind);
         if (link) {
           transformedTrailingButtons.push(link);
           if (sec !== null) existingTimestamps.add(sec);
@@ -271,7 +318,15 @@ export const linkifyTimestamps = (text: string): string => {
             rawStart: string,
             rawEnd: string | undefined,
             closeB: string | undefined,
+            offset: number,
+            fullContent: string,
           ) => {
+            const preceding = fullContent.slice(Math.max(0, offset - 20), offset);
+            const succeeding = fullContent.slice(offset + fullMatch.length, offset + fullMatch.length + 20);
+            if (isFalsePositiveTimestampContext(preceding, succeeding)) {
+              return fullMatch;
+            }
+
             const startSeconds = parseTimestamp(rawStart);
             if (startSeconds === null) {
               return fullMatch;
@@ -307,9 +362,7 @@ export const linkifyTimestamps = (text: string): string => {
               // Single timestamp point
               matchedMeta = omittedLocateMetas.find(
                 (m) =>
-                  !m.used &&
-                  Math.abs(m.start - startSeconds) <= 2 &&
-                  (m.end === null || m.end <= startSeconds + 5),
+                  !m.used && Math.abs(m.start - startSeconds) <= 2 && (m.end === null || m.end <= startSeconds + 5),
               );
             }
 
@@ -322,6 +375,7 @@ export const linkifyTimestamps = (text: string): string => {
             if (hasValidEnd) query.set('end', String(endSeconds));
             if (matchedMeta?.point) query.set('point', matchedMeta.point);
             if (matchedMeta?.box) query.set('box', matchedMeta.box);
+            if (matchedMeta?.kind === 'audio') query.set('kind', 'audio');
             if (matchedMeta?.video) query.set('video', matchedMeta.video);
             if (matchedMeta?.snippet) query.set('snippet', matchedMeta.snippet);
 

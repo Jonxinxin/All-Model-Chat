@@ -557,9 +557,7 @@ describe('htmlPreview utilities', () => {
     });
 
     it('injects echarts vendor script into unrestricted preview documents with charts', () => {
-      const srcDoc = buildUnrestrictedHtmlPreviewSrcDoc(
-        '<div><div data-amc-chart=\'{"type":"bar"}\'></div></div>',
-      );
+      const srcDoc = buildUnrestrictedHtmlPreviewSrcDoc('<div><div data-amc-chart=\'{"type":"bar"}\'></div></div>');
 
       expect(srcDoc).toContain('/vendor/echarts.min.js');
     });

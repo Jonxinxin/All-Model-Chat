@@ -1,6 +1,6 @@
 import React from 'react';
 import { useI18n } from '@/contexts/I18nContext';
-import { SquarePen, Trash2, Pin, PinOff, Download, Copy, FolderInput, Folder, Check } from 'lucide-react';
+import { SquarePen, Trash2, Pin, PinOff, Download, Copy, FolderInput, Folder, Check, Sparkles } from 'lucide-react';
 import { type ChatGroup, type SavedChatSession } from '@/types';
 import {
   ContextMenuContent,
@@ -21,6 +21,8 @@ export interface SessionItemContextMenuProps {
   onDuplicate: () => void;
   onExport: () => void;
   onDelete: () => void;
+  onRegenerateTitle?: () => void;
+  isGeneratingTitle?: boolean;
 }
 
 export const SessionItemContextMenu: React.FC<SessionItemContextMenuProps> = ({
@@ -32,16 +34,39 @@ export const SessionItemContextMenu: React.FC<SessionItemContextMenuProps> = ({
   onDuplicate,
   onExport,
   onDelete,
+  onRegenerateTitle,
+  isGeneratingTitle = false,
 }) => {
   const { t } = useI18n();
+  const isStartingEditRef = React.useRef(false);
+
+  const handleStartEdit = () => {
+    isStartingEditRef.current = true;
+    onStartEdit();
+  };
 
   return (
-    <ContextMenuContent className="w-52 p-1.5">
-      <ContextMenuItem onSelect={onStartEdit}>
+    <ContextMenuContent
+      className="w-52 p-1.5"
+      onCloseAutoFocus={(e) => {
+        if (isStartingEditRef.current) {
+          e.preventDefault();
+          isStartingEditRef.current = false;
+        }
+      }}
+    >
+      <ContextMenuItem onSelect={handleStartEdit}>
         <SquarePen size={14} className="text-[var(--theme-text-secondary)]" />
         <span>{t('edit')}</span>
         <ContextMenuShortcut>Enter</ContextMenuShortcut>
       </ContextMenuItem>
+
+      {onRegenerateTitle && (
+        <ContextMenuItem onSelect={onRegenerateTitle} disabled={isGeneratingTitle}>
+          <Sparkles size={14} className="text-[var(--theme-text-secondary)]" />
+          <span>{t('regenerateTitle')}</span>
+        </ContextMenuItem>
+      )}
 
       <ContextMenuItem onSelect={onTogglePin}>
         {session.isPinned ? (

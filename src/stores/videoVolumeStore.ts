@@ -21,7 +21,7 @@ const clampVolume = (val: number): number => {
   return Math.max(0, Math.min(1, Math.round(val * 100) / 100));
 };
 
-export const loadStoredVideoVolume = (): PersistedVideoVolumeData => {
+const loadStoredVideoVolume = (): PersistedVideoVolumeData => {
   const raw = readPersistentStorageItem(VIDEO_VOLUME_STORAGE_KEY);
   if (!raw) {
     return {
@@ -37,7 +37,7 @@ export const loadStoredVideoVolume = (): PersistedVideoVolumeData => {
       const volume = clampVolume(parsed.volume);
       const isMuted = typeof parsed.isMuted === 'boolean' ? parsed.isMuted : volume === 0;
       const parsedLast = typeof parsed.lastNonZeroVolume === 'number' ? clampVolume(parsed.lastNonZeroVolume) : 0;
-      const lastNonZeroVolume = parsedLast > 0 ? parsedLast : (volume > 0 ? volume : DEFAULT_VIDEO_VOLUME);
+      const lastNonZeroVolume = parsedLast > 0 ? parsedLast : volume > 0 ? volume : DEFAULT_VIDEO_VOLUME;
 
       return {
         volume,
@@ -119,7 +119,12 @@ export const useVideoVolumeStore = create<VideoVolumeState>((set, get) => {
         saveVideoVolume(nextData);
         set(nextData);
       } else {
-        const restoredVol = current.volume > 0 ? current.volume : (current.lastNonZeroVolume > 0 ? current.lastNonZeroVolume : DEFAULT_VIDEO_VOLUME);
+        const restoredVol =
+          current.volume > 0
+            ? current.volume
+            : current.lastNonZeroVolume > 0
+              ? current.lastNonZeroVolume
+              : DEFAULT_VIDEO_VOLUME;
         const nextData: PersistedVideoVolumeData = {
           volume: restoredVol,
           isMuted: false,

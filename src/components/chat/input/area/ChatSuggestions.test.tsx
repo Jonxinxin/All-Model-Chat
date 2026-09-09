@@ -162,41 +162,17 @@ describe('ChatSuggestions rendering', () => {
     expect(renderer.container.querySelector('button[aria-label*="Guide" i]')).toBeNull();
   });
 
-  it('renders organize chip with active styling and toggle dot when isLiveArtifactsActive is true', async () => {
+  it('renders organize chip as a standard suggestion action chip without toggle dot or aria-pressed', async () => {
     await act(async () => {
       renderer.root.render(
-        <ChatSuggestions
-          show
-          isFullscreen={false}
-          onSuggestionClick={vi.fn()}
-          onOrganizeInfoClick={vi.fn()}
-          isLiveArtifactsActive={true}
-        />,
+        <ChatSuggestions show isFullscreen={false} onSuggestionClick={vi.fn()} onOrganizeInfoClick={vi.fn()} />,
       );
     });
 
     const organizeChip = renderer.container.querySelector('[data-testid="organize-info-chip"]');
     expect(organizeChip).not.toBeNull();
-    expect(organizeChip?.getAttribute('aria-pressed')).toBe('true');
-    expect(organizeChip?.querySelector('span.rounded-full.bg-current')).not.toBeNull();
-  });
-
-  it('renders organize chip with inactive styling when isLiveArtifactsActive is false', async () => {
-    await act(async () => {
-      renderer.root.render(
-        <ChatSuggestions
-          show
-          isFullscreen={false}
-          onSuggestionClick={vi.fn()}
-          onOrganizeInfoClick={vi.fn()}
-          isLiveArtifactsActive={false}
-        />,
-      );
-    });
-
-    const organizeChip = renderer.container.querySelector('[data-testid="organize-info-chip"]');
-    expect(organizeChip).not.toBeNull();
-    expect(organizeChip?.getAttribute('aria-pressed')).toBe('false');
-    expect(organizeChip?.querySelector('span.rounded-full.bg-current')).not.toBeNull();
+    expect(organizeChip?.className).toContain(SUGGESTION_CHIP_CLASS);
+    expect(organizeChip?.hasAttribute('aria-pressed')).toBe(false);
+    expect(organizeChip?.querySelector('span.rounded-full.bg-current')).toBeNull();
   });
 });

@@ -428,7 +428,7 @@ export const compensateCjkNodeWidths = (dot: string): string => {
 
         if (!isEdgeStatement && !DOT_DECLARATION_KEYWORDS.has(nodeId.toLowerCase())) {
           const labelMatch = bracketContent.match(/\blabel\s*=\s*"([^"]*)"/);
-          const textToMeasure = labelMatch ? labelMatch[1] : (isCjkText(nodeId) ? nodeId : '');
+          const textToMeasure = labelMatch ? labelMatch[1] : isCjkText(nodeId) ? nodeId : '';
 
           if (textToMeasure && isCjkText(textToMeasure)) {
             const fontSizeMatch = bracketContent.match(/\bfontsize\s*=\s*["']?([0-9.]+)["']?/i);
@@ -439,10 +439,7 @@ export const compensateCjkNodeWidths = (dot: string): string => {
             if (existingWidthMatch) {
               const existingWidth = parseFloat(existingWidthMatch[1]);
               if (existingWidth < requiredWidth) {
-                bracketContent = bracketContent.replace(
-                  /\bwidth\s*=\s*["']?[0-9.]+["']?/i,
-                  `width="${requiredWidth}"`,
-                );
+                bracketContent = bracketContent.replace(/\bwidth\s*=\s*["']?[0-9.]+["']?/i, `width="${requiredWidth}"`);
               }
             } else {
               bracketContent = `${bracketContent.trimEnd()} width="${requiredWidth}"`;

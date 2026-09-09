@@ -38,7 +38,8 @@ describe('MediaNavPanel', () => {
     expect(renderer.container.firstChild).toBeNull();
   });
 
-  it('closes panel and resets nav settings when close button is clicked', () => {
+  it('closes panel without resetting nav settings when close button is clicked', () => {
+    const setCurrentChatSettings = vi.fn();
     useMediaNavStore.setState({
       isOpen: true,
       openKind: 'video',
@@ -47,7 +48,8 @@ describe('MediaNavPanel', () => {
     useChatStore.setState({
       selectedFiles: [mockVideoFile],
       activeMessages: [],
-    });
+      setCurrentChatSettings,
+    } as never);
 
     renderer.render(<MediaNavPanel />);
 
@@ -56,8 +58,31 @@ describe('MediaNavPanel', () => {
 
     fireEvent.click(closeBtn);
 
-    // Verify useMediaNavStore isOpen was properly set to false
+    // Verify useMediaNavStore isOpen was properly set to false, but settings were not wiped
     expect(useMediaNavStore.getState().isOpen).toBe(false);
+    expect(setCurrentChatSettings).not.toHaveBeenCalled();
+  });
+
+  it('formats YouTube URLs as friendly display names in file title and options', () => {
+    const youtubeFile: UploadedFile = {
+      id: 'yt-1',
+      name: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      type: 'video/mp4',
+      size: 0,
+    };
+    useMediaNavStore.setState({
+      isOpen: true,
+      openKind: 'video',
+      activeFileId: 'yt-1',
+    });
+    useChatStore.setState({
+      selectedFiles: [youtubeFile],
+      activeMessages: [],
+    });
+
+    renderer.render(<MediaNavPanel />);
+
+    expect(screen.getByText('YouTube (dQw4w9WgXcQ)')).toBeDefined();
   });
 
   it('switches media kind and clears live artifacts from chat settings', () => {

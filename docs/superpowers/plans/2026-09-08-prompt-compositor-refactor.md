@@ -5,6 +5,7 @@ Refactor AMC-WebUI prompt and tool instruction management from single-value stri
 ## Proposed Changes
 
 ### 1. Types and Defaults
+
 - **File**: `src/types/settings.ts`
   - Add `VisionPromptMode = 'bbox' | 'hdGuide' | null`
   - Add `isLiveArtifactsEnabled?: boolean` and `visionPromptMode?: VisionPromptMode` to `ChatSettings` and `AppSettings`.
@@ -12,6 +13,7 @@ Refactor AMC-WebUI prompt and tool instruction management from single-value stri
   - Add `isLiveArtifactsEnabled: false` and `visionPromptMode: null` to `DEFAULT_CHAT_SETTINGS`.
 
 ### 2. Prompt Compositor Module
+
 - **File**: `src/features/prompts/promptCompositor.ts`
   - Pure function `composeSystemInstruction(context)`:
     - Layer 1: User custom instruction (with legacy markers stripped if present)
@@ -24,6 +26,7 @@ Refactor AMC-WebUI prompt and tool instruction management from single-value stri
   - Comprehensive unit tests covering every combination, precedence, and legacy backward-compatibility.
 
 ### 3. API Request Assembly
+
 - **File**: `src/features/message-sender/standardChatApiCall.ts`
   - Use `composeSystemInstruction` to build `effectiveSystemInstruction`.
   - Avoid wiping `baseInstruction` when media locate directives are active; let compositor handle safe composition.
@@ -31,6 +34,7 @@ Refactor AMC-WebUI prompt and tool instruction management from single-value stri
   - Update prompt merging in `buildGenerationConfigFromOptions` to avoid double-appending Deep Search / Local Python if already handled by compositor.
 
 ### 4. Hook & Settings Decoupling
+
 - **File**: `src/utils/media-nav/mediaNavSettings.ts`
   - When media navigation opens, only toggle `isLiveArtifactsEnabled: false` (or let compositor omit it) without wiping `systemInstruction` to `DEFAULT_SYSTEM_INSTRUCTION`.
 - **File**: `src/utils/live-artifacts/liveArtifactsMode.ts`
@@ -39,6 +43,7 @@ Refactor AMC-WebUI prompt and tool instruction management from single-value stri
   - Decouple `handleLoadLiveArtifactsPromptAndSave` and `setCodePromptModeSettings` so they update boolean flags instead of wiping the user's custom instruction.
 
 ### 5. Verification
+
 - Run Vitest test suites:
   - `promptCompositor.test.ts`
   - `promptRegistry.test.ts`

@@ -108,12 +108,9 @@ const SortableProviderItem: React.FC<SortableProviderItemProps> = ({
 
       <div className="flex items-center gap-1.5 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
         {connection.enabled ? (
-          <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-xs" title={t('enabled') || '已启用'} />
+          <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-xs" title={t('enabled')} />
         ) : (
-          <span
-            className="w-2 h-2 rounded-full bg-[var(--theme-border-secondary)] opacity-40"
-            title={t('disabled') || '未启用'}
-          />
+          <span className="w-2 h-2 rounded-full bg-[var(--theme-border-secondary)] opacity-40" title={t('disabled')} />
         )}
 
         <div className="relative">
@@ -138,7 +135,7 @@ const SortableProviderItem: React.FC<SortableProviderItemProps> = ({
                   className="flex items-center gap-2 w-full px-2.5 py-1.5 rounded-lg text-left text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)]"
                 >
                   <Activity size={13} />
-                  <span>测速连通性</span>
+                  <span>{t('thirdPartyTestSpeed')}</span>
                 </button>
                 <button
                   type="button"
@@ -160,7 +157,7 @@ const SortableProviderItem: React.FC<SortableProviderItemProps> = ({
                   className="flex items-center gap-2 w-full px-2.5 py-1.5 rounded-lg text-left text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)]"
                 >
                   <Copy size={13} />
-                  <span>复制副本</span>
+                  <span>{t('thirdPartyDuplicate')}</span>
                 </button>
                 <div className="h-[1px] bg-[var(--theme-border-secondary)]/30 my-0.5" />
                 <button
@@ -233,7 +230,10 @@ export const ProviderList: React.FC<ProviderListProps> = ({
     }
   };
 
-  const isGeminiMatch = !search || 'google gemini 官方 内置'.toLowerCase().includes(search.toLowerCase());
+  const isGeminiMatch =
+    !search ||
+    'google gemini official builtin 官方 内置'.toLowerCase().includes(search.toLowerCase()) ||
+    t('thirdPartyOfficialProviders').toLowerCase().includes(search.toLowerCase());
 
   return (
     <div className="w-full md:w-64 lg:w-72 flex flex-col h-full bg-[var(--theme-bg-secondary)]/25 border-r border-[var(--theme-border-secondary)]/40 flex-shrink-0 select-none">
@@ -247,7 +247,7 @@ export const ProviderList: React.FC<ProviderListProps> = ({
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={t('thirdPartySearchPlaceholder') || '搜索模型平台...'}
+            placeholder={t('thirdPartySearchPlaceholder')}
             className="w-full pl-8 pr-7 py-1.5 text-xs rounded-xl border border-[var(--theme-border-secondary)]/60 bg-[var(--theme-bg-primary)] text-[var(--theme-text-primary)] placeholder:text-[var(--theme-text-secondary)]/50 focus:outline-none focus:ring-1 focus:ring-[var(--theme-border-focus)] transition-colors"
           />
           {search && (
@@ -270,7 +270,7 @@ export const ProviderList: React.FC<ProviderListProps> = ({
                 ? 'border-[var(--theme-border-focus)] bg-[var(--theme-border-focus)]/10 text-[var(--theme-text-focus)]'
                 : 'border-[var(--theme-border-secondary)]/60 bg-[var(--theme-bg-primary)] text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)]'
             }`}
-            title="筛选平台状态"
+            title={t('thirdPartyFilterStatus')}
           >
             <Filter size={13} />
           </button>
@@ -280,9 +280,9 @@ export const ProviderList: React.FC<ProviderListProps> = ({
               <div className="fixed inset-0 z-30" onClick={() => setFilterMenuOpen(false)} />
               <div className="absolute right-0 top-full mt-1 z-40 w-32 rounded-xl border border-[var(--theme-border-primary)] bg-[var(--theme-bg-primary)] p-1 shadow-xl text-xs space-y-0.5">
                 {[
-                  { id: 'all', label: '全部平台' },
-                  { id: 'enabled', label: '仅已启用' },
-                  { id: 'disabled', label: '仅未启用' },
+                  { id: 'all', label: t('thirdPartyFilterAll') },
+                  { id: 'enabled', label: t('thirdPartyFilterEnabled') },
+                  { id: 'disabled', label: t('thirdPartyFilterDisabled') },
                 ].map((item) => (
                   <button
                     key={item.id}
@@ -307,7 +307,7 @@ export const ProviderList: React.FC<ProviderListProps> = ({
         {isGeminiMatch && (
           <div className="space-y-1">
             <div className="px-2 py-0.5 text-[10px] font-semibold tracking-wider text-[var(--theme-text-secondary)]/60 uppercase">
-              官方内置服务商
+              {t('thirdPartyOfficialProviders')}
             </div>
             <div
               onClick={() => onSelectConnection(GEMINI_PROVIDER_ID)}
@@ -325,11 +325,11 @@ export const ProviderList: React.FC<ProviderListProps> = ({
                       Google Gemini
                     </span>
                     <span className="px-1.5 py-0.2 text-[9px] font-medium rounded-full bg-blue-500/15 text-blue-500 shrink-0">
-                      内置
+                      {t('thirdPartyBuiltin')}
                     </span>
                   </div>
                   <div className="text-[10px] text-[var(--theme-text-secondary)]/70 truncate mt-0.5">
-                    {geminiStatus?.useProxy ? '自定义代理端点' : '官方端点 / Live API'}
+                    {geminiStatus?.useProxy ? t('thirdPartyCustomProxyEndpoint') : t('thirdPartyOfficialEndpoint')}
                   </div>
                 </div>
               </div>
@@ -337,7 +337,7 @@ export const ProviderList: React.FC<ProviderListProps> = ({
                 className={`w-2 h-2 rounded-full shrink-0 ${
                   geminiStatus?.isConfigured ? 'bg-emerald-500' : 'bg-amber-500'
                 }`}
-                title={geminiStatus?.isConfigured ? '已就绪' : '待配置密钥'}
+                title={geminiStatus?.isConfigured ? t('thirdPartyReady') : t('thirdPartyPendingKey')}
               />
             </div>
           </div>
@@ -346,16 +346,14 @@ export const ProviderList: React.FC<ProviderListProps> = ({
         <div className="space-y-1">
           <div className="flex items-center justify-between px-2 py-0.5">
             <span className="text-[10px] font-semibold tracking-wider text-[var(--theme-text-secondary)]/60 uppercase">
-              第三方模型服务商
+              {t('thirdPartyProvidersList')}
             </span>
-            <span className="text-[10px] text-[var(--theme-text-secondary)]/50 font-mono">
-              ({connections.length})
-            </span>
+            <span className="text-[10px] text-[var(--theme-text-secondary)]/50 font-mono">({connections.length})</span>
           </div>
 
           {filteredConnections.length === 0 ? (
             <div className="py-6 px-2 text-center text-xs text-[var(--theme-text-secondary)]">
-              {search ? '未找到相关平台' : '尚未添加任何第三方模型服务商'}
+              {search ? t('thirdPartyNoSearchResults') : t('thirdPartyConnectionsEmpty')}
             </div>
           ) : (
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -387,7 +385,7 @@ export const ProviderList: React.FC<ProviderListProps> = ({
           className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-dashed border-[var(--theme-border-secondary)] hover:border-[var(--theme-border-focus)] bg-[var(--theme-bg-secondary)]/50 hover:bg-[var(--theme-bg-tertiary)]/70 text-xs font-medium text-[var(--theme-text-primary)] transition-all cursor-pointer shadow-xs"
         >
           <Plus size={14} />
-          <span>添加服务商</span>
+          <span>{t('thirdPartyAddConnection')}</span>
         </button>
       </div>
     </div>

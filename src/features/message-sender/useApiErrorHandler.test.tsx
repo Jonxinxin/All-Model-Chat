@@ -137,6 +137,25 @@ describe('useApiErrorHandler', () => {
     expect(finalState[0].messages[0].thinkingTimeMs).toBeUndefined();
   });
 
+  it('finalizes an aborted message even when no partial content or thoughts were produced', () => {
+    const updateAndPersistSessions = vi.fn();
+    const { result } = renderHookWithProviders(() => useApiErrorHandler(updateAndPersistSessions), { language: 'zh' });
+    const session = createSession();
+
+    act(() => {
+      const abortError = new Error('aborted');
+      abortError.name = 'AbortError';
+      result.current.handleApiError(abortError, 'session-1', 'generation-1', 'Error');
+    });
+
+    expect(updateAndPersistSessions).toHaveBeenCalledTimes(1);
+    const updater = updateAndPersistSessions.mock.calls[0]?.[0];
+    const finalState = updater([session]);
+    expect(finalState[0].messages[0].isLoading).toBe(false);
+    expect(finalState[0].messages[0].stoppedByUser).toBe(true);
+    expect(finalState[0].messages[0].generationEndTime).toBeInstanceOf(Date);
+  });
+
   it('invalidates matching file references and clears lockedApiKey on Files API permission denied errors', () => {
     const updateAndPersistSessions = vi.fn();
     const { result } = renderHookWithProviders(() => useApiErrorHandler(updateAndPersistSessions), { language: 'zh' });
@@ -215,5 +234,37 @@ describe('useApiErrorHandler', () => {
     const targetUserFile = finalState[1].messages[0].files![0];
     expect(targetUserFile.fileApiKeyFingerprint).toBe(INVALID_FILE_API_KEY_FINGERPRINT);
     expect(targetUserFile.fileApiExpirationTime).toBe(new Date(0).toISOString());
+  });
+
+  it('prunes un-responded internal tool calls for the aborted model turn', () => {
+    const updateAndPersistSessions = vi.fn();
+    const { result } = renderHookWithProviders(() => useApiErrorHandler(updateAndPersistSessions), { language: 'zh' });
+
+    const session = createSession();
+    session.id = 'session-tool-abort';
+    session.messages = [
+      { id: 'user-1', role: 'user', content: 'run tool' } as any,
+      {
+        id: 'call-1',
+        role: 'model',
+        isInternalToolMessage: true,
+        toolParentMessageId: 'generation-tool',
+        apiParts: [{ functionCall: { name: 'search' } }],
+      } as any,
+      { id: 'generation-tool', role: 'model', content: '', isLoading: true } as any,
+    ];
+
+    act(() => {
+      const abortError = new Error('aborted');
+      abortError.name = 'AbortError';
+      result.current.handleApiError(abortError, 'session-tool-abort', 'generation-tool', 'Error', '', undefined);
+    });
+
+    const updater = updateAndPersistSessions.mock.calls[0]?.[0];
+    const finalState = updater([session]);
+    const finalMessageIds = finalState[0].messages.map((m: any) => m.id);
+    // call-1 was never responded to, so it must be pruned
+    expect(finalMessageIds).toEqual(['user-1', 'generation-tool']);
+    expect(finalState[0].messages[1].stoppedByUser).toBe(true);
   });
 });

@@ -59,8 +59,7 @@ const parseNumericValues = (raw: string | number[]): number[] => {
   return numbers;
 };
 
-const clamp = (val: number, min = 0, max = 1000): number =>
-  Math.min(max, Math.max(min, Math.round(val)));
+const clamp = (val: number, min = 0, max = 1000): number => Math.min(max, Math.max(min, Math.round(val)));
 
 /**
  * Normalizes bounding box coordinates into [ymin, xmin, ymax, xmax] on a 0-1000 scale.
@@ -95,9 +94,7 @@ export const normalizeBoxCoordinates = (
 /**
  * Normalizes point coordinates into [y, x] on a 0-1000 scale.
  */
-export const normalizePointCoordinates = (
-  raw: string | number[] | null | undefined,
-): [number, number] | null => {
+export const normalizePointCoordinates = (raw: string | number[] | null | undefined): [number, number] | null => {
   if (raw === null || raw === undefined) return null;
   const numbers = parseNumericValues(raw);
   if (numbers.length < 2) return null;

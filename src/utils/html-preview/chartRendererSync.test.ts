@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CHART_RENDERER_SCRIPT, hydrateChartsIntoDocument } from './chartRendererScript';
+import { hydrateChartsIntoDocument } from './chartRendererScript';
 
 const THEME_STYLE =
   '<style data-amc-live-artifact-theme="true">:root{color-scheme:dark;--amc-live-artifact-accent:#ffffff;}</style>';
@@ -23,19 +23,6 @@ const makeDoc = (chartJson: string): Document => {
   return doc;
 };
 
-const renderRaw = (doc: Document): void => {
-  const stubWindow: Record<string, unknown> = {
-    document: doc,
-    MutationObserver: undefined,
-    requestAnimationFrame: (fn: () => void) => fn(),
-    addEventListener: () => {},
-    navigator: {},
-    location: { origin: 'null' },
-  };
-  const run = new Function('window', 'document', 'notifyDiagnostic', CHART_RENDERER_SCRIPT);
-  run(stubWindow, doc, undefined);
-};
-
 describe('chart renderer export hydration', () => {
   it('hydrateChartsIntoDocument produces valid SVG for legacy DSL and standard ECharts fixtures', () => {
     for (const fixture of FIXTURES) {
@@ -54,7 +41,8 @@ describe('chart renderer export hydration', () => {
   });
 
   it('hydrates standard ECharts options into static SVG', () => {
-    const option = '{"xAxis":{"type":"category","data":["Mon","Tue"]},"yAxis":{"type":"value"},"series":[{"type":"bar","data":[10,20]}]}';
+    const option =
+      '{"xAxis":{"type":"category","data":["Mon","Tue"]},"yAxis":{"type":"value"},"series":[{"type":"bar","data":[10,20]}]}';
     const doc = makeDoc(option);
     hydrateChartsIntoDocument(doc, { themeStyle: THEME_STYLE });
     const node = doc.querySelector('[data-amc-chart]')!;

@@ -1,11 +1,12 @@
 import React from 'react';
 import type { FunctionCall, Part } from '@google/genai';
-import { type ChatMessage, type UploadedFile, type SideViewContent } from '@/types';
+import { type ChatMessage, type UploadedFile, type MessageAppSettings, type SideViewContent } from '@/types';
 import type { OpenHtmlPreviewHandler } from '@/utils/html-preview/previewPrivilege';
 import { MessageContent } from './MessageContent';
 import { MessageActions } from './MessageActions';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { useChatStore } from '@/stores/chatStore';
+import { useShallow } from 'zustand/react/shallow';
 import { CHAT_USER_MESSAGE_INSET_CLASS } from '@/constants/layout';
 import type { LiveArtifactFollowupPayload } from '@/utils/live-artifacts/liveArtifactFollowup';
 import type { UserMessageCollapseController } from './content/userMessageCollapse';
@@ -36,7 +37,25 @@ interface MessageProps {
 
 export const Message: React.FC<MessageProps> = React.memo((props) => {
   const { message, prevMessage } = props;
-  const appSettings = useSettingsStore((state) => state.appSettings);
+  const appSettings = useSettingsStore(
+    useShallow((state): MessageAppSettings => ({
+      baseFontSize: state.appSettings.baseFontSize,
+      expandCodeBlocksByDefault: state.appSettings.expandCodeBlocksByDefault,
+      isMermaidRenderingEnabled: state.appSettings.isMermaidRenderingEnabled,
+      isGraphvizRenderingEnabled: state.appSettings.isGraphvizRenderingEnabled,
+      unwrapMislabeledHtmlBlocks: state.appSettings.unwrapMislabeledHtmlBlocks,
+      liveArtifactsCustomFontSize: state.appSettings.liveArtifactsCustomFontSize,
+      systemInstruction: state.appSettings.systemInstruction,
+      isLiveArtifactsEnabled: state.appSettings.isLiveArtifactsEnabled,
+      liveArtifactsPromptMode: state.appSettings.liveArtifactsPromptMode,
+      liveArtifactsSystemPrompt: state.appSettings.liveArtifactsSystemPrompt,
+      liveArtifactsSystemPrompts: state.appSettings.liveArtifactsSystemPrompts,
+      autoOpenHtmlPreview: state.appSettings.autoOpenHtmlPreview,
+      hideThinkingInContext: state.appSettings.hideThinkingInContext,
+      thoughtTranslationTargetLanguage: state.appSettings.thoughtTranslationTargetLanguage,
+      thoughtTranslationModelId: state.appSettings.thoughtTranslationModelId,
+    })),
+  );
   const themeId = useSettingsStore((state) => state.currentTheme.id);
   const editingMessageId = useChatStore((state) => state.editingMessageId);
   const isCurrentlyEditing = editingMessageId === message.id;

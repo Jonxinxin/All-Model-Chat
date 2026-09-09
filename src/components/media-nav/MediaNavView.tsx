@@ -8,6 +8,8 @@ import { formatTimestamp } from '@/utils/media-nav/timestamp';
 import { extractTimelineMarkers } from '@/utils/media-nav/timelineMarkers';
 import { type VideoAnnotation } from './VideoHighlightOverlay';
 import { VideoPlayer, type VideoPlayerHandle } from '@/components/shared/file-preview/VideoPlayer';
+import { isYoutubeVideoFile } from '@/utils/media-nav/sessionMediaFiles';
+import { YoutubeNavPlayer } from './YoutubeNavPlayer';
 
 interface MediaNavViewProps {
   file: UploadedFile;
@@ -165,28 +167,34 @@ const MediaNavViewComponent: React.FC<MediaNavViewProps> = ({ file, kind }) => {
     }
   }, [segment, isSegmentLoopEnabled]);
 
+  const isYoutube = useMemo(() => isYoutubeVideoFile(file), [file]);
+
   return (
     <div className="h-full w-full flex flex-col bg-black select-none relative">
       {kind === 'video' ? (
-        <VideoPlayer
-          key={file.id}
-          ref={playerRef}
-          src={file.dataUrl || ''}
-          file={file}
-          testId="media-nav-video"
-          segment={segment}
-          onSegmentChange={handleSegmentChange}
-          isSegmentLoopEnabled={isSegmentLoopEnabled}
-          onSegmentLoopChange={setIsSegmentLoopEnabled}
-          annotation={annotation}
-          annotationTargetTime={annotationTargetTime}
-          isAnnotationVisible={isAnnotationVisible}
-          onAnnotationVisibilityChange={setIsAnnotationVisible}
-          onAnnotationDismiss={() => setIsAnnotationVisible(false)}
-          timelineMarkers={timelineMarkers}
-          onTimeUpdate={(t) => useMediaNavStore.getState().setCurrentPlayTime(t)}
-          onLoadedMetadata={() => setIsMetadataReady(true)}
-        />
+        isYoutube ? (
+          <YoutubeNavPlayer key={file.id} file={file} />
+        ) : (
+          <VideoPlayer
+            key={file.id}
+            ref={playerRef}
+            src={file.dataUrl || ''}
+            file={file}
+            testId="media-nav-video"
+            segment={segment}
+            onSegmentChange={handleSegmentChange}
+            isSegmentLoopEnabled={isSegmentLoopEnabled}
+            onSegmentLoopChange={setIsSegmentLoopEnabled}
+            annotation={annotation}
+            annotationTargetTime={annotationTargetTime}
+            isAnnotationVisible={isAnnotationVisible}
+            onAnnotationVisibilityChange={setIsAnnotationVisible}
+            onAnnotationDismiss={() => setIsAnnotationVisible(false)}
+            timelineMarkers={timelineMarkers}
+            onTimeUpdate={(t) => useMediaNavStore.getState().setCurrentPlayTime(t)}
+            onLoadedMetadata={() => setIsMetadataReady(true)}
+          />
+        )
       ) : (
         <div className="h-full w-full flex flex-col select-none relative">
           {segment && (

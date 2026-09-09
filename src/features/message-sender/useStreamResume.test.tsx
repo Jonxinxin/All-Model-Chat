@@ -40,6 +40,7 @@ vi.mock('@/services/api/geminiApiBaseUrl', () => ({
 
 vi.mock('@/utils/chat/builder', () => ({
   createChatHistoryForApi: mockCreateChatHistoryForApi,
+  appendTurnToHistory: vi.fn((history, role, parts) => [...(history || []), { role, parts }]),
 }));
 
 vi.mock('@/services/api/generationConfig', () => ({

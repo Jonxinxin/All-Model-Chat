@@ -28,8 +28,7 @@ export const ImageHighlightOverlay: React.FC<ImageHighlightOverlayProps> = ({
 }) => {
   const storeHighlights = useMediaNavStore((state) => state.imageHighlights);
   const highlights = propHighlights || (storeHighlights.length > 0 ? storeHighlights : highlight ? [highlight] : []);
-  const activeHighlight =
-    highlight || highlights.find((h) => h.isActive) || highlights[0] || null;
+  const activeHighlight = highlight || highlights.find((h) => h.isActive) || highlights[0] || null;
 
   if (!visible || !activeHighlight) return null;
   const { box2d, point, arrow, label, snippet } = activeHighlight;
@@ -87,7 +86,8 @@ export const ImageHighlightOverlay: React.FC<ImageHighlightOverlayProps> = ({
   };
 
   const activeIdx = highlights.indexOf(activeHighlight);
-  const activeItemIndex = typeof activeHighlight.index === 'number' ? activeHighlight.index : (activeIdx >= 0 ? activeIdx + 1 : 1);
+  const activeItemIndex =
+    typeof activeHighlight.index === 'number' ? activeHighlight.index : activeIdx >= 0 ? activeIdx + 1 : 1;
 
   const handleStep = (direction: -1 | 1) => {
     if (highlights.length <= 1) return;

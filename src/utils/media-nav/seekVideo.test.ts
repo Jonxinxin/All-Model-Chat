@@ -114,4 +114,27 @@ describe('seekSessionVideo', () => {
     expect(state.activeFileId).toBe('a1');
     expect(state.videoTarget?.seconds).toBe(40);
   });
+
+  it('seeks to timestamp on YouTube video in session', () => {
+    const mockYoutube: UploadedFile = {
+      id: 'yt1',
+      name: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      type: 'video/youtube-link',
+      fileUri: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      size: 0,
+    };
+    useChatStore.setState({
+      selectedFiles: [mockYoutube],
+      activeMessages: [],
+    });
+
+    const result = seekSessionVideo({ startSeconds: 88, endSeconds: 120 });
+    expect(result).toBe(true);
+
+    const state = useMediaNavStore.getState();
+    expect(state.isOpen).toBe(true);
+    expect(state.openKind).toBe('video');
+    expect(state.activeFileId).toBe('yt1');
+    expect(state.videoTarget).toMatchObject({ seconds: 88, end: 120 });
+  });
 });

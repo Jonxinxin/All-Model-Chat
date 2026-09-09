@@ -55,13 +55,9 @@ export const ModelDetailCard: React.FC<ModelDetailCardProps> = ({ model, renderM
 
   const description = (spec.descriptionKey ? t(spec.descriptionKey) : undefined) || spec.description;
   const thinkingLevelDisplay =
-    formatThinkingLevelSpec(spec.thinkingLevelSpec, t) ||
-    spec.thinkingLevelRange ||
-    spec.thinkingBudgetRange;
+    formatThinkingLevelSpec(spec.thinkingLevelSpec, t) || spec.thinkingLevelRange || spec.thinkingBudgetRange;
 
-  const displayCapabilities = spec.capabilities.filter(
-    (cap) => cap.category !== 'vision' && cap.category !== 'audio',
-  );
+  const displayCapabilities = spec.capabilities.filter((cap) => cap.category !== 'vision' && cap.category !== 'audio');
 
   return (
     <div
@@ -129,9 +125,7 @@ export const ModelDetailCard: React.FC<ModelDetailCardProps> = ({ model, renderM
                 : t('modelCardThinking')}
             </span>
           </div>
-          <span className="font-mono font-medium text-indigo-700 dark:text-indigo-300">
-            {thinkingLevelDisplay}
-          </span>
+          <span className="font-mono font-medium text-indigo-700 dark:text-indigo-300">{thinkingLevelDisplay}</span>
         </div>
       )}
 
@@ -158,9 +152,7 @@ export const ModelDetailCard: React.FC<ModelDetailCardProps> = ({ model, renderM
       {displayCapabilities.length > 0 && (
         <div
           className={`space-y-1.5 pt-1 ${
-            spec.modalities && spec.modalities.length > 0
-              ? ''
-              : 'border-t border-[var(--theme-border-secondary)]/40'
+            spec.modalities && spec.modalities.length > 0 ? '' : 'border-t border-[var(--theme-border-secondary)]/40'
           }`}
         >
           <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--theme-text-tertiary)]">

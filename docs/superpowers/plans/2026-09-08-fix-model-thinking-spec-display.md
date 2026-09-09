@@ -5,6 +5,7 @@
 **Goal:** Correct the thinking specification display in the AMC-WebUI model dropdown (`ModelPicker` -> `ModelDetailCard`) according to official Google Gemini API documentation, switching Gemini 3 models from legacy token budget ("思考预算") to thinking level ("思考等级"), eliminating false thinking displays on TTS/Transcribe, fixing image/live model thinking levels, and aligning context window sizes.
 
 **Architecture:**
+
 - Update `header.ts` with `modelCardThinkingLevel` translations.
 - Refactor `modelSpecifications.ts` to separate `thinkingLevelRange` (for enum-based reasoning models like Gemini 3, Gemma 4, OpenAI o-series) from `thinkingBudgetRange` (for token-budget models like Claude 3.7 and Gemini 2.5).
 - Remove Gemini 3 models from legacy `THINKING_BUDGET_RANGES` in `modelConfiguration.ts`.
@@ -19,6 +20,7 @@
 ### Task 1: Add Translations for Thinking Level in `header.ts`
 
 **Files:**
+
 - Modify: `src/i18n/translations/header.ts`
 - Test: `src/i18n/translationCoverage.test.ts`
 
@@ -61,11 +63,13 @@ Expected: PASS
 ### Task 2: Refactor `modelSpecifications.ts` and `modelConfiguration.ts` for Accurate Thinking & Context Specs
 
 **Files:**
+
 - Modify: `src/constants/modelConfiguration.ts`
 - Modify: `src/utils/model/modelSpecifications.ts`
 - Test: `src/utils/model/modelSpecifications.test.ts`
 
 **Interfaces:**
+
 - `ModelSpecification`: add `thinkingLevelRange?: string;`, retain `thinkingBudgetRange?: string;` for budget models.
 - `resolveThinkingLevelRange(modelId: string): string | undefined`:
   - Returns `undefined` for TTS (`isTtsModel`), Transcribe (`isTranscribeModel`), Live Translate (`isLiveTranslateModel`).
@@ -118,12 +122,14 @@ Expected: PASS
 ### Task 3: Update `ModelDetailCard.tsx` to Render Thinking Level / Budget
 
 **Files:**
+
 - Modify: `src/components/shared/ModelDetailCard.tsx`
 - Modify: `src/components/shared/ModelDetailCard.test.tsx`
 
 - [ ] **Step 1: Write unit tests in `src/components/shared/ModelDetailCard.test.tsx`**
 
 Test that:
+
 1. `gemini-3.8-flash` displays label `思考等级` (or `Thinking Level`) and value `Low ~ High (默认 Medium)`.
 2. `gemini-3.1-flash-tts-preview` does NOT display any thinking section.
 3. Model with budget (e.g. Claude 3.7 Sonnet) displays `思考预算` (or `Thinking Budget`).
@@ -136,22 +142,23 @@ Expected: FAIL
 - [ ] **Step 3: Update `ModelDetailCard.tsx`**
 
 Replace the old `spec.thinkingBudgetRange` section with:
+
 ```tsx
-{(spec.thinkingLevelRange || spec.thinkingBudgetRange) && (
-  <div className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-lg bg-purple-500/5 border border-purple-500/15 text-xs">
-    <div className="flex items-center gap-1.5 text-purple-600 dark:text-purple-400">
-      <Brain size={12} className="flex-shrink-0" />
-      <span>
-        {spec.thinkingLevelRange
-          ? t('modelCardThinkingLevel') || t('modelCardThinking')
-          : t('modelCardThinking')}
+{
+  (spec.thinkingLevelRange || spec.thinkingBudgetRange) && (
+    <div className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-lg bg-purple-500/5 border border-purple-500/15 text-xs">
+      <div className="flex items-center gap-1.5 text-purple-600 dark:text-purple-400">
+        <Brain size={12} className="flex-shrink-0" />
+        <span>
+          {spec.thinkingLevelRange ? t('modelCardThinkingLevel') || t('modelCardThinking') : t('modelCardThinking')}
+        </span>
+      </div>
+      <span className="font-mono font-medium text-purple-700 dark:text-purple-300">
+        {spec.thinkingLevelRange || spec.thinkingBudgetRange}
       </span>
     </div>
-    <span className="font-mono font-medium text-purple-700 dark:text-purple-300">
-      {spec.thinkingLevelRange || spec.thinkingBudgetRange}
-    </span>
-  </div>
-)}
+  );
+}
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
@@ -164,11 +171,13 @@ Expected: PASS
 ### Task 4: Full Verification and Regression Test Suite
 
 **Files:**
+
 - Test: all existing model selector and model capabilities tests
 
 - [ ] **Step 1: Run all model-related unit tests**
 
 Run:
+
 ```bash
 npm test src/utils/model/
 npm test src/components/shared/ModelDetailCard.test.tsx

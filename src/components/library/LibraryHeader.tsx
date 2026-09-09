@@ -2,7 +2,13 @@ import React, { useRef } from 'react';
 import { Search, X, ChevronDown, ChevronLeft, Upload, Image as ImageIcon, FileText } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { useLibraryStore } from '@/stores/libraryStore';
-import { useClickOutside } from '@/hooks/useClickOutside';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '@/components/shared/DropdownMenu';
 
 interface LibraryHeaderProps {
   onUploadFiles: (files: File[]) => void;
@@ -19,9 +25,6 @@ export const LibraryHeader: React.FC<LibraryHeaderProps> = ({ onUploadFiles, onC
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useClickOutside(dropdownRef, () => setIsNewDropdownOpen(false), isNewDropdownOpen);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -71,55 +74,58 @@ export const LibraryHeader: React.FC<LibraryHeaderProps> = ({ onUploadFiles, onC
           )}
         </div>
 
-        <div className="relative" ref={dropdownRef}>
-          <button
-            onClick={() => setIsNewDropdownOpen((prev) => !prev)}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-medium rounded-full bg-[var(--theme-text-primary)] text-[var(--theme-bg-primary)] hover:opacity-90 active:scale-95 transition-all shadow-sm"
+        <DropdownMenu open={isNewDropdownOpen} onOpenChange={setIsNewDropdownOpen}>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-medium rounded-full bg-[var(--theme-text-primary)] text-[var(--theme-bg-primary)] hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer">
+              <span>{t('libraryNew')}</span>
+              <ChevronDown
+                size={14}
+                strokeWidth={2.5}
+                className={isNewDropdownOpen ? 'rotate-180 transition-transform' : 'transition-transform'}
+              />
+            </button>
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent
+            align="end"
+            sideOffset={6}
+            className="w-44 rounded-2xl bg-[var(--theme-bg-primary)] border border-[var(--theme-border-secondary)] shadow-xl p-1.5 text-sm"
           >
-            <span>{t('libraryNew')}</span>
-            <ChevronDown
-              size={14}
-              strokeWidth={2.5}
-              className={isNewDropdownOpen ? 'rotate-180 transition-transform' : 'transition-transform'}
-            />
-          </button>
+            <DropdownMenuItem
+              onClick={() => {
+                imageInputRef.current?.click();
+              }}
+              className="w-full flex items-center gap-2.5 px-3.5 py-2 text-left text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors rounded-lg cursor-pointer"
+            >
+              <ImageIcon size={16} className="text-[var(--theme-text-secondary)]" />
+              <span>{t('libraryUploadImage')}</span>
+            </DropdownMenuItem>
 
-          {isNewDropdownOpen && (
-            <div className="absolute right-0 mt-1.5 w-44 rounded-2xl bg-[var(--theme-bg-primary)] border border-[var(--theme-border-secondary)] shadow-xl py-1.5 z-50 text-sm animate-in fade-in zoom-in-95 duration-100">
-              <button
+            {onCreateNote && (
+              <DropdownMenuItem
                 onClick={() => {
-                  imageInputRef.current?.click();
+                  setIsNewDropdownOpen(false);
+                  onCreateNote();
                 }}
-                className="w-full flex items-center gap-2.5 px-3.5 py-2 text-left text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors"
+                className="w-full flex items-center gap-2.5 px-3.5 py-2 text-left text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors rounded-lg cursor-pointer"
               >
-                <ImageIcon size={16} className="text-[var(--theme-text-secondary)]" />
-                <span>{t('libraryUploadImage')}</span>
-              </button>
+                <FileText size={16} className="text-[var(--theme-text-secondary)]" />
+                <span>{t('libraryNote')}</span>
+              </DropdownMenuItem>
+            )}
 
-              {onCreateNote && (
-                <button
-                  onClick={() => {
-                    setIsNewDropdownOpen(false);
-                    onCreateNote();
-                  }}
-                  className="w-full flex items-center gap-2.5 px-3.5 py-2 text-left text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors"
-                >
-                  <FileText size={16} className="text-[var(--theme-text-secondary)]" />
-                  <span>{t('libraryNote')}</span>
-                </button>
-              )}
+            <DropdownMenuSeparator className="my-1 -mx-1.5 h-px bg-[var(--theme-border-secondary)]" />
 
-              <button
-                onClick={() => {
-                  fileInputRef.current?.click();
-                }}
-                className="w-full flex items-center gap-2.5 px-3.5 py-2 text-left text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors border-t border-[var(--theme-border-secondary)] mt-1 pt-2"
-              >
-                <Upload size={16} className="text-[var(--theme-text-secondary)]" />
-                <span>{t('libraryUpload')}</span>
-              </button>
-            </div>
-          )}
+            <DropdownMenuItem
+              onClick={() => {
+                fileInputRef.current?.click();
+              }}
+              className="w-full flex items-center gap-2.5 px-3.5 py-2 text-left text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors rounded-lg cursor-pointer"
+            >
+              <Upload size={16} className="text-[var(--theme-text-secondary)]" />
+              <span>{t('libraryUpload')}</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
 
           <input ref={fileInputRef} type="file" multiple onChange={handleFileChange} className="hidden" />
           <input
@@ -130,7 +136,7 @@ export const LibraryHeader: React.FC<LibraryHeaderProps> = ({ onUploadFiles, onC
             onChange={handleFileChange}
             className="hidden"
           />
-        </div>
+        </DropdownMenu>
       </div>
     </div>
   );

@@ -13,14 +13,13 @@ import {
 
 interface PreloadedScenariosProps {
   appSettings: AppSettings;
-  setAppSettings: Dispatch<SetStateAction<AppSettings>>;
+  setAppSettings?: Dispatch<SetStateAction<AppSettings>>;
   updateAndPersistSessions: SessionsUpdater;
   setActiveSessionId: Dispatch<SetStateAction<string | null>>;
 }
 
 export const usePreloadedScenarios = ({
   appSettings,
-  setAppSettings,
   updateAndPersistSessions,
   setActiveSessionId,
 }: PreloadedScenariosProps) => {
@@ -75,11 +74,6 @@ export const usePreloadedScenarios = ({
     updateAndPersistSessions((prev) => [newSession, ...prev.filter((session) => session.id !== newSession.id)]);
     setActiveSessionId(newSession.id);
     dbService.setActiveSessionId(newSession.id);
-
-    setAppSettings((prev) => ({
-      ...prev,
-      systemInstruction,
-    }));
   };
 
   return {

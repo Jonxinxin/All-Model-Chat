@@ -54,7 +54,8 @@ describe('locateTagTransform', () => {
   });
 
   it('cleans up spaces before punctuation marks when tags are converted', () => {
-    const input = 'This is point <custom-locate id="1">one</custom-locate> 。 And another <custom-locate id="2">two</custom-locate> ！';
+    const input =
+      'This is point <custom-locate id="1">one</custom-locate> 。 And another <custom-locate id="2">two</custom-locate> ！';
     const result = linkifyLocateTags(input, 'custom-locate', customPatterns, dummyBuilder);
     expect(result).toContain('[one](#custom?id=1)。');
     expect(result).toContain('[two](#custom?id=2)！');

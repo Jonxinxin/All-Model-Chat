@@ -166,9 +166,17 @@ describe('linkifyTimestamps', () => {
       '访谈中提到了 <audio-locate audio="interview.mp3" start="01:23" end="02:00">商业模式转变</audio-locate>，随后进入提问环节。';
     const output = linkifyTimestamps(input);
     expect(output).toContain(
-      '[01:23-02:00 · 商业模式转变](#video-seek?start=83&end=120&video=interview.mp3&snippet=%E5%95%86%E4%B8%9A%E6%A8%A1%E5%BC%8F%E8%BD%AC%E5%8F%98)',
+      '[01:23-02:00 · 商业模式转变](#video-seek?start=83&end=120&kind=audio&audio=interview.mp3&video=interview.mp3&snippet=%E5%95%86%E4%B8%9A%E6%A8%A1%E5%BC%8F%E8%BD%AC%E5%8F%98)',
     );
     expect(output).not.toContain('<audio-locate');
+  });
+
+  it('converts inline <audio-locate> tags without audio attribute and attaches kind=audio', () => {
+    const input = '录音提到 <audio-locate start="00:30">重点发言</audio-locate>。';
+    const output = linkifyTimestamps(input);
+    expect(output).toContain(
+      '[00:30 · 重点发言](#video-seek?start=30&kind=audio&snippet=%E9%87%8D%E7%82%B9%E5%8F%91%E8%A8%80)',
+    );
   });
 
   it('converts trailing <audio-locate> tags into interactive links', () => {
@@ -179,7 +187,7 @@ describe('linkifyTimestamps', () => {
     ].join('\n');
     const output = linkifyTimestamps(input);
     expect(output).toContain(
-      '[05:10 · 结尾总结](#video-seek?start=310&video=interview.mp3&snippet=%E7%BB%93%E5%B0%BE%E6%80%BB%E7%BB%93)',
+      '[05:10 · 结尾总结](#video-seek?start=310&kind=audio&audio=interview.mp3&video=interview.mp3&snippet=%E7%BB%93%E5%B0%BE%E6%80%BB%E7%BB%93)',
     );
   });
 
@@ -262,5 +270,29 @@ describe('linkifyTimestamps', () => {
     // Zero redundant locate tags remaining
     expect(output).not.toContain('<video-locate');
     expect(output).not.toContain('`[');
+  });
+
+  it('ignores invalid timestamps where seconds or minutes are out of range', () => {
+    const input = '这并不是一个时间 12:88 或者 01:99，还有 1:65:20 也不是。';
+    const output = linkifyTimestamps(input);
+    expect(output).toBe(input);
+  });
+
+  it('does not linkify aspect ratios or scale ratios', () => {
+    const input = '屏幕比例 16:10 以及地图比例尺 1:20，还有 aspect ratio: 16:10。';
+    const output = linkifyTimestamps(input);
+    expect(output).toBe(input);
+  });
+
+  it('does not linkify sports scores', () => {
+    const input = '目前双方比分 2:10，第一回合战成 1:20。';
+    const output = linkifyTimestamps(input);
+    expect(output).toBe(input);
+  });
+
+  it('does not linkify explicit time of day with AM/PM indicators', () => {
+    const input = '明天下午 02:30 准时开会，或者上午 10:30 也行，或者 09:30 am。';
+    const output = linkifyTimestamps(input);
+    expect(output).toBe(input);
   });
 });

@@ -1,4 +1,4 @@
-import { createChatHistoryForApi } from '@/utils/chat/builder';
+import { createChatHistoryForApi, appendTurnToHistory } from '@/utils/chat/builder';
 import {
   buildAudioLocateDirective,
   buildImageLocateDirective,
@@ -6,13 +6,14 @@ import {
   buildVideoLocateDirective,
 } from '@/utils/media-nav/locateMarker';
 import { isLiveArtifactsModeFromSettings } from '@/utils/live-artifacts/liveArtifactsMode';
+import { getLiveArtifactsSystemPromptOverride } from '@/utils/live-artifacts/liveArtifactsPromptSettings';
 import { composeSystemInstruction } from '@/features/prompts/promptCompositor';
 import {
   collectSessionMediaFiles,
   isAudioFile,
   isImageFile,
   isPdfFile,
-  isVideoFile,
+  isNavigableVideoFile,
   partsContainAudio,
   partsContainImage,
   partsContainPdf,
@@ -211,9 +212,9 @@ export const performStandardChatApiCall = async ({
     partsContainPdf(finalParts) ||
     baseMessagesForApi.some((message) => message.files?.some(isPdfFile));
   const hasVideoMedia =
-    enrichedFiles.some(isVideoFile) ||
+    enrichedFiles.some(isNavigableVideoFile) ||
     partsContainVideo(finalParts) ||
-    baseMessagesForApi.some((message) => message.files?.some(isVideoFile));
+    baseMessagesForApi.some((message) => message.files?.some(isNavigableVideoFile));
   const hasAudioMedia =
     enrichedFiles.some(isAudioFile) ||
     partsContainAudio(finalParts) ||
@@ -246,6 +247,7 @@ export const performStandardChatApiCall = async ({
     userInstruction: sessionToUpdate.systemInstruction,
     isLiveArtifactsEnabled: isLiveArtifactsActive,
     liveArtifactsPromptMode: appSettings.liveArtifactsPromptMode,
+    customLiveArtifactsPrompt: getLiveArtifactsSystemPromptOverride(appSettings, appSettings.liveArtifactsPromptMode),
     visionPromptMode: sessionToUpdate.visionPromptMode,
     isDeepSearchEnabled: !activeProvider && Boolean(sessionToUpdate.isDeepSearchEnabled),
     isLocalPythonEnabled: !activeProvider && Boolean(sessionToUpdate.isLocalPythonEnabled),
@@ -677,7 +679,7 @@ export const performStandardChatApiCall = async ({
             if (hasFunctionDeclarationsInRequest) {
               try {
                 const toolLoopResult = await runStandardToolLoop({
-                  initialContents: [...retryHistoryForChat, { role: finalRole, parts: retryFinalParts }],
+                  initialContents: appendTurnToHistory(retryHistoryForChat, finalRole, retryFinalParts),
                   clientFunctions: combinedClientFunctions,
                   abortSignal: newAbortController.signal,
                   onToolCallsStarted: (modelContent) => {
@@ -772,7 +774,7 @@ export const performStandardChatApiCall = async ({
   if (hasFunctionDeclarationsInRequest) {
     try {
       const toolLoopResult = await runStandardToolLoop({
-        initialContents: [...historyForChat, { role: finalRole, parts: finalParts }],
+        initialContents: appendTurnToHistory(historyForChat, finalRole, finalParts),
         clientFunctions: combinedClientFunctions,
         abortSignal: newAbortController.signal,
         onToolCallsStarted: (modelContent) => {

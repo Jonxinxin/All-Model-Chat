@@ -41,7 +41,7 @@
 ## Preview
 
 <p align="center">
-  <img src="./docs/screenshots/app-desktop-20260426.png" alt="AMC WebUI desktop preview" width="100%">
+  <img src="./docs/screenshots/app-desktop-20260909.png" alt="AMC WebUI desktop preview" width="100%">
 </p>
 
 ## Overview
@@ -121,6 +121,14 @@ The project currently focuses on one main application shape: a **Vite + React SP
 - Speech transcription through the Gemini 3.5 Transcribe model.
 - Gemini native image generation (Nano Banana) with aspect ratio, size, and quad-image options.
 
+### Model Context Protocol (MCP)
+
+- Full standard Model Context Protocol (MCP) support bridged through Node API endpoints (`/api/mcp/*`).
+- Supports **stdio**, **SSE**, and **Streamable HTTP** transports (HTTP/SSE connections adhere to the `ENABLE_MCP_PRIVATE_HTTP` private-network security policy).
+- Human-in-the-loop tool execution approval dialogs before invoking external MCP tools.
+- Complete browsing and management of MCP tools, Prompts, and Resources.
+- Real-time connection status monitoring and developer logging.
+
 ### API Management
 
 - Dual API modes: switch between Gemini Native and OpenAI Compatible request paths.
@@ -159,13 +167,13 @@ The project currently focuses on one main application shape: a **Vite + React SP
 
 ### Safety Settings
 
-- Four safety filter categories: harassment, hate speech, sexual content, and dangerous content.
+- Five safety filter categories: harassment, hate speech, sexual content, dangerous content, and jailbreak protection.
 - Each category can be independently configured with levels: Off / Block None / Block Few / Block Some / Block Most.
-- All four default to Off, matching the Gemini API default for 2.5 and 3 models.
+- All five default to Off, matching the Gemini API default for 2.5 and 3 models.
 
 ### Theme System
 
-- Built-in Onyx (dark), Graphite (gray), and Pearl (light) themes.
+- Built-in Onyx (dark), Graphite (gray), Pearl (light, default), and Sepia (warm beige) themes.
 - Supports automatic switching to follow the system theme.
 
 ### Data Management
@@ -187,7 +195,8 @@ Node.js 26 is recommended for local development. The repository includes `.nvmrc
 git clone https://github.com/yeahhe365/AMC-WebUI.git
 cd AMC-WebUI
 
-npm ci
+# Install dependencies (pnpm recommended, npm ci supported)
+pnpm install
 pnpm dev
 ```
 
@@ -452,6 +461,7 @@ AMC-WebUI/
 ├── public/                     # Static assets and runtime-config.js template
 ├── e2e/                        # Playwright tests
 ├── docs/                       # Screenshots and model-logos (runtime icons live in src/assets/model-icons/)
+├── docs-site/                  # Astro Starlight official documentation site source
 ├── docker/                     # Deployment helper scripts (for example web-server.js)
 ├── Dockerfile.api              # Node API container image build config
 ├── Dockerfile.web              # Web frontend container image build config
@@ -475,14 +485,14 @@ AMC-WebUI/
 
 OpenAI Compatible mode uses a separate model list that you can manage manually or fetch from a compatible endpoint. The table below lists the built-in Gemini Native defaults.
 
-| Type             | Models                                                                                                                                      |
-| :--------------- | :------------------------------------------------------------------------------------------------------------------------------------------ |
-| Gemini 3.x       | `gemini-3.8-flash`, `gemini-3.5-flash-lite`, `gemini-3.1-flash-live-preview`, `gemini-3.5-live-translate-preview`, `gemini-3.1-pro-preview` |
-| Robotics         | `gemini-robotics-er-2-preview`                                                                                                              |
-| Gemma 4          | `gemma-4-31b-it`, `gemma-4-26b-a4b-it`                                                                                                      |
-| Image generation | `gemini-3-pro-image-preview`, `gemini-3.1-flash-image-preview`, `gemini-3.1-flash-lite-image`                                               |
-| TTS              | `gemini-3.1-flash-tts-preview` with 30 voices                                                                                               |
-| Transcription    | `gemini-3.5-transcribe`, `gemini-3.5-transcribe-live`                                                                                       |
+| Type             | Models                                                                                                                                                          |
+| :--------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Gemini 3.x       | `gemini-3.8-flash`, `gemini-3.7-flash`, `gemini-3.5-flash-lite`, `gemini-3.1-flash-live-preview`, `gemini-3.5-live-translate-preview`, `gemini-3.1-pro-preview` |
+| Robotics         | `gemini-robotics-er-2-preview`                                                                                                                                  |
+| Gemma 4          | `gemma-4-31b-it`, `gemma-4-26b-a4b-it`                                                                                                                          |
+| Image generation | `gemini-3-pro-image`, `gemini-3.1-flash-image`, `gemini-3.1-flash-lite-image`                                                                                   |
+| TTS              | `gemini-3.1-flash-tts-preview` with 30 voices                                                                                                                   |
+| Transcription    | `gemini-3.5-transcribe`, `gemini-3.5-transcribe-live`                                                                                                           |
 
 ---
 

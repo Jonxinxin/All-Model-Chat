@@ -8,11 +8,14 @@ import {
   isImageFile,
   isPdfFile,
   isVideoFile,
+  isYoutubeVideoFile,
+  isNavigableVideoFile,
   partsContainAudio,
   partsContainImage,
   partsContainPdf,
   partsContainVideo,
   resolveNamedFile,
+  formatMediaNavDisplayName,
 } from './sessionMediaFiles';
 
 const makeFile = (overrides: Partial<UploadedFile> = {}): UploadedFile => ({
@@ -148,5 +151,75 @@ describe('resolveNamedFile', () => {
 
   it('falls back to first file when locator does not match and no activeFileId', () => {
     expect(resolveNamedFile(files, 'non-existent-doc.pdf')?.id).toBe('f1');
+  });
+
+  it('resolves YouTube videos by URL or Video ID', () => {
+    const ytFile = makeFile({
+      id: 'yt-1',
+      name: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      type: 'video/youtube-link',
+      fileUri: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    });
+    const mediaFiles = [...files, ytFile];
+
+    expect(resolveNamedFile(mediaFiles, 'dQw4w9WgXcQ')?.id).toBe('yt-1');
+    expect(resolveNamedFile(mediaFiles, 'https://www.youtube.com/watch?v=dQw4w9WgXcQ')?.id).toBe('yt-1');
+    expect(resolveNamedFile(mediaFiles, 'youtu.be/dQw4w9WgXcQ')?.id).toBe('yt-1');
+  });
+});
+
+describe('YouTube navigable video support', () => {
+  it('identifies YouTube files as navigable videos', () => {
+    const yt1 = makeFile({ type: 'video/youtube-link', name: 'https://youtube.com/watch?v=abc12345678' });
+    const yt2 = makeFile({ type: '', fileUri: 'https://youtu.be/abc12345678' });
+    const localVideo = makeFile({ type: 'video/mp4', name: 'clip.mp4' });
+    const notVideo = makeFile({ type: 'image/png', name: 'img.png' });
+
+    expect(isYoutubeVideoFile(yt1)).toBe(true);
+    expect(isYoutubeVideoFile(yt2)).toBe(true);
+    expect(isYoutubeVideoFile(localVideo)).toBe(false);
+
+    expect(isNavigableVideoFile(yt1)).toBe(true);
+    expect(isNavigableVideoFile(yt2)).toBe(true);
+    expect(isNavigableVideoFile(localVideo)).toBe(true);
+    expect(isNavigableVideoFile(notVideo)).toBe(false);
+  });
+
+  it('collects YouTube videos into videos array in collectSessionMediaFiles', () => {
+    const yt = makeFile({
+      id: 'yt-1',
+      name: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      type: 'video/youtube-link',
+      fileUri: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    });
+    const local = makeFile({ id: 'v-1', name: 'clip.mp4', type: 'video/mp4' });
+    const { videos } = collectSessionMediaFiles([yt], [makeMessage([local])]);
+
+    expect(videos.map((v) => v.id)).toEqual(['yt-1', 'v-1']);
+  });
+
+  it('detects YouTube fileData in partsContainVideo', () => {
+    expect(partsContainVideo([{ fileData: { fileUri: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' } } as never])).toBe(
+      true,
+    );
+  });
+
+  describe('formatMediaNavDisplayName', () => {
+    it('formats YouTube URLs as YouTube (videoId)', () => {
+      expect(formatMediaNavDisplayName({ name: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' })).toBe(
+        'YouTube (dQw4w9WgXcQ)',
+      );
+      expect(
+        formatMediaNavDisplayName({
+          name: 'raw-upload.mp4',
+          fileUri: 'https://youtu.be/dQw4w9WgXcQ',
+        }),
+      ).toBe('YouTube (dQw4w9WgXcQ)');
+    });
+
+    it('returns regular file name for standard files', () => {
+      expect(formatMediaNavDisplayName({ name: 'summary.pdf' })).toBe('summary.pdf');
+      expect(formatMediaNavDisplayName({ name: 'clip.mp4' })).toBe('clip.mp4');
+    });
   });
 });

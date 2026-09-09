@@ -152,9 +152,7 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
             <div
               key={group.id}
               data-settings-group={group.id}
-              className={`flex flex-shrink-0 md:w-full md:flex-col gap-1 md:gap-1 ${
-                idx > 0 ? 'md:pt-2' : ''
-              }`}
+              className={`flex flex-shrink-0 md:w-full md:flex-col gap-1 md:gap-1 ${idx > 0 ? 'md:pt-2' : ''}`}
             >
               {group.titleKey && (
                 <div className="hidden md:block px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--theme-text-secondary)]/50 select-none">

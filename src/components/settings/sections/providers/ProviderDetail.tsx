@@ -109,7 +109,7 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
   // Batch model health check
   const handleBatchHealthCheck = async () => {
     if (connection.models.length === 0) {
-      toastWarning('当前服务商暂无模型可测活');
+      toastWarning(t('thirdPartyToastNoModelsToProbe'));
       return;
     }
     const controller = new AbortController();
@@ -134,10 +134,19 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
       setBatchSummary(summary);
       if (!controller.signal.aborted) {
         if (summary.errorCount === 0) {
-          toastSuccess(`测活完成：全部 ${summary.successCount} 个模型正常 (平均延迟 ${summary.avgLatencyMs}ms)`);
+          toastSuccess(
+            t('thirdPartyToastProbeAllSuccess', {
+              count: summary.successCount,
+              latency: summary.avgLatencyMs,
+            }),
+          );
         } else {
           toastWarning(
-            `测活完成：${summary.successCount} 个正常，${summary.errorCount} 个异常 (平均延迟 ${summary.avgLatencyMs}ms)`,
+            t('thirdPartyToastProbePartialSuccess', {
+              successCount: summary.successCount,
+              errorCount: summary.errorCount,
+              latency: summary.avgLatencyMs,
+            }),
           );
         }
       }
@@ -154,7 +163,7 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
     batchAbortControllerRef.current?.abort();
     setIsCheckingBatch(false);
     setBatchProgress(null);
-    toastWarning('已中止测活');
+    toastWarning(t('thirdPartyToastProbeAborted'));
   };
 
   const handleSingleModelProbe = async (modelId: string) => {
@@ -165,9 +174,11 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
       const res = await probeSingleModel(connection, modelId);
       setModelProbeResults((prev) => ({ ...prev, [modelId]: res }));
       if (res.status === 'success') {
-        toastSuccess(`${modelId} 测活成功：${formatLatency(res.latencyMs)}`);
+        toastSuccess(t('thirdPartyToastSingleProbeSuccess', { modelId, latency: formatLatency(res.latencyMs) }));
       } else {
-        toastError(`${modelId} 测活失败: ${res.errorMessage || '未知错误'}`);
+        toastError(
+          t('thirdPartyToastSingleProbeFailed', { modelId, error: res.errorMessage || t('thirdPartyFailed') }),
+        );
       }
     } catch (probeError) {
       toastError(getErrorMessage(probeError));
@@ -188,11 +199,9 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
     );
     if (failedIds.size === 0) return;
 
-    const updated = connection.models.map((m) =>
-      failedIds.has(m.id) ? { ...m, visibleInSelector: false } : m,
-    );
+    const updated = connection.models.map((m) => (failedIds.has(m.id) ? { ...m, visibleInSelector: false } : m));
     onUpdateConnection({ models: updated });
-    toastSuccess(`已停用 ${failedIds.size} 个失效模型在选择器中的显示`);
+    toastSuccess(t('thirdPartyToastDisabledFailedModels', { count: failedIds.size }));
     setBatchSummary(null);
   };
 
@@ -245,7 +254,7 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
       );
 
       if (rawRemoteModels.length === 0) {
-        toastWarning('远端接口返回了 0 个模型');
+        toastWarning(t('thirdPartyToastRemoteZeroModels'));
         return;
       }
 
@@ -254,7 +263,7 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
       setSyncRemoteModels(enriched);
       setIsSyncModalOpen(true);
     } catch (syncError) {
-      toastError(`同步模型失败: ${getErrorMessage(syncError)}`);
+      toastError(t('thirdPartyToastSyncFailed', { error: getErrorMessage(syncError) }));
     } finally {
       setIsSyncingModels(false);
     }
@@ -266,7 +275,7 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
       models: reconciledModels,
       modelId: connection.modelId || reconciledModels[0]?.id || '',
     });
-    toastSuccess(`已成功同步并更新模型列表 (共 ${reconciledModels.length} 个模型)`);
+    toastSuccess(t('thirdPartyToastSyncSuccess', { count: reconciledModels.length }));
   };
 
   // Add custom model
@@ -277,7 +286,7 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
     const trimmedName = newModelName.trim() || trimmedId;
     const existing = connection.models.find((m) => m.id === trimmedId);
     if (existing) {
-      toastWarning('该模型 ID 已存在');
+      toastWarning(t('thirdPartyToastModelIdExists'));
       return;
     }
 
@@ -294,7 +303,7 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
     setNewModelId('');
     setNewModelName('');
     setIsAddingModel(false);
-    toastSuccess(`已添加模型: ${trimmedName}`);
+    toastSuccess(t('thirdPartyToastModelAdded', { name: trimmedName }));
   };
 
   // Synchronize selectedModelIds when connection.models change
@@ -425,7 +434,9 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
     );
     onUpdateConnection({ models: updated });
     toastSuccess(
-      `已批量${visible ? '在对话选择器中显示' : '在对话选择器中隐藏'} ${selectedModelIds.size} 个模型`,
+      visible
+        ? t('thirdPartyToastBatchShow', { count: selectedModelIds.size })
+        : t('thirdPartyToastBatchHide', { count: selectedModelIds.size }),
     );
   };
 
@@ -433,9 +444,7 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
     if (selectedModelIds.size === 0) return;
     const count = selectedModelIds.size;
     const remaining = connection.models.filter((m) => !selectedModelIds.has(m.id));
-    const newSelectedModelId = selectedModelIds.has(connection.modelId)
-      ? remaining[0]?.id ?? ''
-      : connection.modelId;
+    const newSelectedModelId = selectedModelIds.has(connection.modelId) ? (remaining[0]?.id ?? '') : connection.modelId;
 
     onUpdateConnection({
       models: remaining,
@@ -443,7 +452,7 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
     });
     setSelectedModelIds(new Set());
     setIsBatchMode(false);
-    toastSuccess(`已批量删除 ${count} 个模型`);
+    toastSuccess(t('thirdPartyToastBatchDeleted', { count }));
   };
 
   const handleBatchProbeSelected = async () => {
@@ -472,10 +481,19 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
       setBatchSummary(summary);
       if (!controller.signal.aborted) {
         if (summary.errorCount === 0) {
-          toastSuccess(`测活完成：选中的 ${summary.successCount} 个模型均正常 (平均延迟 ${summary.avgLatencyMs}ms)`);
+          toastSuccess(
+            t('thirdPartyToastSelectedProbeAllSuccess', {
+              count: summary.successCount,
+              latency: summary.avgLatencyMs,
+            }),
+          );
         } else {
           toastWarning(
-            `测活完成：${summary.successCount} 个正常，${summary.errorCount} 个异常 (平均延迟 ${summary.avgLatencyMs}ms)`,
+            t('thirdPartyToastProbePartialSuccess', {
+              successCount: summary.successCount,
+              errorCount: summary.errorCount,
+              latency: summary.avgLatencyMs,
+            }),
           );
         }
       }
@@ -512,7 +530,7 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
             type="button"
             onClick={() => setIsEditOpen(true)}
             className="p-1.5 rounded-lg text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors focus:outline-none"
-            title="配置服务商属性"
+            title={t('thirdPartyConfigureProvider')}
           >
             <Settings size={16} />
           </button>
@@ -524,19 +542,19 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
               connection.enabled ? 'text-emerald-600 dark:text-emerald-400' : 'text-[var(--theme-text-secondary)]'
             }`}
           >
-            {connection.enabled ? (t('enabled') || '已启用') : (t('disabled') || '已停用')}
+            {connection.enabled ? t('enabled') || 'Enabled' : t('disabled') || 'Disabled'}
           </span>
           <Toggle
             checked={connection.enabled}
             onChange={(checked) => onUpdateConnection({ enabled: checked })}
-            ariaLabel={`${connection.name} ${connection.enabled ? '已启用' : '已停用'}`}
+            ariaLabel={`${connection.name} ${connection.enabled ? t('enabled') || 'Enabled' : t('disabled') || 'Disabled'}`}
           />
         </div>
       </div>
       <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-6">
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs">
-            <span className="font-semibold text-[var(--theme-text-primary)]">API 密钥</span>
+            <span className="font-semibold text-[var(--theme-text-primary)]">{t('thirdPartyApiKeyLabel')}</span>
             {templateLinks.apiKeyUrl && (
               <a
                 href={templateLinks.apiKeyUrl}
@@ -544,7 +562,7 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-[var(--theme-text-link)] hover:underline"
               >
-                <span>获取密钥</span>
+                <span>{t('thirdPartyGetApiKey')}</span>
                 <ExternalLink size={11} />
               </a>
             )}
@@ -556,14 +574,14 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
                 type={showApiKey ? 'text' : 'password'}
                 value={connection.apiKey ?? ''}
                 onChange={(e) => onUpdateConnection({ apiKey: e.target.value })}
-                placeholder={connection.authOptional ? '免认证（留空即可）' : 'sk-...'}
+                placeholder={connection.authOptional ? t('thirdPartyAuthOptionalPlaceholder') : 'sk-...'}
                 className={`w-full pl-3 pr-9 py-2 rounded-xl border text-xs font-mono transition-all ${SETTINGS_INPUT_CLASS}`}
               />
               <button
                 type="button"
                 onClick={() => setShowApiKey(!showApiKey)}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--theme-text-secondary)]/70 hover:text-[var(--theme-text-primary)] p-0.5 focus:outline-none"
-                title={showApiKey ? '隐藏密钥' : '显示密钥'}
+                title={showApiKey ? t('thirdPartyHideKey') : t('thirdPartyShowKey')}
               >
                 {showApiKey ? <EyeOff size={14} /> : <Eye size={14} />}
               </button>
@@ -573,11 +591,11 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
               onClick={() => {
                 if (connection.apiKey) {
                   navigator.clipboard.writeText(connection.apiKey);
-                  toastSuccess('API 密钥已复制到剪贴板');
+                  toastSuccess(t('thirdPartyToastKeyCopied'));
                 }
               }}
               className="p-2 rounded-xl border border-[var(--theme-border-secondary)]/70 bg-[var(--theme-bg-secondary)]/60 text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors flex-shrink-0"
-              title="复制 API 密钥"
+              title={t('thirdPartyCopyKey')}
             >
               <KeyRound size={15} />
             </button>
@@ -592,7 +610,7 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
               ) : (
                 <Activity size={13} className="text-[var(--theme-text-secondary)]" />
               )}
-              <span>检测</span>
+              <span>{t('thirdPartyDetect')}</span>
             </button>
             {healthResult && (
               <span
@@ -602,7 +620,9 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
                 title={healthResult.errorMessage ?? undefined}
               >
                 <span className={`w-1.5 h-1.5 rounded-full ${getLatencyBadgeStyles(healthResult.grade).dot}`} />
-                <span>{healthResult.status === 'success' ? formatLatency(healthResult.latencyMs) : '失败'}</span>
+                <span>
+                  {healthResult.status === 'success' ? formatLatency(healthResult.latencyMs) : t('thirdPartyFailed')}
+                </span>
               </span>
             )}
           </div>
@@ -610,7 +630,7 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs">
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-[var(--theme-text-primary)]">API 地址</span>
+              <span className="font-semibold text-[var(--theme-text-primary)]">{t('thirdPartyApiUrlLabel')}</span>
               {templateLinks.docUrl && (
                 <a
                   href={templateLinks.docUrl}
@@ -618,7 +638,7 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
                   rel="noopener noreferrer"
                   className="text-xs text-[var(--theme-text-link)] hover:underline flex items-center gap-1"
                 >
-                  <span>添加端点 / 文档</span>
+                  <span>{t('thirdPartyAddEndpointOrDocs')}</span>
                   <ExternalLink size={10} />
                 </a>
               )}
@@ -637,7 +657,7 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
               type="button"
               onClick={() => setIsEditOpen(true)}
               className="p-2 rounded-xl border border-[var(--theme-border-secondary)]/70 bg-[var(--theme-bg-secondary)]/60 text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors flex-shrink-0"
-              title="配置端点与自定义请求头"
+              title={t('thirdPartyConfigureEndpointAndHeaders')}
             >
               <Settings size={15} />
             </button>
@@ -646,12 +666,14 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
         <div className="space-y-3 pt-2" data-settings-item="providers-models">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-[var(--theme-text-primary)]">模型</span>
+              <span className="text-sm font-semibold text-[var(--theme-text-primary)]">
+                {t('thirdPartyModelsLabel')}
+              </span>
               <button
                 type="button"
                 onClick={toggleAllGroups}
                 className="p-1 rounded-md text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors"
-                title="折叠/展开全部"
+                title={t('thirdPartyToggleCollapseAll')}
               >
                 <ChevronsUpDown size={14} />
               </button>
@@ -663,7 +685,7 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
                     ? 'text-[var(--theme-border-focus)] bg-[var(--theme-border-focus)]/10'
                     : 'text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)]'
                 }`}
-                title="搜索模型"
+                title={t('thirdPartySearchModels')}
               >
                 <Search size={14} />
               </button>
@@ -679,7 +701,7 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
                     ? 'text-[var(--theme-border-focus)] bg-[var(--theme-border-focus)]/10'
                     : 'text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)]'
                 }`}
-                title="批量管理模型"
+                title={t('thirdPartyBatchManage')}
               >
                 <ListChecks size={14} />
               </button>
@@ -689,12 +711,17 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
               {isCheckingBatch ? (
                 <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-xs font-medium text-amber-600 dark:text-amber-400">
                   <Loader2 size={13} className="animate-spin" />
-                  <span>测活中 ({batchProgress?.completed}/{batchProgress?.total})</span>
+                  <span>
+                    {t('thirdPartyProbingProgress', {
+                      completed: batchProgress?.completed ?? 0,
+                      total: batchProgress?.total ?? 0,
+                    })}
+                  </span>
                   <button
                     type="button"
                     onClick={handleStopBatchHealthCheck}
                     className="ml-1 p-0.5 rounded hover:bg-amber-500/20 transition-colors cursor-pointer"
-                    title="中止测活"
+                    title={t('thirdPartyAbortProbe')}
                   >
                     <Square size={11} className="fill-current" />
                   </button>
@@ -705,10 +732,10 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
                   onClick={handleBatchHealthCheck}
                   disabled={connection.models.length === 0}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[var(--theme-border-secondary)]/70 bg-[var(--theme-bg-secondary)]/50 hover:bg-[var(--theme-bg-tertiary)] text-xs font-medium text-[var(--theme-text-primary)] transition-all cursor-pointer disabled:opacity-50 shadow-xs"
-                  title="并发检测所有模型的连通性与响应延迟"
+                  title={t('thirdPartyProbeAllTooltip')}
                 >
                   <Activity size={13} className="text-emerald-500" />
-                  <span>测活</span>
+                  <span>{t('thirdPartyProbe')}</span>
                 </button>
               )}
 
@@ -719,13 +746,13 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[var(--theme-border-secondary)]/70 bg-[var(--theme-bg-secondary)]/50 hover:bg-[var(--theme-bg-tertiary)] text-xs font-medium text-[var(--theme-text-primary)] transition-all cursor-pointer disabled:opacity-60 shadow-xs"
               >
                 <RefreshCw size={13} className={isSyncingModels ? 'animate-spin' : ''} />
-                <span>同步模型</span>
+                <span>{t('thirdPartySyncModels')}</span>
               </button>
               <button
                 type="button"
                 onClick={() => setIsAddingModel(true)}
                 className="p-1.5 rounded-xl border border-[var(--theme-border-secondary)]/70 bg-[var(--theme-bg-secondary)]/50 hover:bg-[var(--theme-bg-tertiary)] text-[var(--theme-text-primary)] transition-all cursor-pointer shadow-xs"
-                title="手动添加模型"
+                title={t('thirdPartyManualAddModel')}
               >
                 <Plus size={14} />
               </button>
@@ -736,7 +763,11 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
               <div className="flex items-center gap-2">
                 <AlertCircle size={15} className="text-amber-500 flex-shrink-0" />
                 <span>
-                  测活完成：{batchSummary.successCount} 个正常，{batchSummary.errorCount} 个异常 (平均延迟: {batchSummary.avgLatencyMs}ms)
+                  {t('thirdPartyProbeSummaryBanner', {
+                    successCount: batchSummary.successCount,
+                    errorCount: batchSummary.errorCount,
+                    latency: batchSummary.avgLatencyMs,
+                  })}
                 </span>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
@@ -745,7 +776,7 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
                   onClick={handleDisableFailedModels}
                   className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 font-medium text-amber-800 dark:text-amber-200 transition-colors cursor-pointer"
                 >
-                  一键停用失效模型
+                  {t('thirdPartyDisableFailedModels')}
                 </button>
                 <button
                   type="button"
@@ -767,7 +798,7 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
                 type="text"
                 value={modelSearch}
                 onChange={(e) => setModelSearch(e.target.value)}
-                placeholder="快速筛选模型名称或 ID..."
+                placeholder={t('thirdPartyFilterModelPlaceholder')}
                 className="w-full pl-8 pr-7 py-1.5 text-xs rounded-xl border border-[var(--theme-border-secondary)]/60 bg-[var(--theme-bg-secondary)]/20 text-[var(--theme-text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-border-focus)]"
                 autoFocus
               />
@@ -801,7 +832,7 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
                   ) : (
                     <Square size={13} className="text-[var(--theme-text-secondary)]" />
                   )}
-                  <span>{isAllVisibleSelected ? '取消全选' : '全选'}</span>
+                  <span>{isAllVisibleSelected ? t('thirdPartyDeselectAll') : t('thirdPartySelectAll')}</span>
                 </button>
 
                 <button
@@ -809,11 +840,11 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
                   onClick={handleInvertSelection}
                   className="px-2 py-1 rounded-lg border border-[var(--theme-border-secondary)]/70 bg-[var(--theme-bg-primary)] hover:bg-[var(--theme-bg-secondary)] text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)] transition-colors cursor-pointer"
                 >
-                  反选
+                  {t('thirdPartyInvertSelection')}
                 </button>
 
                 <span className="text-[var(--theme-text-secondary)] ml-1">
-                  已选 <strong className="text-[var(--theme-text-primary)] font-semibold">{selectedModelIds.size}</strong> / {filteredModels.length} 项
+                  {t('thirdPartySelectedCount', { selected: selectedModelIds.size, total: filteredModels.length })}
                 </span>
               </div>
 
@@ -823,10 +854,10 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
                   onClick={() => handleBatchSetVisible(true)}
                   disabled={selectedModelIds.size === 0}
                   className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-medium transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                  title="在对话框模型选择器中显示选中的模型"
+                  title={t('thirdPartyShowSelectedTooltip')}
                 >
                   <Eye size={12} />
-                  <span>显示</span>
+                  <span>{t('thirdPartyShow')}</span>
                 </button>
 
                 <button
@@ -834,10 +865,10 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
                   onClick={() => handleBatchSetVisible(false)}
                   disabled={selectedModelIds.size === 0}
                   className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[var(--theme-border-secondary)]/70 bg-[var(--theme-bg-primary)] hover:bg-[var(--theme-bg-secondary)] text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)] font-medium transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                  title="在对话框模型选择器中隐藏选中的模型"
+                  title={t('thirdPartyHideSelectedTooltip')}
                 >
                   <EyeOff size={12} />
-                  <span>隐藏</span>
+                  <span>{t('thirdPartyHide')}</span>
                 </button>
 
                 <button
@@ -845,10 +876,10 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
                   onClick={handleBatchProbeSelected}
                   disabled={selectedModelIds.size === 0 || isCheckingBatch}
                   className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-sky-500/30 bg-sky-500/10 hover:bg-sky-500/20 text-sky-700 dark:text-sky-300 font-medium transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                  title="并发测活当前选中的模型"
+                  title={t('thirdPartyProbeSelectedTooltip')}
                 >
                   <Activity size={12} />
-                  <span>测活已选</span>
+                  <span>{t('thirdPartyProbeSelected')}</span>
                 </button>
 
                 <button
@@ -856,10 +887,10 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
                   onClick={handleBatchDelete}
                   disabled={selectedModelIds.size === 0}
                   className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 font-medium transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                  title="批量删除选中的模型"
+                  title={t('thirdPartyDeleteSelectedTooltip')}
                 >
                   <Trash2 size={12} />
-                  <span>删除</span>
+                  <span>{t('delete')}</span>
                 </button>
 
                 <button
@@ -869,7 +900,7 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
                     setIsBatchMode(false);
                   }}
                   className="p-1 rounded-lg text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors ml-1 cursor-pointer"
-                  title="退出批量管理"
+                  title={t('thirdPartyExitBatchManageTooltip')}
                 >
                   <X size={14} />
                 </button>
@@ -880,7 +911,7 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
           {isAddingModel && (
             <div className="p-3 rounded-xl border border-[var(--theme-border-focus)]/50 bg-[var(--theme-bg-secondary)]/30 space-y-2.5 animate-in fade-in duration-150">
               <div className="flex items-center justify-between text-xs font-semibold text-[var(--theme-text-primary)]">
-                <span>添加自定义模型</span>
+                <span>{t('thirdPartyAddCustomModel')}</span>
                 <button
                   type="button"
                   onClick={() => setIsAddingModel(false)}
@@ -894,7 +925,7 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
                   type="text"
                   value={newModelId}
                   onChange={(e) => setNewModelId(e.target.value)}
-                  placeholder="模型 ID (如 deepseek-ai/DeepSeek-V3)"
+                  placeholder={t('thirdPartyCustomModelIdPlaceholder')}
                   className={`p-2 rounded-lg border text-xs font-mono ${SETTINGS_INPUT_CLASS}`}
                   autoFocus
                 />
@@ -902,7 +933,7 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
                   type="text"
                   value={newModelName}
                   onChange={(e) => setNewModelName(e.target.value)}
-                  placeholder="显示名称 (选填)"
+                  placeholder={t('thirdPartyCustomModelNamePlaceholder')}
                   className={`p-2 rounded-lg border text-xs ${SETTINGS_INPUT_CLASS}`}
                 />
               </div>
@@ -920,7 +951,7 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
                   disabled={!newModelId.trim()}
                   className="px-3 py-1 text-xs rounded-lg bg-[var(--theme-border-focus)] text-white disabled:opacity-50"
                 >
-                  添加
+                  {t('add')}
                 </button>
               </div>
             </div>
@@ -928,7 +959,9 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
           <div className="rounded-2xl border border-[var(--theme-border-secondary)]/40 bg-[var(--theme-bg-secondary)]/10 p-2 space-y-3">
             {Object.keys(groupedModels).length === 0 ? (
               <div className="py-8 text-center text-xs text-[var(--theme-text-secondary)]">
-                {connection.models.length === 0 ? '暂无模型，点击右上角「同步模型」快速拉取' : '无匹配模型'}
+                {connection.models.length === 0
+                  ? t('thirdPartyNoModelsPrompt')
+                  : t('thirdPartyNoMatchingFilteredModels')}
               </div>
             ) : (
               (Object.entries(groupedModels) as Array<[string, ModelOption[]]>).map(([groupKey, models]) => {
@@ -973,12 +1006,19 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
                                       ? 'opacity-100'
                                       : 'opacity-0 group-hover:opacity-100 focus:opacity-100'
                                   }`}
-                                  title={selectedModelIds.has(model.id) ? '取消选择' : '选中该模型'}
+                                  title={
+                                    selectedModelIds.has(model.id)
+                                      ? t('thirdPartyDeselectModel')
+                                      : t('thirdPartySelectModel')
+                                  }
                                 >
                                   {selectedModelIds.has(model.id) ? (
                                     <CheckSquare size={14} className="text-[var(--theme-border-focus)]" />
                                   ) : (
-                                    <Square size={14} className="text-[var(--theme-text-secondary)]/50 hover:text-[var(--theme-text-secondary)]" />
+                                    <Square
+                                      size={14}
+                                      className="text-[var(--theme-text-secondary)]/50 hover:text-[var(--theme-text-secondary)]"
+                                    />
                                   )}
                                 </button>
                                 <ProviderAvatar name={model.name || model.id} size={24} className="text-[11px]" />
@@ -1002,7 +1042,7 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
                                     {model.capabilities?.vision ? (
                                       <span
                                         className="px-1 py-0.2 rounded text-[9px] font-medium bg-teal-500/10 text-teal-400 border border-teal-500/20"
-                                        title="支持 Vision 视觉理解"
+                                        title={t('thirdPartyVisionTooltip')}
                                       >
                                         Vision
                                       </span>
@@ -1010,7 +1050,7 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
                                     {probingModelIds.has(model.id) ? (
                                       <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9px] bg-[var(--theme-bg-secondary)] text-[var(--theme-text-secondary)] border border-[var(--theme-border-primary)]/60">
                                         <Loader2 size={10} className="animate-spin" />
-                                        <span>测试中</span>
+                                        <span>{t('thirdPartyTesting')}</span>
                                       </span>
                                     ) : modelProbeResults[model.id] ? (
                                       modelProbeResults[model.id].status === 'success' ? (
@@ -1018,7 +1058,9 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
                                           className={`inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9px] font-mono font-medium ${
                                             getLatencyBadgeStyles(modelProbeResults[model.id].grade).badge
                                           }`}
-                                          title={`响应延迟: ${modelProbeResults[model.id].latencyMs}ms`}
+                                          title={t('thirdPartyLatencyTooltip', {
+                                            latency: modelProbeResults[model.id].latencyMs,
+                                          })}
                                         >
                                           <span
                                             className={`w-1.5 h-1.5 rounded-full ${
@@ -1033,7 +1075,7 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
                                           title={
                                             modelProbeResults[model.id].errorMessage ||
                                             modelProbeResults[model.id].diagnosticTip ||
-                                            '模型测活失败'
+                                            t('thirdPartyModelProbeFailed')
                                           }
                                         >
                                           <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
@@ -1044,7 +1086,7 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
                                                 ? '401'
                                                 : modelProbeResults[model.id].errorMessage?.includes('429')
                                                   ? '429'
-                                                  : '失败'}
+                                                  : t('thirdPartyFailed')}
                                           </span>
                                         </span>
                                       )
@@ -1069,7 +1111,7 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
                                         ? 'text-rose-500 hover:bg-rose-500/10'
                                         : 'text-[var(--theme-text-secondary)]/40 hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)]'
                                   }`}
-                                  title="单独测活该模型"
+                                  title={t('thirdPartyProbeSingleModel')}
                                 >
                                   {probingModelIds.has(model.id) ? (
                                     <Loader2 size={13} className="animate-spin" />
@@ -1085,7 +1127,9 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
                                       ? 'text-emerald-600 bg-emerald-500/10 hover:bg-emerald-500/20'
                                       : 'text-[var(--theme-text-secondary)]/40 hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)]'
                                   }`}
-                                  title={isVisible ? '模型在对话选择器中可见' : '已在对话选择器中隐藏'}
+                                  title={
+                                    isVisible ? t('thirdPartyModelVisibleTooltip') : t('thirdPartyModelHiddenTooltip')
+                                  }
                                 >
                                   <Eye size={13} />
                                 </button>
@@ -1097,7 +1141,11 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
                                       ? 'text-amber-500 bg-amber-500/10 hover:bg-amber-500/20'
                                       : 'text-[var(--theme-text-secondary)]/40 hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)]'
                                   }`}
-                                  title={isThinking ? '深度思考/推理已开启' : '深度思考/推理已关闭'}
+                                  title={
+                                    isThinking
+                                      ? t('thirdPartyThinkingEnabledTooltip')
+                                      : t('thirdPartyThinkingDisabledTooltip')
+                                  }
                                 >
                                   <Lightbulb size={13} />
                                 </button>
@@ -1109,7 +1157,9 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
                                       ? 'text-sky-500 bg-sky-500/10 hover:bg-sky-500/20'
                                       : 'text-[var(--theme-text-secondary)]/40 hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)]'
                                   }`}
-                                  title={isTools ? '工具/函数调用已开启' : '工具/函数调用已关闭'}
+                                  title={
+                                    isTools ? t('thirdPartyToolsEnabledTooltip') : t('thirdPartyToolsDisabledTooltip')
+                                  }
                                 >
                                   <Wrench size={13} />
                                 </button>
@@ -1121,7 +1171,7 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
                                       ? 'text-[var(--theme-border-focus)] bg-[var(--theme-border-focus)]/10'
                                       : 'text-[var(--theme-text-secondary)]/40 hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)]'
                                   }`}
-                                  title="自定义单模型参数 (温度/Token)"
+                                  title={t('thirdPartyModelParametersTooltip')}
                                 >
                                   <Settings size={13} />
                                 </button>
@@ -1129,7 +1179,7 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
                                   type="button"
                                   onClick={() => deleteSingleModel(model.id)}
                                   className="p-1.5 rounded-lg text-[var(--theme-text-secondary)]/40 hover:text-[var(--theme-text-danger)] hover:bg-[var(--theme-bg-danger)]/10 transition-colors cursor-pointer"
-                                  title="删除该模型"
+                                  title={t('thirdPartyDeleteModel')}
                                 >
                                   <Minus size={13} />
                                 </button>
@@ -1160,7 +1210,7 @@ export const ProviderDetail: React.FC<ProviderDetailProps> = ({
         onSave={(params) => {
           if (paramModalModel) {
             updateSingleModel(paramModalModel.id, { parameters: params });
-            toastSuccess(`${paramModalModel.name} 参数已保存`);
+            toastSuccess(t('thirdPartyToastParamSaved', { name: paramModalModel.name }));
           }
         }}
       />

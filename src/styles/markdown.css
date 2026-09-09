@@ -192,6 +192,59 @@
   background-color: rgba(248, 81, 73, 0.12);
 }
 
+.theme-sepia .hljs {
+  color: #2c251f;
+}
+
+.theme-sepia .hljs-comment,
+.theme-sepia .hljs-quote {
+  color: #8c7b6e;
+  font-style: italic;
+}
+
+.theme-sepia .hljs-keyword,
+.theme-sepia .hljs-selector-tag,
+.theme-sepia .hljs-subst,
+.theme-sepia .hljs-name {
+  color: #a05a2c;
+}
+
+.theme-sepia .hljs-string,
+.theme-sepia .hljs-doctag,
+.theme-sepia .hljs-title,
+.theme-sepia .hljs-section,
+.theme-sepia .hljs-selector-id {
+  color: #3b7a3a;
+}
+
+.theme-sepia .hljs-number,
+.theme-sepia .hljs-literal,
+.theme-sepia .hljs-variable,
+.theme-sepia .hljs-template-variable,
+.theme-sepia .hljs-tag .hljs-attr,
+.theme-sepia .hljs-attr {
+  color: #b45309;
+}
+
+.theme-sepia .hljs-built_in,
+.theme-sepia .hljs-type,
+.theme-sepia .hljs-symbol,
+.theme-sepia .hljs-bullet,
+.theme-sepia .hljs-link,
+.theme-sepia .hljs-meta {
+  color: #8b3a7a;
+}
+
+.theme-sepia .hljs-addition {
+  color: #2e6b30;
+  background-color: rgba(46, 107, 48, 0.12);
+}
+
+.theme-sepia .hljs-deletion {
+  color: #991b1b;
+  background-color: rgba(185, 28, 28, 0.12);
+}
+
 /* Tighter line height for headers */
 .markdown-body h1,
 .markdown-body h2,

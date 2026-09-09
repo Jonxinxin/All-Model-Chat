@@ -1,5 +1,4 @@
 import React from 'react';
-import { createPortal } from 'react-dom';
 import { Paperclip, FolderOpen, Library, FileArchive } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { type AttachmentAction, GEMINI_PROVIDER_ID } from '@/types';
@@ -15,7 +14,12 @@ import {
 } from '@/components/icons';
 import { CHAT_INPUT_BUTTON_CLASS } from '@/constants/buttonClasses';
 import { MENU_ITEM_BUTTON_CLASS, MENU_ITEM_DEFAULT_STATE_CLASS } from '@/constants/menuClasses';
-import { usePortaledMenu } from '@/hooks/ui/usePortaledMenu';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/shared/DropdownMenu';
 import { useIsMobile } from '@/hooks/useDevice';
 import { useChatInputActionsContext } from './ChatInputContext';
 import { isGemmaModel } from '@/utils/model/modelCapabilities';
@@ -35,14 +39,11 @@ export const AttachmentMenu: React.FC = () => {
   } = useChatInputActionsContext();
   const { t } = useI18n();
   const isMobile = useIsMobile();
-  const { isOpen, menuPosition, containerRef, buttonRef, menuRef, targetWindow, closeMenu, toggleMenu } =
-    usePortaledMenu({ constrainHeight: true });
   const isAttachmentDisabled = disabled;
   const isGemma = isGemmaModel(currentModelId);
   const isGeminiNative = providerId === undefined || providerId === GEMINI_PROVIDER_ID;
 
   const handleAction = (action: AttachmentAction) => {
-    closeMenu();
     onAttachmentAction(action);
   };
 
@@ -93,44 +94,45 @@ export const AttachmentMenu: React.FC = () => {
         : menuItems;
 
   return (
-    <div className="relative" ref={containerRef}>
-      <button
-        ref={buttonRef}
-        type="button"
-        onClick={toggleMenu}
-        disabled={isAttachmentDisabled}
-        className={`${CHAT_INPUT_BUTTON_CLASS} text-[var(--theme-icon-attach)] bg-transparent hover:bg-[var(--theme-bg-tertiary)]`}
-        aria-label={t('attachMenuAria')}
-        title={t('attachMenuTitle')}
-        aria-haspopup="true"
-        aria-expanded={isOpen}
-      >
-        <Paperclip size={attachIconSize} strokeWidth={2} />
-      </button>
-
-      {isOpen &&
-        targetWindow &&
-        createPortal(
-          <div
-            ref={menuRef}
-            className="w-60 bg-[var(--theme-bg-primary)] border border-[var(--theme-border-secondary)] rounded-xl py-1.5 custom-scrollbar"
-            style={menuPosition}
-            role="menu"
+    <div className="relative">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            disabled={isAttachmentDisabled}
+            className={`${CHAT_INPUT_BUTTON_CLASS} text-[var(--theme-icon-attach)] bg-transparent hover:bg-[var(--theme-bg-tertiary)] data-[state=open]:bg-[var(--theme-bg-tertiary)] data-[state=open]:text-[var(--theme-text-primary)]`}
+            aria-label={t('attachMenuAria')}
+            title={t('attachMenuTitle')}
+            aria-haspopup="true"
           >
-            {filteredMenuItems.map((item) => (
+            <Paperclip size={attachIconSize} strokeWidth={2} />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          side="top"
+          align="start"
+          sideOffset={8}
+          className="w-60 max-h-[75vh] overflow-y-auto custom-scrollbar py-1.5 shadow-premium"
+        >
+          {filteredMenuItems.map((item) => (
+            <DropdownMenuItem
+              key={item.action}
+              asChild
+              onClick={() => handleAction(item.action)}
+              className="cursor-pointer"
+            >
               <button
-                key={item.action}
-                onClick={() => handleAction(item.action)}
-                className={`${MENU_ITEM_BUTTON_CLASS} ${MENU_ITEM_DEFAULT_STATE_CLASS} px-4 py-2.5 gap-3.5`}
+                type="button"
                 role="menuitem"
+                className={`${MENU_ITEM_BUTTON_CLASS} ${MENU_ITEM_DEFAULT_STATE_CLASS} w-full px-4 py-2.5 gap-3.5`}
               >
                 <span className="text-[var(--theme-text-secondary)]">{item.icon}</span>
                 <span className="font-medium">{t(item.labelKey)}</span>
               </button>
-            ))}
-          </div>,
-          targetWindow.document.body,
-        )}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 };

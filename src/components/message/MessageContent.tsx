@@ -1,6 +1,6 @@
 import React from 'react';
 import type { FunctionCall, Part } from '@google/genai';
-import { type ChatMessage, type UploadedFile, type AppSettings, type SideViewContent } from '@/types';
+import { type ChatMessage, type UploadedFile, type MessageAppSettings, type SideViewContent } from '@/types';
 import type { OpenHtmlPreviewHandler } from '@/utils/html-preview/previewPrivilege';
 import { MessageFiles } from './content/MessageFiles';
 import { MessageThoughts } from './content/MessageThoughts';
@@ -22,7 +22,7 @@ interface MessageContentProps {
   isGraphvizRenderingEnabled: boolean;
   onSuggestionClick?: (suggestion: string) => void;
   onSuggestionFill?: (suggestion: string) => void;
-  appSettings: AppSettings;
+  appSettings: MessageAppSettings;
   themeId: string;
   onOpenSidePanel: (content: SideViewContent) => void;
   onConfigureFile?: (file: UploadedFile, messageId: string) => void;

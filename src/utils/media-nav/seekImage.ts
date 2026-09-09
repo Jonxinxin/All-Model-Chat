@@ -74,9 +74,9 @@ export const seekSessionImage = (params: SeekSessionImageParams): boolean => {
             !hasActive &&
             Boolean(
               (label && loc.label === label) ||
-                (snippet && loc.snippet === snippet) ||
-                (box2d && loc.box2d && box2d[0] === loc.box2d[0] && box2d[1] === loc.box2d[1]) ||
-                (point && loc.point && point[0] === loc.point[0] && point[1] === loc.point[1]),
+              (snippet && loc.snippet === snippet) ||
+              (box2d && loc.box2d && box2d[0] === loc.box2d[0] && box2d[1] === loc.box2d[1]) ||
+              (point && loc.point && point[0] === loc.point[0] && point[1] === loc.point[1]),
             );
 
           if (isSelected) hasActive = true;

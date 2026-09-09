@@ -7,7 +7,7 @@ import * as modelHealthCheck from '@/utils/model/modelHealthCheck';
 import { ProviderDetail } from './ProviderDetail';
 
 describe('ProviderDetail', () => {
-  const renderer = setupTestRenderer();
+  const renderer = setupTestRenderer({ providers: { language: 'zh' } });
   setupStoreStateReset();
 
   afterEach(() => {
@@ -31,11 +31,7 @@ describe('ProviderDetail', () => {
   it('renders provider name, models, and batch health check button', () => {
     act(() => {
       renderer.root.render(
-        <ProviderDetail
-          connection={baseConnection}
-          onUpdateConnection={vi.fn()}
-          onDeleteConnection={vi.fn()}
-        />
+        <ProviderDetail connection={baseConnection} onUpdateConnection={vi.fn()} onDeleteConnection={vi.fn()} />,
       );
     });
 
@@ -96,12 +92,12 @@ describe('ProviderDetail', () => {
           connection={baseConnection}
           onUpdateConnection={onUpdateConnection}
           onDeleteConnection={vi.fn()}
-        />
+        />,
       );
     });
 
-    const batchCheckBtn = Array.from(renderer.container.querySelectorAll('button')).find(
-      (btn) => btn.textContent?.includes('测活')
+    const batchCheckBtn = Array.from(renderer.container.querySelectorAll('button')).find((btn) =>
+      btn.textContent?.includes('测活'),
     );
     expect(batchCheckBtn).toBeDefined();
 
@@ -115,8 +111,8 @@ describe('ProviderDetail', () => {
     expect(renderer.container.textContent).toContain('一键停用失效模型');
 
     // Click "一键停用失效模型"
-    const disableFailedBtn = Array.from(renderer.container.querySelectorAll('button')).find(
-      (btn) => btn.textContent?.includes('一键停用失效模型')
+    const disableFailedBtn = Array.from(renderer.container.querySelectorAll('button')).find((btn) =>
+      btn.textContent?.includes('一键停用失效模型'),
     );
     expect(disableFailedBtn).toBeDefined();
 
@@ -144,11 +140,7 @@ describe('ProviderDetail', () => {
 
     act(() => {
       renderer.root.render(
-        <ProviderDetail
-          connection={baseConnection}
-          onUpdateConnection={vi.fn()}
-          onDeleteConnection={vi.fn()}
-        />
+        <ProviderDetail connection={baseConnection} onUpdateConnection={vi.fn()} onDeleteConnection={vi.fn()} />,
       );
     });
 
@@ -166,11 +158,7 @@ describe('ProviderDetail', () => {
   it('toggles batch mode, selects all and inverts selection', async () => {
     act(() => {
       renderer.root.render(
-        <ProviderDetail
-          connection={baseConnection}
-          onUpdateConnection={vi.fn()}
-          onDeleteConnection={vi.fn()}
-        />
+        <ProviderDetail connection={baseConnection} onUpdateConnection={vi.fn()} onDeleteConnection={vi.fn()} />,
       );
     });
 
@@ -218,7 +206,7 @@ describe('ProviderDetail', () => {
           connection={baseConnection}
           onUpdateConnection={onUpdateConnection}
           onDeleteConnection={vi.fn()}
-        />
+        />,
       );
     });
 
@@ -274,7 +262,7 @@ describe('ProviderDetail', () => {
           connection={baseConnection}
           onUpdateConnection={onUpdateConnection}
           onDeleteConnection={vi.fn()}
-        />
+        />,
       );
     });
 
@@ -307,7 +295,7 @@ describe('ProviderDetail', () => {
           connection={baseConnection}
           onUpdateConnection={onUpdateConnection}
           onDeleteConnection={vi.fn()}
-        />
+        />,
       );
     });
 
@@ -342,11 +330,7 @@ describe('ProviderDetail', () => {
 
     act(() => {
       renderer.root.render(
-        <ProviderDetail
-          connection={baseConnection}
-          onUpdateConnection={vi.fn()}
-          onDeleteConnection={vi.fn()}
-        />
+        <ProviderDetail connection={baseConnection} onUpdateConnection={vi.fn()} onDeleteConnection={vi.fn()} />,
       );
     });
 
@@ -357,8 +341,8 @@ describe('ProviderDetail', () => {
     });
 
     const bar = renderer.container.querySelector('[data-testid="batch-action-bar"]');
-    const probeSelectedBtn = Array.from(bar!.querySelectorAll('button')).find(
-      (b) => b.textContent?.includes('测活已选')
+    const probeSelectedBtn = Array.from(bar!.querySelectorAll('button')).find((b) =>
+      b.textContent?.includes('测活已选'),
     );
     expect(probeSelectedBtn).toBeDefined();
 
@@ -369,7 +353,7 @@ describe('ProviderDetail', () => {
     expect(runBatchSpy).toHaveBeenCalledWith(
       baseConnection,
       [expect.objectContaining({ id: 'deepseek-chat' })],
-      expect.anything()
+      expect.anything(),
     );
   });
 });

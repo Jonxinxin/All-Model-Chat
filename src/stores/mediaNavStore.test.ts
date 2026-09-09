@@ -109,4 +109,3 @@ describe('mediaNavStore', () => {
     expect(useMediaNavStore.getState().imageHighlight).toBeNull();
   });
 });
-

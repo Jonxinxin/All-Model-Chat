@@ -65,9 +65,7 @@ export const ModelParameterModal: React.FC<ModelParameterModalProps> = ({ isOpen
         <div className="flex items-center justify-between border-b border-[var(--theme-border-secondary)]/40 pb-3">
           <div className="flex items-center gap-2">
             <Sliders size={18} className="text-[var(--theme-text-secondary)]" />
-            <h3 className="text-base font-semibold text-[var(--theme-text-primary)]">
-              {t('settingsModelParameters') || '模型参数设置'}
-            </h3>
+            <h3 className="text-base font-semibold text-[var(--theme-text-primary)]">{t('settingsModelParameters')}</h3>
           </div>
           <button
             type="button"
@@ -86,11 +84,9 @@ export const ModelParameterModal: React.FC<ModelParameterModalProps> = ({ isOpen
         <div className="space-y-4">
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs">
-              <label className="font-medium text-[var(--theme-text-primary)]">
-                {t('settingsTemperature') || '温度 (Temperature)'}
-              </label>
+              <label className="font-medium text-[var(--theme-text-primary)]">{t('settingsTemperature')}</label>
               <span className="font-mono text-[var(--theme-text-secondary)]">
-                {temperature !== undefined ? temperature.toFixed(2) : t('settingsDefault') || '默认'}
+                {temperature !== undefined ? temperature.toFixed(2) : t('settingsDefault')}
               </span>
             </div>
             <div className="flex items-center gap-3">
@@ -108,7 +104,7 @@ export const ModelParameterModal: React.FC<ModelParameterModalProps> = ({ isOpen
                 min="0"
                 max="2"
                 step="0.05"
-                placeholder={t('settingsDefault') || '默认'}
+                placeholder={t('settingsDefault')}
                 value={temperature ?? ''}
                 onChange={(e) => {
                   const val = e.target.value === '' ? undefined : parseFloat(e.target.value);
@@ -117,17 +113,13 @@ export const ModelParameterModal: React.FC<ModelParameterModalProps> = ({ isOpen
                 className={`w-20 p-1.5 text-xs font-mono rounded border ${SETTINGS_INPUT_CLASS}`}
               />
             </div>
-            <p className="text-[11px] text-[var(--theme-text-secondary)]">
-              {t('settingsTemperatureHelp') || '较高的数值会使输出更加随机，较低的数值会使其更加集中且确定。'}
-            </p>
+            <p className="text-[11px] text-[var(--theme-text-secondary)]">{t('settingsTemperatureHelp')}</p>
           </div>
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs">
-              <label className="font-medium text-[var(--theme-text-primary)]">
-                {t('settingsMaxOutputTokens') || '单次最大输出 Token'}
-              </label>
+              <label className="font-medium text-[var(--theme-text-primary)]">{t('settingsMaxOutputTokens')}</label>
               <span className="font-mono text-[var(--theme-text-secondary)]">
-                {maxOutputTokens !== undefined ? maxOutputTokens : t('settingsDefault') || '默认'}
+                {maxOutputTokens !== undefined ? maxOutputTokens : t('settingsDefault')}
               </span>
             </div>
             <input
@@ -135,7 +127,7 @@ export const ModelParameterModal: React.FC<ModelParameterModalProps> = ({ isOpen
               min="1"
               max="131072"
               step="256"
-              placeholder={t('settingsMaxOutputTokensPlaceholder') || '留空使用全局默认'}
+              placeholder={t('settingsMaxOutputTokensPlaceholder')}
               value={maxOutputTokens ?? ''}
               onChange={(e) => {
                 const val = e.target.value === '' ? undefined : parseInt(e.target.value, 10);
@@ -143,15 +135,13 @@ export const ModelParameterModal: React.FC<ModelParameterModalProps> = ({ isOpen
               }}
               className={`w-full p-2 text-xs font-mono rounded-lg border ${SETTINGS_INPUT_CLASS}`}
             />
-            <p className="text-[11px] text-[var(--theme-text-secondary)]">
-              {t('settingsMaxOutputTokensHelp') || '设置该模型单次回复的最大 Token 限制。'}
-            </p>
+            <p className="text-[11px] text-[var(--theme-text-secondary)]">{t('settingsMaxOutputTokensHelp')}</p>
           </div>
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs">
               <label className="font-medium text-[var(--theme-text-primary)]">Top-P</label>
               <span className="font-mono text-[var(--theme-text-secondary)]">
-                {topP !== undefined ? topP.toFixed(2) : t('settingsDefault') || '默认'}
+                {topP !== undefined ? topP.toFixed(2) : t('settingsDefault')}
               </span>
             </div>
             <div className="flex items-center gap-3">
@@ -169,7 +159,7 @@ export const ModelParameterModal: React.FC<ModelParameterModalProps> = ({ isOpen
                 min="0"
                 max="1"
                 step="0.05"
-                placeholder={t('settingsDefault') || '默认'}
+                placeholder={t('settingsDefault')}
                 value={topP ?? ''}
                 onChange={(e) => {
                   const val = e.target.value === '' ? undefined : parseFloat(e.target.value);
@@ -188,7 +178,7 @@ export const ModelParameterModal: React.FC<ModelParameterModalProps> = ({ isOpen
             className="inline-flex items-center gap-1 text-xs text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)] transition-colors"
           >
             <RotateCcw size={12} />
-            <span>{t('settingsResetToDefaults') || '恢复默认'}</span>
+            <span>{t('settingsResetToDefaults')}</span>
           </button>
           <div className="flex items-center gap-2">
             <button type="button" onClick={onClose} className={SETTINGS_SECONDARY_ACTION_BUTTON_CLASS}>

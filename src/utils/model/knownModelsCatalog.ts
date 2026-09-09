@@ -91,7 +91,7 @@ export const KNOWN_MODELS_CATALOG: Record<string, CatalogModelSpec> = {
     capabilities: { vision: true, thinking: false, tools: true },
     ownedBy: 'openai',
   },
-  'o1': {
+  o1: {
     id: 'o1',
     name: 'o1',
     contextWindow: 200_000,
@@ -115,7 +115,7 @@ export const KNOWN_MODELS_CATALOG: Record<string, CatalogModelSpec> = {
     capabilities: { vision: false, thinking: true, tools: false },
     ownedBy: 'openai',
   },
-  'o3': {
+  o3: {
     id: 'o3',
     name: 'o3',
     contextWindow: 200_000,
@@ -516,11 +516,7 @@ export const inferModelCapabilities = (
 /**
  * Match a raw remote model to the known catalog or heuristically enrich its metadata.
  */
-export const enrichModelMetadata = (remote: {
-  id: string;
-  name?: string;
-  owned_by?: string;
-}): ModelOption => {
+export const enrichModelMetadata = (remote: { id: string; name?: string; owned_by?: string }): ModelOption => {
   const normalizedId = normalizeModelId(remote.id);
   const catalogEntry = KNOWN_MODELS_CATALOG[normalizedId] || KNOWN_MODELS_CATALOG[remote.id.toLowerCase()];
 

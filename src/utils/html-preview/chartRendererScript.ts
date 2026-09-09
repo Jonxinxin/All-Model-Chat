@@ -598,7 +598,7 @@ export const hydrateChartsIntoDocument = (doc: Document, options: HydrateChartsI
     const height = heightMatch ? parseFloat(heightMatch[1]) : 280;
 
     try {
-      const chart = echarts.init(null, theme as unknown as Record<string, unknown>, {
+      const chart = echarts.init(null, theme, {
         renderer: 'svg',
         ssr: true,
         width,

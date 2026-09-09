@@ -87,12 +87,24 @@ export const ProviderAddModal: React.FC<ProviderAddModalProps> = ({ isOpen, onCl
 
   if (!isOpen) return null;
 
+  const getPresetDisplayName = (preset: TemplatePresetMeta) => {
+    if (preset.id === 'custom-openai') return t('thirdPartyCustomOpenAIName');
+    if (preset.id === 'custom-anthropic') return t('thirdPartyCustomAnthropicName');
+    return THIRD_PARTY_TEMPLATE_LABELS[preset.id] || preset.name;
+  };
+
+  const getPresetDescription = (preset: TemplatePresetMeta) => {
+    if (preset.id === 'custom-openai') return t('thirdPartyCustomOpenAIDesc');
+    if (preset.id === 'custom-anthropic') return t('thirdPartyCustomAnthropicDesc');
+    return preset.description;
+  };
+
   const categories = [
-    { id: 'all', label: '全部' },
-    { id: 'recommended', label: '推荐 / 国际' },
-    { id: 'domestic', label: '国内大模型' },
-    { id: 'local', label: '本地引擎' },
-    { id: 'custom', label: '自定义协议' },
+    { id: 'all', label: t('thirdPartyCategoryAll') },
+    { id: 'recommended', label: t('thirdPartyCategoryRecommended') },
+    { id: 'domestic', label: t('thirdPartyCategoryDomestic') },
+    { id: 'local', label: t('thirdPartyCategoryLocal') },
+    { id: 'custom', label: t('thirdPartyCategoryCustom') },
   ] as const;
 
   return (
@@ -105,11 +117,9 @@ export const ProviderAddModal: React.FC<ProviderAddModalProps> = ({ isOpen, onCl
         <div className="flex items-center justify-between border-b border-[var(--theme-border-secondary)]/40 pb-3 flex-shrink-0">
           <div>
             <h3 className="text-base font-semibold text-[var(--theme-text-primary)]">
-              {t('thirdPartyAddConnectionTitle') || '添加模型服务商'}
+              {t('thirdPartyAddConnectionTitle')}
             </h3>
-            <p className="text-xs text-[var(--theme-text-secondary)] mt-0.5">
-              选择预设平台快速配置，或添加任意兼容 OpenAI / Anthropic 协议的服务商
-            </p>
+            <p className="text-xs text-[var(--theme-text-secondary)] mt-0.5">{t('thirdPartyAddConnectionSubtitle')}</p>
           </div>
           <button
             type="button"
@@ -129,7 +139,7 @@ export const ProviderAddModal: React.FC<ProviderAddModalProps> = ({ isOpen, onCl
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="搜索平台名称、模型或协议类型..."
+              placeholder={t('thirdPartySearchPresetsPlaceholder')}
               className={`w-full pl-9 pr-3 py-2 text-xs rounded-xl border ${SETTINGS_INPUT_CLASS}`}
               autoFocus
             />
@@ -155,12 +165,13 @@ export const ProviderAddModal: React.FC<ProviderAddModalProps> = ({ isOpen, onCl
           {filteredPresets.length === 0 ? (
             <div className="col-span-2 flex flex-col items-center justify-center p-8 text-center text-xs text-[var(--theme-text-secondary)]">
               <Server size={32} className="opacity-30 mb-2" />
-              <p>未找到匹配的服务商平台</p>
+              <p>{t('thirdPartyNoMatchingPresets')}</p>
             </div>
           ) : (
             filteredPresets.map((preset) => {
               const defaultUrl = getThirdPartyTemplateDefaults(preset.id).baseUrl;
-              const displayName = THIRD_PARTY_TEMPLATE_LABELS[preset.id] || preset.name;
+              const displayName = getPresetDisplayName(preset);
+              const displayDesc = getPresetDescription(preset);
 
               return (
                 <button
@@ -182,15 +193,13 @@ export const ProviderAddModal: React.FC<ProviderAddModalProps> = ({ isOpen, onCl
                       </span>
                       {preset.category === 'local' && (
                         <span className="text-[10px] px-1.5 py-0.2 rounded bg-[var(--theme-bg-tertiary)] text-[var(--theme-text-secondary)] font-mono flex-shrink-0">
-                          本地
+                          {t('thirdPartyLocalTag')}
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-[var(--theme-text-secondary)] mt-0.5 line-clamp-1">
-                      {preset.description}
-                    </p>
+                    <p className="text-xs text-[var(--theme-text-secondary)] mt-0.5 line-clamp-1">{displayDesc}</p>
                     <p className="text-[10px] font-mono text-[var(--theme-text-secondary)]/70 mt-1 truncate">
-                      {defaultUrl || '用户自定义端点'}
+                      {defaultUrl || t('thirdPartyUserCustomEndpoint')}
                     </p>
                   </div>
                 </button>

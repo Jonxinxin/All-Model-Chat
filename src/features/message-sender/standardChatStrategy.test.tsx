@@ -47,6 +47,7 @@ vi.mock('@/utils/apiKeySelection', () => ({
 vi.mock('@/utils/chat/builder', () => ({
   buildContentParts: mockBuildContentParts,
   createChatHistoryForApi: mockCreateChatHistoryForApi,
+  appendTurnToHistory: vi.fn((history, role, parts) => [...(history || []), { role, parts }]),
 }));
 
 vi.mock('@/utils/chat/ids', () => ({

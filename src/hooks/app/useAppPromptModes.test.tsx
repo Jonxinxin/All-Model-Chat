@@ -562,13 +562,11 @@ describe('useAppPromptModes', () => {
 
     expect(handleSendMessage).not.toHaveBeenCalled();
     expect(setCommandedInput).toHaveBeenCalledWith({
-      text: '',
+      text: 'Create interactive HTML board.\n',
       id: expect.any(Number),
       mode: 'replace',
     });
-    expect(setAppSettings).toHaveBeenCalled();
-    expect(setCurrentChatSettings).toHaveBeenCalled();
-    expect(result.current.isLiveArtifactsPromptActive).toBe(false);
+    expect(result.current.isLiveArtifactsPromptActive).toBe(true);
 
     unmount();
   });
@@ -695,7 +693,7 @@ describe('useAppPromptModes', () => {
     }
   });
 
-  it('automatically deactivates Live Artifacts when the media navigation panel is opened', async () => {
+  it('does not automatically deactivate Live Artifacts when the media navigation panel is opened', async () => {
     const setAppSettings = vi.fn();
     const setCurrentChatSettings = vi.fn();
     const options = {
@@ -720,7 +718,8 @@ describe('useAppPromptModes', () => {
     });
     rerender();
 
-    expect(result.current.isLiveArtifactsPromptActive).toBe(false);
+    expect(result.current.isLiveArtifactsPromptActive).toBe(true);
+    expect(setCurrentChatSettings).not.toHaveBeenCalled();
 
     unmount();
   });
@@ -970,7 +969,10 @@ describe('useAppPromptModes', () => {
     });
 
     // Switch to session 2 with its own custom prompt
-    options.activeChat = createLiveArtifactsSession({ id: 'session-2', title: 'Session 2' }, { systemInstruction: customPrompt2 });
+    options.activeChat = createLiveArtifactsSession(
+      { id: 'session-2', title: 'Session 2' },
+      { systemInstruction: customPrompt2 },
+    );
     options.activeSessionId = 'session-2';
     options.currentChatSettings = createLiveArtifactsChatSettings({ systemInstruction: customPrompt2 });
     rerender();
@@ -990,10 +992,13 @@ describe('useAppPromptModes', () => {
     expect(session2Updater(options.currentChatSettings).systemInstruction).toBe(customPrompt2);
 
     // Switch back to session 1
-    options.activeChat = createLiveArtifactsSession({ id: 'session-1', title: 'Session 1' }, {
-      isLiveArtifactsEnabled: true,
-      systemInstruction: LIVE_ARTIFACTS_PROMPT,
-    });
+    options.activeChat = createLiveArtifactsSession(
+      { id: 'session-1', title: 'Session 1' },
+      {
+        isLiveArtifactsEnabled: true,
+        systemInstruction: LIVE_ARTIFACTS_PROMPT,
+      },
+    );
     options.activeSessionId = 'session-1';
     options.currentChatSettings = createLiveArtifactsChatSettings({
       isLiveArtifactsEnabled: true,
@@ -1018,12 +1023,15 @@ describe('useAppPromptModes', () => {
     const options = {
       appSettings: createAppSettings(),
       setAppSettings: vi.fn(),
-      activeChat: createLiveArtifactsSession({ id: 'session-nav' }, {
-        isPdfNavEnabled: true,
-        isVideoNavEnabled: true,
-        isAudioNavEnabled: true,
-        isImageNavEnabled: true,
-      }),
+      activeChat: createLiveArtifactsSession(
+        { id: 'session-nav' },
+        {
+          isPdfNavEnabled: true,
+          isVideoNavEnabled: true,
+          isAudioNavEnabled: true,
+          isImageNavEnabled: true,
+        },
+      ),
       activeSessionId: 'session-nav',
       currentChatSettings: createLiveArtifactsChatSettings({
         isPdfNavEnabled: true,
@@ -1154,6 +1162,117 @@ describe('useAppPromptModes', () => {
     rerender();
 
     expect(currentSettings.systemInstruction).toBe('Custom user prompt');
+
+    unmount();
+  });
+
+  it('cancels in-flight async activation when deactivation occurs before prompt finishes loading', async () => {
+    const deferred = createDeferred<string>();
+    mockLoadLiveArtifactsSystemPrompt.mockReturnValue(deferred.promise);
+
+    const setAppSettings = vi.fn();
+    const setCurrentChatSettings = vi.fn();
+    const options = {
+      appSettings: createAppSettings(),
+      setAppSettings,
+      activeChat: createLiveArtifactsSession({ id: 'session-cancel' }),
+      activeSessionId: 'session-cancel',
+      currentChatSettings: createLiveArtifactsChatSettings({ isLiveArtifactsEnabled: false }),
+      setCurrentChatSettings,
+      handleSendMessage: vi.fn(),
+      setCommandedInput: createSetCommandedInputMock(),
+    };
+
+    const { result, unmount } = renderHook(() => useAppPromptModesWithDefaultTheme(options));
+
+    // Start activating (async load begins)
+    let pendingActivation: Promise<void> | undefined;
+    act(() => {
+      pendingActivation = result.current.handleLoadLiveArtifactsPromptAndSave();
+    });
+
+    expect(result.current.isLiveArtifactsPromptActive).toBe(true);
+
+    // User deactivates while prompt load is still pending
+    act(() => {
+      result.current.handleDeactivateLiveArtifactsPrompt();
+    });
+
+    expect(result.current.isLiveArtifactsPromptActive).toBe(false);
+
+    setAppSettings.mockClear();
+    setCurrentChatSettings.mockClear();
+
+    // Now the delayed async prompt arrives
+    await act(async () => {
+      deferred.resolve(LIVE_ARTIFACTS_PROMPT);
+      await pendingActivation;
+    });
+
+    // It must NOT re-enable Live Artifacts after being cancelled
+    expect(setAppSettings).not.toHaveBeenCalled();
+    expect(setCurrentChatSettings).not.toHaveBeenCalled();
+    expect(result.current.isLiveArtifactsPromptActive).toBe(false);
+
+    unmount();
+  });
+
+  it('sets busy state during deactivation to debounce rapid re-activation clicks', () => {
+    const options = {
+      appSettings: createAppSettings({ isLiveArtifactsEnabled: true }),
+      setAppSettings: vi.fn(),
+      activeChat: createLiveArtifactsSession({ id: 'session-busy' }, { isLiveArtifactsEnabled: true }),
+      activeSessionId: 'session-busy',
+      currentChatSettings: createLiveArtifactsChatSettings({ isLiveArtifactsEnabled: true }),
+      setCurrentChatSettings: vi.fn(),
+      handleSendMessage: vi.fn(),
+      setCommandedInput: createSetCommandedInputMock(),
+    };
+
+    const { result, unmount } = renderHook(() => useAppPromptModesWithDefaultTheme(options));
+
+    expect(result.current.isLiveArtifactsPromptActive).toBe(true);
+
+    act(() => {
+      result.current.handleDeactivateLiveArtifactsPrompt();
+    });
+
+    // Busy flag should be active during deactivation
+    expect(result.current.isLiveArtifactsPromptBusy).toBe(true);
+    expect(result.current.isLiveArtifactsPromptActive).toBe(false);
+
+    unmount();
+  });
+
+  it('preserves user instruction when deactivating if instruction contains user text before legacy protocol', () => {
+    const combinedPrompt = 'You are a chemistry expert.\n\n[Live Artifacts Inline Protocol - zh]\nProtocol...';
+    let currentSettings = createLiveArtifactsChatSettings({
+      isLiveArtifactsEnabled: true,
+      systemInstruction: combinedPrompt,
+    });
+    const setCurrentChatSettings = vi.fn((updater) => {
+      currentSettings = typeof updater === 'function' ? updater(currentSettings) : updater;
+    });
+
+    const options = {
+      appSettings: createAppSettings(),
+      setAppSettings: vi.fn(),
+      activeChat: createLiveArtifactsSession({ id: 'session-combined' }, currentSettings),
+      activeSessionId: 'session-combined',
+      currentChatSettings: currentSettings,
+      setCurrentChatSettings,
+      handleSendMessage: vi.fn(),
+      setCommandedInput: createSetCommandedInputMock(),
+    };
+
+    const { result, unmount } = renderHook(() => useAppPromptModesWithDefaultTheme(options));
+
+    act(() => {
+      result.current.handleDeactivateLiveArtifactsPrompt();
+    });
+
+    expect(currentSettings.isLiveArtifactsEnabled).toBe(false);
+    expect(currentSettings.systemInstruction).toBe('You are a chemistry expert.');
 
     unmount();
   });

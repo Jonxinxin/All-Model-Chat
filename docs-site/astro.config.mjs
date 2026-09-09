@@ -40,7 +40,8 @@ export default defineConfig({
           tag: 'meta',
           attrs: {
             name: 'keywords',
-            content: 'AMC WebUI, Google Gemini, Thinking Model, Live API, Local-First, Model Context Protocol, Pyodide, Artifacts',
+            content:
+              'AMC WebUI, Google Gemini, Thinking Model, Live API, Local-First, Model Context Protocol, Pyodide, Artifacts',
           },
         },
         {

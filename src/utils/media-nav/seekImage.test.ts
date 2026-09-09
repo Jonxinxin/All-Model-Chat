@@ -141,4 +141,3 @@ describe('seekSessionImage', () => {
     expect(state.imageHighlights[1].index).toBe(2);
   });
 });
-

@@ -1,8 +1,9 @@
 import { useCallback } from 'react';
 import { logService } from '@/services/logService';
 import { type SessionsUpdater } from '@/types';
-import { updateMessageInSession, updateSessionById } from '@/utils/chat/sessionMutations';
+import { updateSessionById } from '@/utils/chat/sessionMutations';
 import { invalidateSessionFilesApiReferences } from '@/utils/chat/geminiFilesApi';
+import { pruneDanglingInternalToolMessages } from '@/utils/chat/visibility';
 import { useI18n } from '@/contexts/I18nContext';
 import { formatMessageSenderText } from './i18nFormat';
 
@@ -42,19 +43,26 @@ export const useApiErrorHandler = (updateAndPersistSessions: SessionsUpdater) =>
       });
 
       if (isAborted) {
-        if (partialContent !== undefined || partialThoughts !== undefined) {
-          updateAndPersistSessions((previousSessions) =>
-            updateMessageInSession(previousSessions, sessionId, modelMessageId, (message) => ({
-              ...message,
-              content: partialContent !== undefined ? partialContent : message.content,
-              thoughts: partialThoughts !== undefined ? partialThoughts : message.thoughts,
-              isLoading: false,
-              generationEndTime: new Date(),
-              stoppedByUser: true,
-              thinkingTimeMs: fallbackThinkingTimeMs(message),
-            })),
-          );
-        }
+        updateAndPersistSessions((previousSessions) =>
+          updateSessionById(previousSessions, sessionId, (session) => {
+            const cleanedMessages = pruneDanglingInternalToolMessages(session.messages, modelMessageId);
+            const updatedMessages = cleanedMessages.map((message) => {
+              if (message.id !== modelMessageId) {
+                return message;
+              }
+              return {
+                ...message,
+                content: partialContent !== undefined ? partialContent : message.content,
+                thoughts: partialThoughts !== undefined ? partialThoughts : message.thoughts,
+                isLoading: false,
+                generationEndTime: new Date(),
+                stoppedByUser: true,
+                thinkingTimeMs: fallbackThinkingTimeMs(message),
+              };
+            });
+            return { ...session, messages: updatedMessages };
+          }),
+        );
         return;
       }
 
@@ -80,7 +88,8 @@ export const useApiErrorHandler = (updateAndPersistSessions: SessionsUpdater) =>
 
       updateAndPersistSessions((previousSessions) =>
         updateSessionById(previousSessions, sessionId, (session) => {
-          const updatedMessages = session.messages.map((message) => {
+          const cleanedMessages = pruneDanglingInternalToolMessages(session.messages, modelMessageId);
+          const updatedMessages = cleanedMessages.map((message) => {
             if (message.id !== modelMessageId) {
               return message;
             }

@@ -130,4 +130,83 @@ describe('ZipViewer', () => {
       expect(onConvertToContext).toHaveBeenCalledWith(fakeContextFile);
     });
   });
+
+  it('shows translated notice when text file exceeds 5MB', async () => {
+    const zip = new JSZip();
+    const bigFileEntry = {
+      name: 'large.txt',
+      dir: false,
+      date: new Date(),
+      _data: { uncompressedSize: 6 * 1024 * 1024 },
+      async: vi.fn(),
+    };
+    // @ts-expect-error test injection
+    zip.files['large.txt'] = bigFileEntry;
+    vi.spyOn(JSZip, 'loadAsync').mockResolvedValueOnce(zip);
+
+    const uploadedFile: UploadedFile = {
+      id: 'zip-large',
+      name: 'large.zip',
+      type: 'application/zip',
+      size: 10 * 1024 * 1024,
+      rawFile: new File(['fake'], 'large.zip', { type: 'application/zip' }),
+    };
+
+    await act(async () => {
+      renderer.render(<ZipViewer file={uploadedFile} />);
+    });
+
+    await waitFor(() => {
+      expect(document.body.textContent).toContain('large.txt');
+    });
+
+    const entry = Array.from(document.querySelectorAll('span')).find((el) => el.textContent === 'large.txt');
+    await act(async () => {
+      fireEvent.click(entry!);
+    });
+
+    await waitFor(() => {
+      expect(document.body.textContent).toMatch(/File size exceeds 5MB|文件大小超过 5MB/);
+    });
+  });
+
+  it('uses full-height layout without pt-20 and allows toggling markdown preview/source mode', async () => {
+    const uploadedFile = await createZipFile({
+      'GUIDE.md': '# User Guide\nContent here',
+    });
+
+    await act(async () => {
+      renderer.render(<ZipViewer file={uploadedFile} />);
+    });
+
+    await waitFor(() => {
+      expect(document.body.textContent).toContain('GUIDE.md');
+    });
+
+    // Verify outer container is full-height without pt-20 clearance
+    const outerWrapper = document.querySelector('.w-full.h-full.flex.flex-col');
+    expect(outerWrapper).not.toBeNull();
+    expect(outerWrapper?.className).not.toContain('pt-20');
+
+    const guideEntry = Array.from(document.querySelectorAll('span')).find((el) => el.textContent === 'GUIDE.md');
+    await act(async () => {
+      fireEvent.click(guideEntry!);
+    });
+
+    await waitFor(() => {
+      expect(document.body.textContent).toContain('User Guide');
+    });
+
+    // Check toggle buttons for Markdown
+    const sourceBtn = Array.from(document.querySelectorAll('button')).find((btn) => btn.textContent?.includes('源码'));
+    expect(sourceBtn).toBeDefined();
+
+    await act(async () => {
+      fireEvent.click(sourceBtn!);
+    });
+
+    await waitFor(() => {
+      expect(document.body.textContent).toContain('# User Guide');
+    });
+  });
 });

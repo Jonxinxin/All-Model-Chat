@@ -64,12 +64,32 @@ type StructuredTextContent = Array<{
   parts: Array<{ text: string }>;
 }>;
 
-const stripWrappingQuotes = (text: string) => {
-  if ((text.startsWith('"') && text.endsWith('"')) || (text.startsWith("'") && text.endsWith("'"))) {
-    return text.substring(1, text.length - 1);
+const sanitizeGeneratedTitle = (text: string) => {
+  let cleaned = text.trim();
+
+  for (let i = 0; i < 3; i += 1) {
+    const prev = cleaned;
+    if ((cleaned.startsWith('**') && cleaned.endsWith('**')) || (cleaned.startsWith('__') && cleaned.endsWith('__'))) {
+      cleaned = cleaned.substring(2, cleaned.length - 2).trim();
+    }
+    if (
+      (cleaned.startsWith('*') && cleaned.endsWith('*')) ||
+      (cleaned.startsWith('_') && cleaned.endsWith('_')) ||
+      (cleaned.startsWith('`') && cleaned.endsWith('`'))
+    ) {
+      cleaned = cleaned.substring(1, cleaned.length - 1).trim();
+    }
+    if (
+      (cleaned.startsWith('"') && cleaned.endsWith('"')) ||
+      (cleaned.startsWith("'") && cleaned.endsWith("'")) ||
+      (cleaned.startsWith('“') && cleaned.endsWith('”'))
+    ) {
+      cleaned = cleaned.substring(1, cleaned.length - 1).trim();
+    }
+    if (cleaned === prev) break;
   }
 
-  return text;
+  return cleaned;
 };
 
 const parseSuggestionLines = (text: string) =>
@@ -137,23 +157,37 @@ const buildTitleContents = (
   userContent: string,
   modelContent: string,
   language: SupportedLanguage,
-): StructuredTextContent => [
-  {
-    role: 'user',
-    parts: [
-      {
-        text:
-          language === 'zh'
-            ? '根据后续独立内容片段中的对话，创建一个非常简短、简洁的标题（最多4-6个词）。不要使用引号或任何其他格式。只返回标题文本。'
-            : `Based on the conversation in the following separate content parts, create a very short, concise title (4-6 words max). Do not use quotes or any other formatting. Just return the text of the title.${outputLanguageDirective(language)}`,
-      },
-      { text: language === 'zh' ? '用户消息:' : 'USER message:' },
-      { text: userContent },
-      { text: language === 'zh' ? '助手消息:' : 'ASSISTANT message:' },
-      { text: modelContent },
-    ],
-  },
-];
+): StructuredTextContent => {
+  const instruction =
+    language === 'zh'
+      ? `作为对话标题提炼专家，请基于后续独立内容片段中的对话，创建一个简短精练的会话标题。
+
+规则：
+1. 开头必须且仅包含 1 个最贴切的主题 Emoji 表情（如 💻代码、🐛排错、📝写作、💡创意、🌍翻译、📊数据等）。
+2. Emoji 与标题文字之间保留 1 个空格。
+3. 标题文字简明扼要（6~12 个字），突出核心动作或主题，避免“关于...”、“讨论...”等冗余泛话。
+4. 严禁使用引号、括号或 Markdown 格式（如加粗），仅返回单行纯文本标题。`
+      : `You are an expert at summarizing conversations into concise titles. Based on the conversation in the following separate content parts, create a short, focused title.
+
+Rules:
+1. Start with exactly 1 most relevant emoji reflecting the core topic (e.g. 💻, 🐛, 📝, 💡, 🌍, 📊).
+2. Put a single space between the emoji and the title text.
+3. Keep the title concise and specific (3-6 words max).
+4. Do not use quotes or markdown formatting. Return only the single-line title text.${outputLanguageDirective(language)}`;
+
+  return [
+    {
+      role: 'user',
+      parts: [
+        { text: instruction },
+        { text: language === 'zh' ? '用户消息:' : 'USER message:' },
+        { text: userContent },
+        { text: language === 'zh' ? '助手消息:' : 'ASSISTANT message:' },
+        { text: modelContent },
+      ],
+    },
+  ];
+};
 
 export const translateTextApi = async (
   apiKey: string,
@@ -324,7 +358,7 @@ export const generateTitleApi = async (
             });
             return '';
           }
-          return stripWrappingQuotes(titleText);
+          return sanitizeGeneratedTitle(titleText);
         } catch (error) {
           // Abort is intentional (timeout) — let it propagate so the timeout
           // controller can be observed; all other failures just fall back to

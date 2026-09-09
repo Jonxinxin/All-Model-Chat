@@ -55,11 +55,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
             className={`z-[9999] max-w-xs rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-opacity duration-150 leading-snug pointer-events-none select-none ${contentStyle} ${className}`}
           >
             {text}
-            <TooltipPrimitive.Arrow
-              className={arrowStyle}
-              width={8}
-              height={4}
-            />
+            <TooltipPrimitive.Arrow className={arrowStyle} width={8} height={4} />
           </TooltipPrimitive.Content>
         </TooltipPrimitive.Portal>
       </TooltipPrimitive.Root>

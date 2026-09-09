@@ -342,6 +342,7 @@ const ImageViewerContent: React.FC<ImageViewerProps> = ({ file, highlight }) => 
               <ImageVisualCropper
                 fileName={file.name}
                 imageDimensions={{ width: dimensions.imgW, height: dimensions.imgH }}
+                rotation={rotation}
                 onConfirmSelection={handleConfirmVisualSelection}
                 onCancel={() => setIsVisualCropActive(false)}
               />

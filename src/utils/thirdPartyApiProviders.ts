@@ -775,61 +775,6 @@ export const reorderThirdPartyConnections = (
   };
 };
 
-export const updateModelInConnection = (
-  thirdPartyApi: ThirdPartyApiSettings,
-  connectionId: string,
-  modelId: string,
-  updates: Partial<ModelOption>,
-): ThirdPartyApiSettings => ({
-  ...thirdPartyApi,
-  connections: thirdPartyApi.connections.map((connection) => {
-    if (connection.id !== connectionId) return connection;
-    return {
-      ...connection,
-      models: connection.models.map((m) => (m.id === modelId ? { ...m, ...updates } : m)),
-    };
-  }),
-});
-
-export const deleteModelFromConnection = (
-  thirdPartyApi: ThirdPartyApiSettings,
-  connectionId: string,
-  modelId: string,
-): ThirdPartyApiSettings => ({
-  ...thirdPartyApi,
-  connections: thirdPartyApi.connections.map((connection) => {
-    if (connection.id !== connectionId) return connection;
-    const nextModels = connection.models.filter((m) => m.id !== modelId);
-    return {
-      ...connection,
-      models: nextModels,
-      modelId: connection.modelId === modelId ? (nextModels[0]?.id ?? '') : connection.modelId,
-    };
-  }),
-});
-
-export const addModelToConnection = (
-  thirdPartyApi: ThirdPartyApiSettings,
-  connectionId: string,
-  newModel: ModelOption,
-): ThirdPartyApiSettings => ({
-  ...thirdPartyApi,
-  connections: thirdPartyApi.connections.map((connection) => {
-    if (connection.id !== connectionId) return connection;
-    const existingIndex = connection.models.findIndex((m) => m.id === newModel.id);
-    if (existingIndex >= 0) {
-      const updatedModels = [...connection.models];
-      updatedModels[existingIndex] = { ...updatedModels[existingIndex], ...newModel };
-      return { ...connection, models: updatedModels };
-    }
-    return {
-      ...connection,
-      models: [...connection.models, newModel],
-      modelId: connection.modelId ? connection.modelId : newModel.id,
-    };
-  }),
-});
-
 export function generateColorFromChar(text: string): string {
   if (!text) return '#475569';
   let hash = 0;

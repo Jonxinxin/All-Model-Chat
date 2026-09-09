@@ -716,4 +716,33 @@ describe('MessageText', () => {
     expect(renderer.container.querySelector('[data-user-message-collapsed]')).not.toBeInTheDocument();
     expect(renderer.container.querySelector('[aria-label="Expand"]')).not.toBeInTheDocument();
   });
+
+  it('renders thinking indicator text without a spinner when loading with no content', () => {
+    act(() => {
+      renderer.render(
+        <MessageText
+          message={{
+            id: 'loading-model',
+            role: 'model',
+            content: '',
+            isLoading: true,
+            timestamp: new Date('2026-04-21T00:00:00.000Z'),
+          }}
+          showThoughts={false}
+          appSettings={createAppSettings({ autoOpenHtmlPreview: false, hideThinkingInContext: false })}
+          themeId="pearl"
+          baseFontSize={16}
+          onImageClick={vi.fn()}
+          onOpenHtmlPreview={vi.fn()}
+          expandCodeBlocksByDefault={false}
+          isMermaidRenderingEnabled={true}
+          isGraphvizRenderingEnabled={true}
+          onOpenSidePanel={vi.fn()}
+        />,
+      );
+    });
+
+    expect(renderer.container.textContent).toContain('Thinking...');
+    expect(renderer.container.querySelector('[data-testid="google-spinner"]')).toBeNull();
+  });
 });

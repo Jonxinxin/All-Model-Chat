@@ -100,4 +100,148 @@ describe('SessionItemMenu and SessionItemContextMenu', () => {
     expect(screen.getByText('Duplicate')).toBeInTheDocument();
     expect(screen.getByText('Delete')).toBeInTheDocument();
   });
+
+  it('triggers onStartEdit and prevents default on close autofocus when Edit is selected in DropdownMenu', () => {
+    const onStartEdit = vi.fn();
+
+    render(
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button>Options</button>
+        </DropdownMenuTrigger>
+        <SessionItemMenu
+          session={mockSession}
+          groups={mockGroups}
+          onMoveSessionToGroup={vi.fn()}
+          onStartEdit={onStartEdit}
+          onTogglePin={vi.fn()}
+          onDuplicate={vi.fn()}
+          onExport={vi.fn()}
+          onDelete={vi.fn()}
+        />
+      </DropdownMenu>,
+    );
+
+    fireEvent.pointerDown(screen.getByText('Options'), { button: 0 });
+    const editItem = screen.getByText('Edit');
+    fireEvent.click(editItem);
+
+    expect(onStartEdit).toHaveBeenCalledTimes(1);
+  });
+
+  it('triggers onStartEdit when Edit is selected in ContextMenu', () => {
+    const onStartEdit = vi.fn();
+
+    render(
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <div data-testid="session-row-2">Session Row 2</div>
+        </ContextMenuTrigger>
+        <SessionItemContextMenu
+          session={mockSession}
+          groups={mockGroups}
+          onMoveSessionToGroup={vi.fn()}
+          onStartEdit={onStartEdit}
+          onTogglePin={vi.fn()}
+          onDuplicate={vi.fn()}
+          onExport={vi.fn()}
+          onDelete={vi.fn()}
+        />
+      </ContextMenu>,
+    );
+
+    fireEvent.contextMenu(screen.getByTestId('session-row-2'));
+    const editItem = screen.getByText('Edit');
+    fireEvent.click(editItem);
+
+    expect(onStartEdit).toHaveBeenCalledTimes(1);
+  });
+
+  it('triggers onRegenerateTitle when Regenerate Title is selected in DropdownMenu', () => {
+    const onRegenerateTitle = vi.fn();
+
+    render(
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button>Options</button>
+        </DropdownMenuTrigger>
+        <SessionItemMenu
+          session={mockSession}
+          groups={mockGroups}
+          onMoveSessionToGroup={vi.fn()}
+          onStartEdit={vi.fn()}
+          onTogglePin={vi.fn()}
+          onDuplicate={vi.fn()}
+          onExport={vi.fn()}
+          onDelete={vi.fn()}
+          onRegenerateTitle={onRegenerateTitle}
+        />
+      </DropdownMenu>,
+    );
+
+    fireEvent.pointerDown(screen.getByText('Options'), { button: 0 });
+    const regenItem = screen.getByText('Regenerate Title');
+    expect(regenItem).toBeInTheDocument();
+    fireEvent.click(regenItem);
+
+    expect(onRegenerateTitle).toHaveBeenCalledTimes(1);
+  });
+
+  it('triggers onRegenerateTitle when Regenerate Title is selected in ContextMenu', () => {
+    const onRegenerateTitle = vi.fn();
+
+    render(
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <div data-testid="session-row-3">Session Row 3</div>
+        </ContextMenuTrigger>
+        <SessionItemContextMenu
+          session={mockSession}
+          groups={mockGroups}
+          onMoveSessionToGroup={vi.fn()}
+          onStartEdit={vi.fn()}
+          onTogglePin={vi.fn()}
+          onDuplicate={vi.fn()}
+          onExport={vi.fn()}
+          onDelete={vi.fn()}
+          onRegenerateTitle={onRegenerateTitle}
+        />
+      </ContextMenu>,
+    );
+
+    fireEvent.contextMenu(screen.getByTestId('session-row-3'));
+    const regenItem = screen.getByText('Regenerate Title');
+    expect(regenItem).toBeInTheDocument();
+    fireEvent.click(regenItem);
+
+    expect(onRegenerateTitle).toHaveBeenCalledTimes(1);
+  });
+
+  it('disables Regenerate Title item when isGeneratingTitle is true', () => {
+    const onRegenerateTitle = vi.fn();
+
+    render(
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button>Options</button>
+        </DropdownMenuTrigger>
+        <SessionItemMenu
+          session={mockSession}
+          groups={mockGroups}
+          onMoveSessionToGroup={vi.fn()}
+          onStartEdit={vi.fn()}
+          onTogglePin={vi.fn()}
+          onDuplicate={vi.fn()}
+          onExport={vi.fn()}
+          onDelete={vi.fn()}
+          onRegenerateTitle={onRegenerateTitle}
+          isGeneratingTitle={true}
+        />
+      </DropdownMenu>,
+    );
+
+    fireEvent.pointerDown(screen.getByText('Options'), { button: 0 });
+    const regenItem = screen.getByText('Regenerate Title').closest('[role="menuitem"]');
+    expect(regenItem).toHaveAttribute('data-disabled');
+  });
 });

@@ -22,7 +22,7 @@ import {
   Globe,
   Brain,
   Code2,
-  MapPin,
+  MapPinned,
   Link as LinkIcon,
   Settings,
   FolderKanban,
@@ -252,7 +252,7 @@ export const GlobalCommandPalette: React.FC<GlobalCommandPaletteProps> = ({
               })
             }
           >
-            <MapPin className="text-[var(--theme-text-secondary)]" />
+            <MapPinned className="text-[var(--theme-text-secondary)]" />
             <span>Google 地图位置检索</span>
             <CommandShortcut>/maps</CommandShortcut>
           </CommandItem>

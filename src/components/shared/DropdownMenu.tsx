@@ -3,7 +3,40 @@ import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu';
 import { Check, ChevronRight, Circle } from 'lucide-react';
 
 export const DropdownMenu = DropdownMenuPrimitive.Root;
-export const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger;
+
+export const DropdownMenuTrigger = React.forwardRef<
+  React.ElementRef<typeof DropdownMenuPrimitive.Trigger>,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Trigger>
+>(({ onClick, onPointerDown, ...props }, ref) => {
+  const hasPointerDown = React.useRef(false);
+
+  return (
+    <DropdownMenuPrimitive.Trigger
+      ref={ref}
+      onPointerDown={(e) => {
+        hasPointerDown.current = true;
+        onPointerDown?.(e);
+      }}
+      onClick={(e) => {
+        onClick?.(e);
+        if (!hasPointerDown.current && !e.defaultPrevented) {
+          const EventCtor = typeof PointerEvent !== 'undefined' ? PointerEvent : MouseEvent;
+          e.currentTarget.dispatchEvent(
+            new EventCtor('pointerdown', {
+              bubbles: true,
+              cancelable: true,
+              button: 0,
+            }),
+          );
+        }
+        hasPointerDown.current = false;
+      }}
+      {...props}
+    />
+  );
+});
+DropdownMenuTrigger.displayName = DropdownMenuPrimitive.Trigger.displayName;
+
 export const DropdownMenuGroup = DropdownMenuPrimitive.Group;
 export const DropdownMenuPortal = DropdownMenuPrimitive.Portal;
 export const DropdownMenuSub = DropdownMenuPrimitive.Sub;
@@ -47,13 +80,15 @@ export const DropdownMenuSubContent = React.forwardRef<
 ));
 DropdownMenuSubContent.displayName = DropdownMenuPrimitive.SubContent.displayName;
 
-export type DropdownMenuContentProps = React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content>;
+export interface DropdownMenuContentProps extends React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content> {
+  portalled?: boolean;
+}
 
 export const DropdownMenuContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Content>,
   DropdownMenuContentProps
->(({ className = '', sideOffset = 4, ...props }, ref) => (
-  <DropdownMenuPrimitive.Portal>
+>(({ className = '', sideOffset = 4, portalled = true, ...props }, ref) => {
+  const content = (
     <DropdownMenuPrimitive.Content
       ref={ref}
       sideOffset={sideOffset}
@@ -61,8 +96,10 @@ export const DropdownMenuContent = React.forwardRef<
       className={`z-[9999] min-w-[11rem] overflow-hidden rounded-xl border border-[var(--theme-border-secondary)] bg-[var(--theme-bg-primary)] p-1 text-[var(--theme-text-primary)] shadow-xl animate-in fade-in zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 backdrop-blur-md ${className}`}
       {...props}
     />
-  </DropdownMenuPrimitive.Portal>
-));
+  );
+
+  return portalled ? <DropdownMenuPrimitive.Portal>{content}</DropdownMenuPrimitive.Portal> : content;
+});
 DropdownMenuContent.displayName = DropdownMenuPrimitive.Content.displayName;
 
 export type DropdownMenuItemProps = React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Item> & {

@@ -48,4 +48,49 @@ describe('ImageVisualCropper', () => {
     fireEvent.click(insertBtn);
     expect(onConfirmSelection).toHaveBeenCalledWith([100, 100, 500, 500]);
   });
+
+  it('correctly maps coordinates when image is rotated by 90 degrees', () => {
+    const onConfirmSelection = vi.fn();
+    const onCancel = vi.fn();
+
+    const { container } = render(
+      <div style={{ position: 'relative', width: 800, height: 1000 }}>
+        <ImageVisualCropper
+          fileName="screen.png"
+          imageDimensions={{ width: 1000, height: 800 }}
+          rotation={90}
+          onConfirmSelection={onConfirmSelection}
+          onCancel={onCancel}
+        />
+      </div>,
+    );
+
+    const surface = container.querySelector('[data-testid="visual-cropper-surface"]');
+    expect(surface).not.toBeNull();
+
+    // With 90 deg rotation, the rendered AABB width and height swap
+    vi.spyOn(surface!, 'getBoundingClientRect').mockReturnValue({
+      left: 100,
+      top: 0,
+      width: 800,
+      height: 1000,
+      right: 900,
+      bottom: 1000,
+      x: 100,
+      y: 0,
+      toJSON: () => {},
+    });
+
+    // ClientX=820, ClientY=100 corresponds to unrotated (100, 80)
+    // ClientX=500, ClientY=500 corresponds to unrotated (500, 400)
+    fireEvent.pointerDown(surface!, { clientX: 820, clientY: 100, button: 0 });
+    fireEvent.pointerMove(surface!, { clientX: 500, clientY: 500 });
+    fireEvent.pointerUp(surface!, { clientX: 500, clientY: 500 });
+
+    const insertBtn = screen.getByTestId('visual-crop-insert-btn');
+    expect(insertBtn).toBeInTheDocument();
+
+    fireEvent.click(insertBtn);
+    expect(onConfirmSelection).toHaveBeenCalledWith([100, 100, 500, 500]);
+  });
 });

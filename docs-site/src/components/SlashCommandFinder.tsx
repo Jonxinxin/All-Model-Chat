@@ -121,6 +121,7 @@ const COMMAND_LIST: SlashItem[] = [
     category: 'system',
     descriptionZh: '切换画中画 (Picture-in-Picture) 浮动窗口模式',
     descriptionEn: 'Toggle Picture-in-Picture floating window mode',
+    shortcut: 'Cmd/Ctrl + Alt + P',
     scope: '应用视图',
   },
   {
@@ -128,7 +129,6 @@ const COMMAND_LIST: SlashItem[] = [
     category: 'system',
     descriptionZh: '打开系统配置面板',
     descriptionEn: 'Open system settings modal',
-    shortcut: 'Cmd/Ctrl + ,',
     scope: '全局',
   },
   {
@@ -136,7 +136,6 @@ const COMMAND_LIST: SlashItem[] = [
     category: 'system',
     descriptionZh: '打开快捷键与功能帮助弹窗',
     descriptionEn: 'Open help and keyboard shortcuts dialog',
-    shortcut: 'Cmd/Ctrl + /',
     scope: '全局',
   },
 ];
@@ -355,4 +354,3 @@ export const SlashCommandFinder: React.FC<SlashCommandFinderProps> = ({ locale =
     </div>
   );
 };
-

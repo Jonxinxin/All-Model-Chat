@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useI18n } from '@/contexts/I18nContext';
 import { Modal } from '@/components/shared/Modal';
-import { MapPin, Navigation, X } from 'lucide-react';
+import { MapPinned, Navigation, X } from 'lucide-react';
 import { PRESET_LOCATIONS, requestBrowserLocation, type PresetLocation } from '@/utils/geolocation';
 import type { GeoLocationCoordinates } from '@/types';
 import { SETTINGS_INPUT_CLASS } from '@/constants/formClasses';
@@ -114,7 +114,7 @@ export const GoogleMapsLocationModal: React.FC<GoogleMapsLocationModalProps> = (
         <div className="flex items-center justify-between pb-4 border-b border-[var(--theme-border-secondary)]">
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--theme-bg-accent)]/10 text-[var(--theme-text-link)]">
-              <MapPin size={20} strokeWidth={2} />
+              <MapPinned size={20} strokeWidth={2} />
             </div>
             <div>
               <h2 className="text-base font-semibold text-[var(--theme-text-primary)]">{t('mapsLocationTitle')}</h2>

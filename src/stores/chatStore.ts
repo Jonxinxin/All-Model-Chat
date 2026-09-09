@@ -165,20 +165,28 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       const metadataList = await dbService.getAllSessionMetadata();
       const { activeSessionId, loadingSessionIds, setActiveMessages, setSavedSessions } = get();
 
+      let rehydratedActiveMessages: SavedChatSession['messages'] | undefined;
       if (activeSessionId && !loadingSessionIds.has(activeSessionId)) {
         const fullActiveSession = await dbService.getSession(activeSessionId);
         if (fullActiveSession) {
           const rehydrated = rehydrateSessionFiles(sanitizeSessionModel(fullActiveSession));
-          setActiveMessages(rehydrated.messages);
+          rehydratedActiveMessages = rehydrated.messages;
+          setActiveMessages(rehydratedActiveMessages);
         }
       }
 
-      setSavedSessions((prev) =>
-        mergeSessionMetadata(prev, metadataList, {
+      setSavedSessions((prev) => {
+        const adjustedPrev =
+          rehydratedActiveMessages && activeSessionId
+            ? prev.map((session) =>
+                session.id === activeSessionId ? { ...session, messages: rehydratedActiveMessages } : session,
+              )
+            : prev;
+        return mergeSessionMetadata(adjustedPrev, metadataList, {
           activeSessionId,
           loadingSessionIds,
-        }),
-      );
+        });
+      });
     } catch (refreshError) {
       logService.error('Failed to refresh sessions from DB', { error: refreshError });
     }

@@ -67,7 +67,7 @@ export const DocxViewer: React.FC<DocxViewerProps> = ({ file }) => {
   }, [file, t]);
 
   return (
-    <div className="w-full h-full overflow-auto bg-[var(--theme-bg-tertiary)]/20 flex flex-col items-center pt-20 sm:pt-24 pb-12 px-4 sm:px-8">
+    <div className="w-full h-full overflow-auto bg-[var(--theme-bg-tertiary)]/20 flex flex-col items-center pt-4 sm:pt-6 pb-12 px-2 sm:px-6 custom-scrollbar">
       {isLoading && (
         <div className="flex flex-col items-center justify-center m-auto text-[var(--theme-text-secondary)] gap-3">
           <GoogleSpinner size={32} />
