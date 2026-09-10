@@ -15,6 +15,7 @@ export const ComposerMoreMenu: React.FC<{ actions: ComposerAuxiliaryAction[]; di
   disabled = false,
 }) => {
   const { t } = useI18n();
+  const isItemActionTriggeredRef = React.useRef(false);
 
   if (actions.length === 0) {
     return null;
@@ -34,11 +35,25 @@ export const ComposerMoreMenu: React.FC<{ actions: ComposerAuxiliaryAction[]; di
             <Ellipsis size={20} strokeWidth={2.2} />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56 py-1.5 shadow-premium" side="top" align="start" sideOffset={8}>
+        <DropdownMenuContent
+          className="w-56 py-1.5 shadow-premium"
+          side="top"
+          align="start"
+          sideOffset={8}
+          onCloseAutoFocus={(e) => {
+            if (isItemActionTriggeredRef.current) {
+              e.preventDefault();
+              isItemActionTriggeredRef.current = false;
+            }
+          }}
+        >
           {actions.map((item) => (
             <DropdownMenuItem
               key={item.id}
-              onClick={item.action}
+              onClick={() => {
+                isItemActionTriggeredRef.current = true;
+                item.action();
+              }}
               disabled={item.disabled}
               data-testid={item.testId}
               className="flex w-full cursor-pointer items-center gap-3 px-4 py-2.5 text-sm text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] focus:bg-[var(--theme-bg-tertiary)]"

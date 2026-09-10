@@ -43,7 +43,10 @@ export const AttachmentMenu: React.FC = () => {
   const isGemma = isGemmaModel(currentModelId);
   const isGeminiNative = providerId === undefined || providerId === GEMINI_PROVIDER_ID;
 
+  const isItemActionTriggeredRef = React.useRef(false);
+
   const handleAction = (action: AttachmentAction) => {
+    isItemActionTriggeredRef.current = true;
     onAttachmentAction(action);
   };
 
@@ -113,6 +116,12 @@ export const AttachmentMenu: React.FC = () => {
           align="start"
           sideOffset={8}
           className="w-60 max-h-[75vh] overflow-y-auto custom-scrollbar py-1.5 shadow-premium"
+          onCloseAutoFocus={(e) => {
+            if (isItemActionTriggeredRef.current) {
+              e.preventDefault();
+              isItemActionTriggeredRef.current = false;
+            }
+          }}
         >
           {filteredMenuItems.map((item) => (
             <DropdownMenuItem

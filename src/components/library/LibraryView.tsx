@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, Suspense } from 'react';
 import { useI18n } from '@/contexts/I18nContext';
 import { useChatStore } from '@/stores/chatStore';
 import { useUIStore } from '@/stores/uiStore';
@@ -12,6 +12,9 @@ import {
 } from '@/utils/library/libraryFiles';
 import { triggerDownload } from '@/utils/export/core';
 import { fileToBlobUrl, cleanupFilePreviewUrl } from '@/utils/file/filePreviewUrls';
+import { EXTENSION_TO_MIME } from '@/constants/fileTypeSupport';
+import { isTextFile, isMarkdownFile } from '@/utils/file/fileTypeClassification';
+import { lazyNamedComponent } from '@/utils/lazyNamedComponent';
 import { LibraryHeader } from './LibraryHeader';
 import { LibraryToolbar } from './LibraryToolbar';
 import { LibraryListView } from './LibraryListView';
@@ -21,6 +24,11 @@ import { FilePreviewModal } from '@/components/modals/FilePreviewModal';
 import { ConfirmationModal } from '@/components/modals/ConfirmationModal';
 import { Upload } from 'lucide-react';
 
+const LazyCreateTextFileEditor = lazyNamedComponent(
+  () => import('@/components/modals/create-file/CreateTextFileEditor'),
+  'CreateTextFileEditor',
+);
+
 interface LibraryViewProps {
   onNewChat?: (initialFiles?: UploadedFile[]) => void;
   onSelectSession?: (sessionId: string) => void;
@@ -28,7 +36,7 @@ interface LibraryViewProps {
   themeId?: string;
 }
 
-export const LibraryView: React.FC<LibraryViewProps> = ({ onNewChat, onSelectSession, onClose }) => {
+export const LibraryView: React.FC<LibraryViewProps> = ({ onNewChat, onSelectSession, onClose, themeId = 'default' }) => {
   const { t } = useI18n();
   const savedSessions = useChatStore((state) => state.savedSessions);
   const setSelectedFiles = useChatStore((state) => state.setSelectedFiles);
@@ -42,6 +50,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onNewChat, onSelectSes
   const searchQuery = useLibraryStore((state) => state.searchQuery);
   const selectedFileIds = useLibraryStore((state) => state.selectedFileIds);
   const clearSelection = useLibraryStore((state) => state.clearSelection);
+  const selectAllFiles = useLibraryStore((state) => state.selectAllFiles);
   const setCategoryFilter = useLibraryStore((state) => state.setCategoryFilter);
   const setSourceFilter = useLibraryStore((state) => state.setSourceFilter);
   const setFileTypeFilter = useLibraryStore((state) => state.setFileTypeFilter);
@@ -49,36 +58,45 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onNewChat, onSelectSes
 
   const [standaloneFiles, setStandaloneFiles] = useState<LibraryItem[]>([]);
   const [historicalFiles, setHistoricalFiles] = useState<LibraryItem[]>([]);
+  const [deletedFileIds, setDeletedFileIds] = useState<Set<string>>(new Set());
   const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [deleteConfirmTarget, setDeleteConfirmTarget] = useState<LibraryItem | 'selected' | null>(null);
+  const [showCreateNote, setShowCreateNote] = useState(false);
 
-  // Load standalone files and historical session files from IndexedDB
+  const previewOriginalDataUrlRef = useRef<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Load standalone files, historical session files, and deleted file tombstones from IndexedDB
   const refreshLibraryFiles = useCallback(async () => {
-    const [standalone, historical] = await Promise.all([
+    const [standalone, historical, deleted] = await Promise.all([
       dbService.getStandaloneLibraryFiles(),
       dbService.getAllHistoricalSessionFiles(),
+      dbService.getDeletedLibraryFileIds(),
     ]);
     setStandaloneFiles(standalone);
     setHistoricalFiles(historical);
+    setDeletedFileIds(new Set(deleted));
   }, []);
 
   useEffect(() => {
     void refreshLibraryFiles();
   }, [refreshLibraryFiles]);
 
-  // Merge session files and standalone files
+  // Merge session files and standalone files, excluding deleted items
   const allItems = useMemo(() => {
     const map = new Map<string, LibraryItem>();
 
     // 1. Add standalone files first
     standaloneFiles.forEach((file) => {
-      map.set(file.id, file);
+      if (!deletedFileIds.has(file.id)) {
+        map.set(file.id, file);
+      }
     });
 
     // 2. Add historical session files from IndexedDB
     historicalFiles.forEach((file) => {
-      if (!map.has(file.id)) {
+      if (!deletedFileIds.has(file.id) && !map.has(file.id)) {
         map.set(file.id, file);
       }
     });
@@ -86,11 +104,13 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onNewChat, onSelectSes
     // 3. Add or update with current in-memory sessions (covers active / freshly modified session)
     const inMemorySessionFiles = extractLibraryItemsFromSessions(savedSessions);
     inMemorySessionFiles.forEach((file) => {
-      map.set(file.id, file);
+      if (!deletedFileIds.has(file.id)) {
+        map.set(file.id, file);
+      }
     });
 
     return Array.from(map.values());
-  }, [savedSessions, standaloneFiles, historicalFiles]);
+  }, [savedSessions, standaloneFiles, historicalFiles, deletedFileIds]);
 
   // Filtered & sorted items
   const filteredItems = useMemo(() => {
@@ -114,7 +134,12 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onNewChat, onSelectSes
           const id = `lib-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
           let textContent: string | undefined;
 
-          if (file.type.startsWith('text/') || file.name.endsWith('.md') || file.name.endsWith('.txt')) {
+          const isText =
+            file.type.startsWith('text/') ||
+            isTextFile({ name: file.name, type: file.type }) ||
+            isMarkdownFile({ name: file.name, type: file.type });
+
+          if (isText && file.size <= 5 * 1024 * 1024) {
             try {
               textContent = await file.text();
             } catch {
@@ -178,7 +203,9 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onNewChat, onSelectSes
       if (!items.length) return;
 
       const uploadedFiles: UploadedFile[] = await Promise.all(
-        items.map((item) => resolveLibraryItemToUploadedFile(item, (i) => dbService.fetchLibraryFileBlob(i))),
+        items.map((item) =>
+          resolveLibraryItemToUploadedFile(item, (i) => dbService.fetchLibraryFileBlob(i), { generateNewId: true }),
+        ),
       );
 
       if (onNewChat) {
@@ -196,8 +223,57 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onNewChat, onSelectSes
     await handleStartChatWithItems(selectedItems);
   }, [allItems, selectedFileIds, clearSelection, handleStartChatWithItems]);
 
+  const handleSelectAll = useCallback(() => {
+    selectAllFiles(filteredItems.map((item) => item.id));
+  }, [filteredItems, selectAllFiles]);
+
+  const handleSaveNote = useCallback(
+    async (content: string | Blob, filename: string) => {
+      const sanitizeFilename = (name: string) => name.trim().replace(/[<>:"/\\|?*]+/g, '_');
+      const safeFilename = filename.trim() ? sanitizeFilename(filename) : `note-${Date.now()}.md`;
+      const extension = safeFilename.includes('.') ? `.${safeFilename.split('.').pop()?.toLowerCase()}` : '.md';
+      const resolvedMime =
+        content instanceof Blob
+          ? (content.type || EXTENSION_TO_MIME[extension] || 'application/octet-stream')
+          : (EXTENSION_TO_MIME[extension] || (extension === '.md' ? 'text/markdown' : 'text/plain'));
+
+      const blob = typeof content === 'string' ? new Blob([content], { type: resolvedMime }) : content;
+      const textContent = typeof content === 'string' ? content : undefined;
+      const file = new File([blob], safeFilename, { type: resolvedMime });
+
+      const newItem: LibraryItem = {
+        id: `lib-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        name: safeFilename,
+        type: file.type,
+        size: file.size,
+        timestamp: Date.now(),
+        rawFile: file,
+        textContent,
+        source: 'uploaded',
+        isStandalone: true,
+      };
+
+      await dbService.addStandaloneLibraryFiles([newItem]);
+      await refreshLibraryFiles();
+      setShowCreateNote(false);
+    },
+    [refreshLibraryFiles],
+  );
+
   // Download item
   const handleDownloadItem = useCallback(async (item: LibraryItem) => {
+    // Prevent cross-origin download navigation for YouTube or external links
+    if (
+      item.type === 'video/youtube' ||
+      item.dataUrl?.startsWith('http://') ||
+      item.dataUrl?.startsWith('https://')
+    ) {
+      if (item.dataUrl) {
+        window.open(item.dataUrl, '_blank', 'noopener,noreferrer');
+      }
+      return;
+    }
+
     let blob = item.rawFile;
     if (!blob) {
       blob = await dbService.fetchLibraryFileBlob(item);
@@ -205,9 +281,10 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onNewChat, onSelectSes
 
     if (blob) {
       const url = fileToBlobUrl(blob);
-      triggerDownload(url, item.name);
+      triggerDownload(url, item.name, true);
     } else if (item.dataUrl) {
-      triggerDownload(item.dataUrl, item.name);
+      // Do not revoke session dataUrl
+      triggerDownload(item.dataUrl, item.name, false);
     }
   }, []);
 
@@ -232,34 +309,48 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onNewChat, onSelectSes
 
     if (deleteConfirmTarget === 'selected') {
       const ids = Array.from(selectedFileIds);
-      await dbService.deleteStandaloneLibraryFiles(ids);
+      await Promise.all([
+        dbService.deleteStandaloneLibraryFiles(ids),
+        dbService.addDeletedLibraryFileIds(ids),
+      ]);
+      setDeletedFileIds((prev) => new Set([...prev, ...ids]));
       setHistoricalFiles((prev) => prev.filter((i) => !selectedFileIds.has(i.id)));
       clearSelection();
       await refreshLibraryFiles();
     } else {
       const item = deleteConfirmTarget;
       if (item.isStandalone) {
-        await dbService.deleteStandaloneLibraryFiles([item.id]);
-        await refreshLibraryFiles();
+        await Promise.all([
+          dbService.deleteStandaloneLibraryFiles([item.id]),
+          dbService.addDeletedLibraryFileIds([item.id]),
+        ]);
       } else {
-        // Session file: remove from view state
-        setHistoricalFiles((prev) => prev.filter((i) => i.id !== item.id));
+        // Session file: record tombstone so it won't reappear from savedSessions
+        await dbService.addDeletedLibraryFileIds([item.id]);
       }
+      setDeletedFileIds((prev) => new Set([...prev, item.id]));
+      setHistoricalFiles((prev) => prev.filter((i) => i.id !== item.id));
+      await refreshLibraryFiles();
     }
   }, [deleteConfirmTarget, selectedFileIds, clearSelection, refreshLibraryFiles]);
 
   // Preview item
   const handlePreviewItem = useCallback(async (item: LibraryItem) => {
+    previewOriginalDataUrlRef.current = item.dataUrl ?? null;
     const file = await resolveLibraryItemToUploadedFile(item, (i) => dbService.fetchLibraryFileBlob(i));
     setPreviewFile(file);
   }, []);
 
-  const handleClosePreview = () => {
+  const handleClosePreview = useCallback(() => {
     if (previewFile?.dataUrl) {
-      cleanupFilePreviewUrl(previewFile);
+      // Only revoke if the dataUrl was newly created during preview, NOT inherited from item.dataUrl
+      if (previewFile.dataUrl !== previewOriginalDataUrlRef.current) {
+        cleanupFilePreviewUrl(previewFile);
+      }
     }
+    previewOriginalDataUrlRef.current = null;
     setPreviewFile(null);
-  };
+  }, [previewFile]);
 
   const previewIndex = previewFile ? filteredItems.findIndex((item) => item.id === previewFile.id) : -1;
   const hasPrevPreview = previewIndex > 0;
@@ -267,18 +358,20 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onNewChat, onSelectSes
 
   const handlePrevPreview = useCallback(() => {
     if (previewIndex > 0) {
-      if (previewFile?.dataUrl) {
+      if (previewFile?.dataUrl && previewFile.dataUrl !== previewOriginalDataUrlRef.current) {
         cleanupFilePreviewUrl(previewFile);
       }
+      previewOriginalDataUrlRef.current = null;
       void handlePreviewItem(filteredItems[previewIndex - 1]);
     }
   }, [previewIndex, previewFile, filteredItems, handlePreviewItem]);
 
   const handleNextPreview = useCallback(() => {
     if (previewIndex !== -1 && previewIndex < filteredItems.length - 1) {
-      if (previewFile?.dataUrl) {
+      if (previewFile?.dataUrl && previewFile.dataUrl !== previewOriginalDataUrlRef.current) {
         cleanupFilePreviewUrl(previewFile);
       }
+      previewOriginalDataUrlRef.current = null;
       void handlePreviewItem(filteredItems[previewIndex + 1]);
     }
   }, [previewIndex, previewFile, filteredItems, handlePreviewItem]);
@@ -310,13 +403,19 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onNewChat, onSelectSes
         </div>
       )}
 
-      <LibraryHeader onUploadFiles={handleUploadFiles} onClose={onClose} />
+      <LibraryHeader
+        onUploadFiles={handleUploadFiles}
+        onCreateNote={() => setShowCreateNote(true)}
+        onClose={onClose}
+      />
 
       <LibraryToolbar
         selectedCount={selectedFileIds.size}
+        totalCount={filteredItems.length}
         onStartChat={handleStartChatWithSelected}
         onDownloadSelected={handleDownloadSelected}
         onDeleteSelected={handleDeleteSelected}
+        onSelectAll={handleSelectAll}
       />
 
       <div className="flex-1 overflow-y-auto custom-scrollbar">
@@ -325,8 +424,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onNewChat, onSelectSes
             isFiltered={isFiltered}
             onClearFilters={handleClearFilters}
             onUploadClick={() => {
-              const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement | null;
-              fileInput?.click();
+              fileInputRef.current?.click();
             }}
           />
         ) : viewMode === 'list' ? (
@@ -348,9 +446,27 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onNewChat, onSelectSes
             onStartChatWithItem={(item) => handleStartChatWithItems([item])}
             onDownloadItem={handleDownloadItem}
             onDeleteItem={handleDeleteItem}
+            onJumpToSession={(sessionId) => {
+              onSelectSession?.(sessionId);
+              setActiveView('chat');
+            }}
           />
         )}
       </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        onChange={(e) => {
+          if (e.target.files && e.target.files.length > 0) {
+            void handleUploadFiles(Array.from(e.target.files));
+            e.target.value = '';
+          }
+        }}
+        className="hidden"
+        data-testid="library-empty-file-input"
+      />
 
       {previewFile && (
         <FilePreviewModal
@@ -374,6 +490,18 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onNewChat, onSelectSes
           confirmLabel={t('delete')}
           cancelLabel={t('cancel')}
         />
+      )}
+
+      {showCreateNote && (
+        <Suspense fallback={null}>
+          <LazyCreateTextFileEditor
+            onConfirm={handleSaveNote}
+            onCancel={() => setShowCreateNote(false)}
+            isProcessing={false}
+            isLoading={false}
+            themeId={themeId}
+          />
+        </Suspense>
       )}
     </div>
   );

@@ -5,6 +5,19 @@ import { extractLibraryItemsFromSessions } from '@/utils/library/libraryFiles';
 import { base64ToBlob } from '@/utils/file/fileEncoding';
 
 const STANDALONE_LIBRARY_STORAGE_KEY = 'amc_library_standalone_files_v1';
+const DELETED_LIBRARY_FILES_STORAGE_KEY = 'amc_library_deleted_file_ids_v1';
+
+export const getDeletedLibraryFileIds = async (): Promise<string[]> => {
+  const ids = await getKeyValue<string[]>(DELETED_LIBRARY_FILES_STORAGE_KEY);
+  return Array.isArray(ids) ? ids : [];
+};
+
+export const addDeletedLibraryFileIds = async (newIds: string[]): Promise<void> => {
+  const current = await getDeletedLibraryFileIds();
+  const idSet = new Set(current);
+  newIds.forEach((id) => idSet.add(id));
+  await setKeyValue(DELETED_LIBRARY_FILES_STORAGE_KEY, Array.from(idSet));
+};
 
 export const getStandaloneLibraryFiles = async (): Promise<LibraryItem[]> => {
   const items = await getKeyValue<LibraryItem[]>(STANDALONE_LIBRARY_STORAGE_KEY);

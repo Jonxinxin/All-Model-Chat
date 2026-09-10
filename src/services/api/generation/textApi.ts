@@ -375,3 +375,99 @@ export const generateTitleApi = async (
     window.clearTimeout(timeoutId);
   }
 };
+
+const FILE_TITLE_SOURCE_MAX_CHARS = 4000;
+const clampForFileTitle = (text: string) =>
+  text.length > FILE_TITLE_SOURCE_MAX_CHARS ? `${text.slice(0, FILE_TITLE_SOURCE_MAX_CHARS)}…` : text;
+
+const buildFileTitleContents = (
+  documentContent: string,
+  language: SupportedLanguage,
+): StructuredTextContent => {
+  const instruction =
+    language === 'zh'
+      ? `作为文件命名与内容提炼专家，请基于后续提供的文档内容，提炼一个简练、精准的文件名（不含扩展名）。
+
+规则：
+1. 提取核心主旨，字数控制在 4~15 个字之间。
+2. 严禁包含操作系统非法文件名字符（如 < > : " / \\ | ? *）。
+3. 严禁使用引号、书名号、括号、标点符号或 Markdown 格式。
+4. 仅返回提炼出的单行文件名文本，严禁包含多余解释说明。`
+      : `You are an expert at summarizing document content into a concise, filesystem-safe filename stem (without file extension).
+
+Rules:
+1. Extract the core topic in 2 to 6 words (under 40 characters).
+2. Do NOT use unsafe filename characters (< > : " / \\ | ? *).
+3. Do NOT use quotes, brackets, punctuation, or markdown formatting.
+4. Return ONLY the filename text on a single line with no explanation.${outputLanguageDirective(language)}`;
+
+  return [
+    {
+      role: 'user',
+      parts: [
+        { text: instruction },
+        { text: language === 'zh' ? '文档内容:' : 'Document content:' },
+        { text: clampForFileTitle(documentContent) },
+      ],
+    },
+  ];
+};
+
+const sanitizeFileTitleStem = (text: string): string => {
+  let cleaned = sanitizeGeneratedTitle(text);
+  cleaned = cleaned
+    .replace(/[<>:"/\\|?*]+/g, '_')
+    .replace(/^[-_\s.]+|[-_\s.]+$/g, '')
+    .trim();
+  return cleaned;
+};
+
+export const generateFileTitleApi = async (
+  apiKey: string,
+  documentContent: string,
+  language: SupportedLanguage,
+): Promise<string> => {
+  const contents = buildFileTitleContents(documentContent, language);
+  const timeoutController = new AbortController();
+  const timeoutId = window.setTimeout(() => timeoutController.abort(), AUX_API_TIMEOUT_MS);
+
+  try {
+    return await executeConfiguredApiRequest({
+      apiKey,
+      label: `Generating file title in ${language}...`,
+      errorLabel: 'Error during file title generation:',
+      abortSignal: timeoutController.signal,
+      run: async ({ client: ai }) => {
+        try {
+          const response = await ai.models.generateContent({
+            model: TEXT_GENERATION_MODEL_ID,
+            contents,
+            config: {
+              ...buildMinimalThinkingConfig(TEXT_GENERATION_MODEL_ID),
+              temperature: 0.3,
+              topP: 0.9,
+            },
+          });
+
+          const titleText = response.text?.trim();
+          if (!titleText) {
+            logService.debug('File title generation returned empty response', {
+              model: TEXT_GENERATION_MODEL_ID,
+              candidates: (response as { candidates?: unknown })?.candidates,
+            });
+            return '';
+          }
+          return sanitizeFileTitleStem(titleText);
+        } catch (error) {
+          if (error instanceof Error && error.name === 'AbortError') {
+            throw error;
+          }
+          logService.debug('File title generation request failed', error);
+          return '';
+        }
+      },
+    });
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+};

@@ -12,19 +12,23 @@ import { isImageMimeType } from '@/utils/file/fileTypeClassification';
 import { blobToDataUrl } from '@/utils/file/fileEncoding';
 import { CREATE_TEXT_FILE_EDITOR_LAST_EXTENSION_KEY } from '@/constants/storageKeys';
 import { readPersistentStorageItem, writePersistentStorageItem } from '@/stores/persistentStorage';
+import { useSettingsStore } from '@/stores/settingsStore';
+import { useChatStore } from '@/stores/chatStore';
+import { getGeminiKeyForRequest } from '@/utils/apiKeySelection';
 import { useI18n } from '@/contexts/I18nContext';
 import { CREATE_FILE_EXTENSION_OPTIONS } from './createFileExtensionOptions';
 import { composeCreateFileName } from './composeCreateFileName';
-import { deriveDefaultFilename } from './deriveDefaultFilename';
+import { formatTimestampFilename } from './deriveDefaultFilename';
 import { getClipboardPastePlan } from './createFileClipboard';
 
 interface UseCreateFileEditorProps {
   initialContent: string;
   initialFilename: string;
-  onConfirm: (content: string | Blob, filename: string) => void;
+  onConfirm: (content: string | Blob, filename: string) => void | Promise<void>;
   themeId: string;
   isPasteRichTextAsMarkdownEnabled: boolean;
 }
+
 
 const EDITOR_CONTENT_DEBOUNCE_MS = 300;
 const EDITOR_FOCUS_DELAY_MS = 100;
@@ -57,7 +61,14 @@ export const useCreateFileEditor = ({
   const [debouncedEditorContent, setDebouncedEditorContent] = useState(initialInlineImagesRef.current.editorContent);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [isGeneratingAiFilename, setIsGeneratingAiFilename] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
+
+  const appSettings = useSettingsStore((state) => state.appSettings);
+  const language = useSettingsStore((state) => state.language);
+  const currentChatSettings = useChatStore((state) =>
+    state.activeSessionId ? state.savedSessions.find((s) => s.id === state.activeSessionId)?.settings : undefined,
+  );
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -89,7 +100,8 @@ export const useCreateFileEditor = ({
   const isPdf = extension === '.pdf';
   const supportsRichPreview = ['.md', '.markdown', '.pdf'].includes(extension);
 
-  const derivedFilename = useMemo(() => deriveDefaultFilename(textContent), [textContent]);
+  const [defaultTimestampFilename] = useState(() => formatTimestampFilename());
+  const defaultFilename = defaultTimestampFilename;
 
   const isDirty =
     textContent !== initialInlineImagesRef.current.editorContent ||
@@ -123,28 +135,36 @@ export const useCreateFileEditor = ({
     if (!textContent.trim()) return;
 
     saveLockRef.current = true;
-    const finalName = composeCreateFileName(filenameBase, derivedFilename, extension);
+    const finalName = composeCreateFileName(filenameBase, defaultFilename, extension);
 
     if (isPdf) {
       setIsExportingPdf(true);
       setPdfError(null);
       try {
         const pdfBlob = await generatePdfBlob(finalName);
-        onConfirm(pdfBlob, finalName);
+        await onConfirm(pdfBlob, finalName);
       } catch (error) {
         logService.error('PDF generation error:', error);
         setPdfError(t('createTextPdfError'));
-        saveLockRef.current = false;
       } finally {
+        saveLockRef.current = false;
         setIsExportingPdf(false);
       }
     } else {
-      onConfirm(
-        resolveInlineImagePlaceholders(normalizeConvertedMarkdown(textContent), imagePlaceholdersRef.current),
-        finalName,
-      );
+      try {
+        const resolvedContent = resolveInlineImagePlaceholders(
+          normalizeConvertedMarkdown(textContent),
+          imagePlaceholdersRef.current,
+        );
+        await onConfirm(resolvedContent, finalName);
+      } catch (error) {
+        logService.error('Save file error:', error);
+      } finally {
+        saveLockRef.current = false;
+      }
     }
   };
+
 
   const handleDownloadPdf = async () => {
     if (saveLockRef.current || isExportingPdf) return;
@@ -153,7 +173,7 @@ export const useCreateFileEditor = ({
     saveLockRef.current = true;
     setIsExportingPdf(true);
     setPdfError(null);
-    const finalName = composeCreateFileName(filenameBase, derivedFilename, '.pdf', 'document');
+    const finalName = composeCreateFileName(filenameBase, defaultFilename, '.pdf');
 
     try {
       const pdfBlob = await generatePdfBlob(finalName);
@@ -166,6 +186,41 @@ export const useCreateFileEditor = ({
       setIsExportingPdf(false);
     }
   };
+
+  const canGenerateAiFilename = Boolean(textContent.trim());
+
+  const handleGenerateAiFilename = useCallback(async () => {
+    if (isGeneratingAiFilename || !textContent.trim()) return;
+
+    const effectiveChatSettings =
+      currentChatSettings ??
+      ({
+        modelId: 'gemini-3.5-flash-lite',
+      } as Parameters<typeof getGeminiKeyForRequest>[1]);
+
+    const keyResult = getGeminiKeyForRequest(appSettings, effectiveChatSettings, { skipIncrement: true });
+    if ('error' in keyResult) {
+      logService.warn('Cannot generate AI filename without valid API key:', keyResult.error);
+      return;
+    }
+
+    setIsGeneratingAiFilename(true);
+    try {
+      const { generateFileTitleApi } = await import('@/services/api/generation/textApi');
+      const resolvedContent = resolveInlineImagePlaceholders(
+        normalizeConvertedMarkdown(textContent),
+        imagePlaceholdersRef.current,
+      );
+      const generatedTitle = await generateFileTitleApi(keyResult.key, resolvedContent, language);
+      if (generatedTitle.trim()) {
+        setFilenameBase(generatedTitle.trim());
+      }
+    } catch (error) {
+      logService.error('Failed to generate AI filename:', error);
+    } finally {
+      setIsGeneratingAiFilename(false);
+    }
+  }, [appSettings, currentChatSettings, isGeneratingAiFilename, language, textContent]);
 
   const insertImageFile = useCallback((file: File, startPos: number, endPos: number = startPos) => {
     const placeholder = createInlineImagePlaceholder(nextImageIndexRef.current++);
@@ -197,7 +252,8 @@ export const useCreateFileEditor = ({
   const handlePaste = useCallback(
     (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
       const textarea = textareaRef.current;
-      const plan = getClipboardPastePlan(event.clipboardData, isPasteRichTextAsMarkdownEnabled);
+      const shouldPasteRichText = isPasteRichTextAsMarkdownEnabled && supportsRichPreview;
+      const plan = getClipboardPastePlan(event.clipboardData, shouldPasteRichText);
       const start = textarea ? textarea.selectionStart : textContent.length;
       const end = textarea ? textarea.selectionEnd : textContent.length;
 
@@ -236,8 +292,9 @@ export const useCreateFileEditor = ({
         }, 0);
       })();
     },
-    [isPasteRichTextAsMarkdownEnabled, insertImageFile, textContent],
+    [isPasteRichTextAsMarkdownEnabled, supportsRichPreview, insertImageFile, textContent],
   );
+
 
   const handleDrop = useCallback(
     (event: React.DragEvent) => {
@@ -306,7 +363,8 @@ export const useCreateFileEditor = ({
     setIsPreviewMode,
     isExportingPdf,
     pdfError,
-    derivedFilename,
+    defaultFilename,
+    derivedFilename: defaultFilename,
     isDirty,
     textareaRef,
     isEditing,
@@ -316,5 +374,8 @@ export const useCreateFileEditor = ({
     handleDownloadPdf,
     handlePaste,
     handleDrop,
+    canGenerateAiFilename,
+    isGeneratingAiFilename,
+    handleGenerateAiFilename,
   };
 };

@@ -30,6 +30,8 @@ import {
   renameStandaloneLibraryFile,
   fetchLibraryFileBlob,
   getAllHistoricalSessionFiles,
+  getDeletedLibraryFileIds,
+  addDeletedLibraryFileIds,
 } from './libraryRecords';
 import { deleteDraftFiles, getDraftFiles, saveDraftFiles } from './draftFileRecords';
 
@@ -75,6 +77,8 @@ export const dbService = {
   renameStandaloneLibraryFile,
   fetchLibraryFileBlob,
   getAllHistoricalSessionFiles,
+  getDeletedLibraryFileIds,
+  addDeletedLibraryFileIds,
 
   addApiUsageRecord,
   getApiUsageByTimeRange,

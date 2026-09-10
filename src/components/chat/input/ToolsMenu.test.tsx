@@ -277,4 +277,44 @@ describe('ToolsMenu', () => {
     });
     expect(onToggleUrl).toHaveBeenCalledTimes(1);
   });
+
+  it('triggers onToggle when Deep Search is selected in the menu', () => {
+    const onToggleDeepSearch = vi.fn();
+
+    act(() => {
+      renderer.root.render(
+        <ToolsMenu
+          currentModelId="gemini-3.8-flash"
+          toolStates={{
+            ...createChatToolToggleStatesFromFlags({ deepSearch: false }),
+            deepSearch: {
+              isEnabled: false,
+              onToggle: onToggleDeepSearch,
+            },
+          }}
+          toolUtilityActions={toolUtilityActions}
+          disabled={false}
+        />,
+      );
+    });
+
+    const toolsButton = document.querySelector('button[aria-label="Tools"]') as HTMLButtonElement | null;
+    expect(toolsButton).not.toBeNull();
+
+    act(() => {
+      toolsButton?.click();
+    });
+
+    const deepSearchButton = Array.from(document.querySelectorAll('button[role="menuitem"]')).find((btn) =>
+      btn.textContent?.includes('Deep Search'),
+    ) as HTMLButtonElement | undefined;
+
+    expect(deepSearchButton).toBeDefined();
+
+    act(() => {
+      deepSearchButton?.click();
+    });
+
+    expect(onToggleDeepSearch).toHaveBeenCalledTimes(1);
+  });
 });

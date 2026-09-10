@@ -48,7 +48,7 @@ export const CreateTextFileEditor: React.FC<CreateTextFileEditorProps> = (props)
     setIsPreviewMode,
     isExportingPdf,
     pdfError,
-    derivedFilename,
+    defaultFilename,
     isDirty,
     textareaRef,
     isEditing,
@@ -58,6 +58,9 @@ export const CreateTextFileEditor: React.FC<CreateTextFileEditorProps> = (props)
     handleDownloadPdf,
     handlePaste,
     handleDrop,
+    canGenerateAiFilename,
+    isGeneratingAiFilename,
+    handleGenerateAiFilename,
   } = useCreateFileEditor({
     initialContent,
     initialFilename,
@@ -66,7 +69,7 @@ export const CreateTextFileEditor: React.FC<CreateTextFileEditorProps> = (props)
     isPasteRichTextAsMarkdownEnabled,
   });
 
-  const isBusy = isExportingPdf;
+  const isBusy = isExportingPdf || isGeneratingAiFilename;
 
   const handleSaveKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
     if (event.key !== 'Enter' || !(event.metaKey || event.ctrlKey)) return;
@@ -105,10 +108,13 @@ export const CreateTextFileEditor: React.FC<CreateTextFileEditorProps> = (props)
             titleId={CREATE_FILE_TITLE_ID}
             filenameBase={filenameBase}
             setFilenameBase={setFilenameBase}
-            filenamePlaceholder={derivedFilename || t('createTextFilenamePlaceholder')}
+            filenamePlaceholder={defaultFilename || t('createTextFilenamePlaceholder')}
             extension={extension}
             setExtension={setExtension}
             onSaveKeyDown={handleSaveKeyDown}
+            canGenerateAiFilename={canGenerateAiFilename}
+            isGeneratingAiFilename={isGeneratingAiFilename}
+            handleGenerateAiFilename={handleGenerateAiFilename}
           />
         }
         body={

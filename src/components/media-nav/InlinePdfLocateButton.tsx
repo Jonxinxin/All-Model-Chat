@@ -4,6 +4,8 @@ import { useI18n } from '@/contexts/I18nContext';
 import { seekSessionPdf } from '@/utils/media-nav/seekPdf';
 import { extractTextFromNode } from '@/utils/reactNodeText';
 import { useMediaNavStore } from '@/stores/mediaNavStore';
+import { useChatStore } from '@/stores/chatStore';
+import { collectSessionMediaFiles, resolveNamedFile } from '@/utils/media-nav/sessionMediaFiles';
 import { Tooltip } from '@/components/shared/Tooltip';
 
 interface InlinePdfLocateButtonProps {
@@ -33,15 +35,29 @@ export const InlinePdfLocateButton: React.FC<InlinePdfLocateButtonProps> = ({
 }) => {
   const { t } = useI18n();
 
-  const isActive = useMediaNavStore(
+  const isOpen = useMediaNavStore((state) => state.isOpen);
+  const openKind = useMediaNavStore((state) => state.openKind);
+  const activeFileId = useMediaNavStore((state) => state.activeFileId);
+  const currentPage = useMediaNavStore((state) => state.currentPage);
+
+  const activePdfMatches = useChatStore(
     useCallback(
       (state) => {
-        if (!state.isOpen || state.openKind !== 'pdf') return false;
-        return state.currentPage === pageNumber;
+        const { pdfs } = collectSessionMediaFiles(state.selectedFiles, state.activeMessages);
+        if (pdfs.length === 0) return true;
+        const activePdf = (activeFileId ? pdfs.find((p) => p.id === activeFileId) : null) ?? pdfs[0];
+        if (!activePdf) return true;
+        if (docName) {
+          const target = resolveNamedFile(pdfs, docName, activeFileId);
+          return target?.id === activePdf.id;
+        }
+        return pdfs.length === 1;
       },
-      [pageNumber],
+      [docName, activeFileId],
     ),
   );
+
+  const isActive = Boolean(isOpen && openKind === 'pdf' && currentPage === pageNumber && activePdfMatches);
 
   const handleClick = (e: React.MouseEvent) => {
     // If user is selecting text (e.g. dragging mouse or double-clicking to copy),

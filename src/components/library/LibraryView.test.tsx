@@ -68,6 +68,8 @@ describe('LibraryView', () => {
     vi.clearAllMocks();
     vi.spyOn(dbService, 'getStandaloneLibraryFiles').mockResolvedValue([]);
     vi.spyOn(dbService, 'getAllHistoricalSessionFiles').mockResolvedValue([]);
+    vi.spyOn(dbService, 'getDeletedLibraryFileIds').mockResolvedValue([]);
+    vi.spyOn(dbService, 'addDeletedLibraryFileIds').mockResolvedValue(undefined);
     vi.spyOn(dbService, 'addStandaloneLibraryFiles').mockResolvedValue(undefined);
     vi.spyOn(dbService, 'deleteStandaloneLibraryFiles').mockResolvedValue(undefined);
     vi.spyOn(dbService, 'fetchLibraryFileBlob').mockResolvedValue(new Blob(['test']));
@@ -247,8 +249,9 @@ describe('LibraryView', () => {
     expect(onClose).toHaveBeenCalled();
   });
 
-  it('renders video thumbnail for video library items', async () => {
+  it('renders video thumbnail for video library items in grid view and badge in list view', async () => {
     useChatStore.setState({ savedSessions: [mockSession] });
+    useLibraryStore.setState({ viewMode: 'grid' });
 
     await act(async () => {
       renderer.root.render(<LibraryView />);
@@ -259,6 +262,12 @@ describe('LibraryView', () => {
     const videoElement = document.querySelector('video');
     expect(videoElement).toBeInTheDocument();
     expect(videoElement).toHaveAttribute('src', 'blob:http://localhost/demo.mp4#t=0.1');
+
+    // Switch to list view: video element is not mounted to conserve decoders
+    act(() => {
+      useLibraryStore.setState({ viewMode: 'list' });
+    });
+    expect(document.querySelector('video')).toBeNull();
   });
 
   it('filters items when clicking Audio and Video tabs', async () => {
@@ -346,4 +355,231 @@ describe('LibraryView', () => {
     expect(screen.queryByText('revenue_graph.png')).not.toBeInTheDocument();
     expect(screen.queryByText('demo_video.mp4')).not.toBeInTheDocument();
   });
+
+  it('deletes a session file and saves tombstone to prevent reappearance', async () => {
+    let deletedList: string[] = [];
+    vi.spyOn(dbService, 'getDeletedLibraryFileIds').mockImplementation(async () => deletedList);
+    const addDeletedSpy = vi.spyOn(dbService, 'addDeletedLibraryFileIds').mockImplementation(async (ids) => {
+      deletedList = [...deletedList, ...ids];
+    });
+    useChatStore.setState({ savedSessions: [mockSession] });
+
+    await act(async () => {
+      renderer.root.render(<LibraryView />);
+      await Promise.resolve();
+    });
+
+    expect(screen.getByText('quarterly_report.pdf')).toBeInTheDocument();
+
+    // Find and click delete button for quarterly_report.pdf
+    const deleteButtons = screen.getAllByRole('button', { name: /delete/i });
+    await act(async () => {
+      fireEvent.click(deleteButtons[0]);
+    });
+
+    // Confirm delete in modal
+    const confirmBtn = screen.getByRole('button', { name: /^delete$/i });
+    await act(async () => {
+      fireEvent.click(confirmBtn);
+      await Promise.resolve();
+    });
+
+    expect(addDeletedSpy).toHaveBeenCalledWith(['file-pdf-1']);
+    expect(screen.queryByText('quarterly_report.pdf')).not.toBeInTheDocument();
+  });
+
+  it('clears selection when Deselect all button is clicked in toolbar', async () => {
+    useChatStore.setState({ savedSessions: [mockSession] });
+    useLibraryStore.setState({ selectedFileIds: new Set(['file-pdf-1', 'file-img-1']) });
+
+    await act(async () => {
+      renderer.root.render(<LibraryView />);
+      await Promise.resolve();
+    });
+
+    const deselectBtn = screen.getByRole('button', { name: /Deselect all/i });
+    expect(deselectBtn).toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.click(deselectBtn);
+    });
+
+    expect(useLibraryStore.getState().selectedFileIds.size).toBe(0);
+  });
+
+  it('opens YouTube files in new tab instead of triggering raw file download', async () => {
+    const windowOpenSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+    const youtubeSession: SavedChatSession = {
+      id: 'session-yt',
+      title: 'YouTube Chat',
+      timestamp: 1000,
+      settings: {} as any,
+      messages: [
+        {
+          id: 'msg-yt',
+          role: 'user',
+          content: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+          timestamp: new Date(1000),
+          files: [
+            {
+              id: 'file-yt-1',
+              name: 'YouTube Video',
+              type: 'video/youtube',
+              size: 0,
+              dataUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            },
+          ],
+        },
+      ],
+    };
+    useChatStore.setState({ savedSessions: [youtubeSession] });
+
+    await act(async () => {
+      renderer.root.render(<LibraryView />);
+      await Promise.resolve();
+    });
+
+    const downloadBtn = screen.getByRole('button', { name: /download/i });
+    await act(async () => {
+      fireEvent.click(downloadBtn);
+    });
+
+    expect(windowOpenSpy).toHaveBeenCalledWith(
+      'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      '_blank',
+      'noopener,noreferrer',
+    );
+  });
+
+  it('selects all filtered files when Select all button is clicked in toolbar', async () => {
+    useChatStore.setState({ savedSessions: [mockSession] });
+
+    await act(async () => {
+      renderer.root.render(<LibraryView />);
+      await Promise.resolve();
+    });
+
+    // Initially select one item to reveal the toolbar selection controls
+    act(() => {
+      useLibraryStore.getState().toggleSelectFile('file-pdf-1');
+    });
+
+    const selectAllBtn = screen.getByRole('button', { name: /^select all$/i });
+    expect(selectAllBtn).toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.click(selectAllBtn);
+    });
+
+    expect(useLibraryStore.getState().selectedFileIds.size).toBe(3);
+    expect(useLibraryStore.getState().selectedFileIds.has('file-pdf-1')).toBe(true);
+    expect(useLibraryStore.getState().selectedFileIds.has('file-img-1')).toBe(true);
+    expect(useLibraryStore.getState().selectedFileIds.has('file-vid-1')).toBe(true);
+  });
+
+  it('extracts textContent when uploading code or json files', async () => {
+    let savedItems: LibraryItem[] = [];
+    vi.spyOn(dbService, 'addStandaloneLibraryFiles').mockImplementation(async (items) => {
+      savedItems = items;
+    });
+
+    await act(async () => {
+      renderer.root.render(<LibraryView />);
+      await Promise.resolve();
+    });
+
+    const input = screen.getByTestId('library-empty-file-input') as HTMLInputElement;
+    const jsonFile = new File(['{"theme": "dark", "version": 2}'], 'config.json', {
+      type: 'application/json',
+    });
+
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [jsonFile] } });
+      await Promise.resolve();
+    });
+
+    expect(savedItems.length).toBe(1);
+    expect(savedItems[0].name).toBe('config.json');
+    expect(savedItems[0].textContent).toBe('{"theme": "dark", "version": 2}');
+    expect(savedItems[0].isStandalone).toBe(true);
+  });
+
+  it('opens note editor when New Note option is selected in header', async () => {
+    await act(async () => {
+      renderer.root.render(<LibraryView />);
+      await Promise.resolve();
+    });
+
+    // Open dropdown via store
+    act(() => {
+      useLibraryStore.getState().setIsNewDropdownOpen(true);
+    });
+
+    const noteMenuItem = await screen.findByText('New note');
+    expect(noteMenuItem).toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.click(noteMenuItem);
+    });
+
+    // Editor is dynamically loaded; wait for it to render
+    const noteModal = await screen.findByRole('dialog');
+    expect(noteModal).toBeInTheDocument();
+  });
+
+  it('saves new note with correct MIME type and size based on extension', async () => {
+    let savedItems: LibraryItem[] = [];
+    vi.spyOn(dbService, 'addStandaloneLibraryFiles').mockImplementation(async (items) => {
+      savedItems = items;
+    });
+
+    await act(async () => {
+      renderer.root.render(<LibraryView />);
+      await Promise.resolve();
+    });
+
+    act(() => {
+      useLibraryStore.getState().setIsNewDropdownOpen(true);
+    });
+
+    const noteMenuItem = await screen.findByText('New note');
+    await act(async () => {
+      fireEvent.click(noteMenuItem);
+    });
+
+    const noteModal = await screen.findByRole('dialog');
+    expect(noteModal).toBeInTheDocument();
+
+    const textarea = noteModal.querySelector('textarea')!;
+    await act(async () => {
+      fireEvent.change(textarea, { target: { value: '{"key": "value"}' } });
+    });
+
+    const select = noteModal.querySelector('select')!;
+    await act(async () => {
+      fireEvent.change(select, { target: { value: '.json' } });
+    });
+
+    const filenameInput = noteModal.querySelector('input[type="text"]')!;
+    await act(async () => {
+      fireEvent.change(filenameInput, { target: { value: 'settings' } });
+    });
+
+    const saveBtn = Array.from(noteModal.querySelectorAll('button')).find((b) =>
+      b.getAttribute('title') === 'Create file' || b.getAttribute('title') === '创建文件' || b.textContent?.includes('Create'),
+    );
+    expect(saveBtn).toBeTruthy();
+
+    await act(async () => {
+      fireEvent.click(saveBtn!);
+      await Promise.resolve();
+    });
+
+    expect(savedItems.length).toBe(1);
+    expect(savedItems[0].name).toBe('settings.json');
+    expect(savedItems[0].type).toBe('application/json');
+    expect(savedItems[0].size).toBe(new Blob(['{"key": "value"}']).size);
+    expect(savedItems[0].textContent).toBe('{"key": "value"}');
+  });
 });
+

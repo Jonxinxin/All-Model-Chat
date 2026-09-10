@@ -9,6 +9,9 @@ export type MarkdownNode = {
   url?: string;
   alt?: string;
   ordered?: boolean;
+  checked?: boolean | null;
+  depth?: number;
   lang?: string;
   children?: MarkdownNode[];
 };
+

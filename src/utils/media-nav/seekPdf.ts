@@ -127,10 +127,6 @@ export const seekSessionPdf = (params: SeekSessionPdfParams): boolean => {
   if (params.messageId && (!docName || (!box2d && !point))) {
     const msg = activeMessages.find((m) => m.id === params.messageId);
     if (msg) {
-      if (!docName && msg.files) {
-        const msgPdf = msg.files.find(isPdfFile);
-        if (msgPdf) docName = msgPdf.name;
-      }
       if (!box2d && !point && msg.content) {
         const { pdfLocates } = parseLocateMarkers(msg.content);
         const matched = pdfLocates.find((loc) => loc.pageNumber === params.pageNumber);
@@ -139,6 +135,12 @@ export const seekSessionPdf = (params: SeekSessionPdfParams): boolean => {
           box2d = box2d || matched.box2d;
           point = point || matched.point;
           snippet = snippet || matched.snippet;
+        }
+      }
+      if (!docName && msg.files) {
+        const msgPdfs = msg.files.filter(isPdfFile);
+        if (msgPdfs.length === 1) {
+          docName = msgPdfs[0].name;
         }
       }
     }

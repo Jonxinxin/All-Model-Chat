@@ -77,20 +77,27 @@ const PdfViewerContent: React.FC<PdfViewerProps> = ({
     onToggleSidebar: toggleSidebar,
   });
 
+  const isHighlightForCurrentFile =
+    !highlight?.docName ||
+    highlight.docName.toLowerCase() === file.name.toLowerCase() ||
+    file.name.toLowerCase().includes(highlight.docName.toLowerCase()) ||
+    highlight.docName.toLowerCase().includes(file.name.toLowerCase());
+  const effectiveHighlight = isHighlightForCurrentFile ? highlight : null;
+
   useEffect(() => {
     if (targetPage == null || !numPages) return;
     // If targetPage is invalid / out of bounds, clamp and consume to prevent stuck queue
     if (targetPage < 1 || targetPage > numPages) {
       const clampedPage = Math.max(1, Math.min(numPages, targetPage));
-      scrollToPage(clampedPage, highlight?.pageNumber === targetPage ? highlight : null);
+      scrollToPage(clampedPage, effectiveHighlight?.pageNumber === targetPage ? effectiveHighlight : null);
       onTargetPageConsumed?.();
       return;
     }
     // Pages render lazily; keep the request queued until the page exists.
-    if (scrollToPage(targetPage, highlight?.pageNumber === targetPage ? highlight : null)) {
+    if (scrollToPage(targetPage, effectiveHighlight?.pageNumber === targetPage ? effectiveHighlight : null)) {
       onTargetPageConsumed?.();
     }
-  }, [targetPage, numPages, scrollToPage, onTargetPageConsumed, highlight]);
+  }, [targetPage, numPages, scrollToPage, onTargetPageConsumed, effectiveHighlight]);
 
   useEffect(() => {
     onCurrentPageChange?.(currentPage);
@@ -125,7 +132,7 @@ const PdfViewerContent: React.FC<PdfViewerProps> = ({
           onLoadError={onDocumentLoadError}
           setPageRef={setPageRef}
           containerRef={containerRef}
-          highlight={highlight}
+          highlight={effectiveHighlight}
           pageNaturalWidth={pageNaturalWidth}
           pageNaturalHeight={pageNaturalHeight}
         />

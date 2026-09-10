@@ -89,6 +89,7 @@ export const LibraryHeader: React.FC<LibraryHeaderProps> = ({ onUploadFiles, onC
           <DropdownMenuContent
             align="end"
             sideOffset={6}
+            portalled={false}
             className="w-44 rounded-2xl bg-[var(--theme-bg-primary)] border border-[var(--theme-border-secondary)] shadow-xl p-1.5 text-sm"
           >
             <DropdownMenuItem

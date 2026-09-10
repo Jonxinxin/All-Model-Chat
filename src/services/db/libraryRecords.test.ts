@@ -7,6 +7,8 @@ import {
   renameStandaloneLibraryFile,
   fetchLibraryFileBlob,
   getAllHistoricalSessionFiles,
+  getDeletedLibraryFileIds,
+  addDeletedLibraryFileIds,
 } from './libraryRecords';
 import type { LibraryItem } from '@/types';
 
@@ -262,4 +264,19 @@ describe('libraryRecords service', () => {
     const blob = await fetchLibraryFileBlob(item);
     expect(blob).toBe(standaloneBlob);
   });
+
+  it('manages deleted library file ids (tombstones)', async () => {
+    const initial = await getDeletedLibraryFileIds();
+    expect(initial).toEqual([]);
+
+    await addDeletedLibraryFileIds(['del-1', 'del-2']);
+    let current = await getDeletedLibraryFileIds();
+    expect(current).toEqual(['del-1', 'del-2']);
+
+    // Adding duplicates and new entries
+    await addDeletedLibraryFileIds(['del-2', 'del-3']);
+    current = await getDeletedLibraryFileIds();
+    expect(current).toEqual(['del-1', 'del-2', 'del-3']);
+  });
 });
+

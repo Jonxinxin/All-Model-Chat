@@ -13,7 +13,7 @@ vi.mock('@/services/api/apiClient', async () => {
   };
 });
 
-import { generateSuggestionsApi, generateTitleApi, translateTextApi } from './textApi';
+import { generateFileTitleApi, generateSuggestionsApi, generateTitleApi, translateTextApi } from './textApi';
 
 describe('textApi prompt construction', () => {
   beforeEach(() => {
@@ -152,5 +152,31 @@ describe('textApi prompt construction', () => {
     mockGenerateContent.mockResolvedValueOnce({ text: '"📝 Meeting Notes"' });
     const titleWithQuotes = await generateTitleApi('key', 'u', 'm', 'en');
     expect(titleWithQuotes).toBe('📝 Meeting Notes');
+  });
+
+  it('sends document content and formatting rules in generateFileTitleApi', async () => {
+    const documentContent = '# Project Roadmap\n\nDetailed milestones...';
+    mockGenerateContent.mockResolvedValue({ text: 'Project Roadmap 2026' });
+
+    const title = await generateFileTitleApi('key', documentContent, 'en');
+
+    expect(title).toBe('Project Roadmap 2026');
+    const request = mockGenerateContent.mock.calls[0][0];
+    expect(request.contents).toEqual([
+      {
+        role: 'user',
+        parts: [
+          { text: expect.stringContaining('filesystem-safe filename') },
+          { text: 'Document content:' },
+          { text: documentContent },
+        ],
+      },
+    ]);
+  });
+
+  it('sanitizes and strips illegal characters and quotes in generateFileTitleApi', async () => {
+    mockGenerateContent.mockResolvedValue({ text: '"**年度财务审计报告**"' });
+    const title = await generateFileTitleApi('key', '正文...', 'zh');
+    expect(title).toBe('年度财务审计报告');
   });
 });

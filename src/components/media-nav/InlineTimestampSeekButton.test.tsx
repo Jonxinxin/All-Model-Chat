@@ -4,6 +4,8 @@ import { InlineTimestampSeekButton } from './InlineTimestampSeekButton';
 import * as seekVideoModule from '@/utils/media-nav/seekVideo';
 import * as seekAudioModule from '@/utils/media-nav/seekAudio';
 import { useMediaNavStore } from '@/stores/mediaNavStore';
+import { useChatStore } from '@/stores/chatStore';
+import type { UploadedFile } from '@/types';
 
 vi.mock('@/utils/media-nav/seekVideo', () => ({
   seekSessionVideo: vi.fn(),
@@ -123,4 +125,50 @@ describe('InlineTimestampSeekButton', () => {
     );
     expect(seekVideoModule.seekSessionVideo).not.toHaveBeenCalled();
   });
+
+  it('does not highlight clipB button when clipA is currently playing in multi-video session', () => {
+    const videoA: UploadedFile = {
+      id: 'vid-a',
+      name: 'clipA.mp4',
+      type: 'video/mp4',
+      size: 1000,
+    };
+    const videoB: UploadedFile = {
+      id: 'vid-b',
+      name: 'clipB.mp4',
+      type: 'video/mp4',
+      size: 2000,
+    };
+    useChatStore.setState({
+      selectedFiles: [videoA, videoB],
+      activeMessages: [],
+    });
+
+    act(() => {
+      useMediaNavStore.setState({
+        isOpen: true,
+        openKind: 'video',
+        activeFileId: 'vid-a',
+        currentPlayTime: 20,
+      });
+    });
+
+    const { container: containerA, unmount } = render(
+      <InlineTimestampSeekButton startSeconds={15} endSeconds={30} videoName="clipA.mp4">
+        ClipA 00:15 - 00:30
+      </InlineTimestampSeekButton>,
+    );
+    const btnA = containerA.querySelector('[data-testid="inline-timestamp-seek-btn"]')!;
+    expect(btnA.getAttribute('data-active')).toBe('true');
+    unmount();
+
+    const { container: containerB } = render(
+      <InlineTimestampSeekButton startSeconds={15} endSeconds={30} videoName="clipB.mp4">
+        ClipB 00:15 - 00:30
+      </InlineTimestampSeekButton>,
+    );
+    const btnB = containerB.querySelector('[data-testid="inline-timestamp-seek-btn"]')!;
+    expect(btnB.getAttribute('data-active')).toBeNull();
+  });
 });
+

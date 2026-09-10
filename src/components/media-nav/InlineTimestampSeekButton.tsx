@@ -9,7 +9,7 @@ import { Tooltip } from '@/components/shared/Tooltip';
 
 import { useChatStore } from '@/stores/chatStore';
 import { useMediaNavStore } from '@/stores/mediaNavStore';
-import { collectSessionMediaFiles } from '@/utils/media-nav/sessionMediaFiles';
+import { collectSessionMediaFiles, resolveNamedFile } from '@/utils/media-nav/sessionMediaFiles';
 
 interface InlineTimestampSeekButtonProps {
   startSeconds: number;
@@ -26,7 +26,7 @@ interface InlineTimestampSeekButtonProps {
 }
 
 /**
- * Minimalist graphite keycap inline video/audio seek button.
+ * Minimalist graphite keycap inline timestamp seek button.
  * Uses neutral warm-cool slate/zinc tones, fine micro-border and subtle
  * drop shadow to blend seamlessly into editorial text without color clashing.
  * Supports reverse grounding (synchronized playback pulse) and hover mini-preview.
@@ -56,20 +56,37 @@ export const InlineTimestampSeekButton: React.FC<InlineTimestampSeekButtonProps>
     return videos.length === 0 && audios.length > 0;
   });
 
-  const isActive = useMediaNavStore(
+  const isOpen = useMediaNavStore((state) => state.isOpen);
+  const openKind = useMediaNavStore((state) => state.openKind);
+  const activeFileId = useMediaNavStore((state) => state.activeFileId);
+  const currentPlayTime = useMediaNavStore((state) => state.currentPlayTime);
+
+  const activeMediaMatches = useChatStore(
     useCallback(
       (state) => {
-        if (!state.isOpen) return false;
-        if (isAudio ? state.openKind !== 'audio' : state.openKind !== 'video') return false;
-        const curTime = state.currentPlayTime;
-        if (curTime === null) return false;
-        if (endSeconds !== undefined) {
-          return curTime >= startSeconds - 0.5 && curTime <= endSeconds + 0.5;
+        const { videos, audios } = collectSessionMediaFiles(state.selectedFiles, state.activeMessages);
+        const list = isAudio ? audios : videos;
+        if (list.length === 0) return true;
+        const activeMedia = (activeFileId ? list.find((m) => m.id === activeFileId) : null) ?? list[0];
+        if (!activeMedia) return true;
+        if (videoName) {
+          const target = resolveNamedFile(list, videoName, activeFileId);
+          return target?.id === activeMedia.id;
         }
-        return curTime >= startSeconds - 0.5 && curTime <= startSeconds + 2.5;
+        return list.length === 1;
       },
-      [isAudio, startSeconds, endSeconds],
+      [isAudio, videoName, activeFileId],
     ),
+  );
+
+  const isActive = Boolean(
+    isOpen &&
+      (isAudio ? openKind === 'audio' : openKind === 'video') &&
+      activeMediaMatches &&
+      currentPlayTime !== null &&
+      (endSeconds !== undefined
+        ? currentPlayTime >= startSeconds - 0.5 && currentPlayTime <= endSeconds + 0.5
+        : currentPlayTime >= startSeconds - 0.5 && currentPlayTime <= startSeconds + 2.5),
   );
 
   const handleClick = (e: React.MouseEvent) => {

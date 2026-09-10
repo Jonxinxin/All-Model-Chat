@@ -175,15 +175,21 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
   // Matched icon size to other toolbar buttons (Attachment, Mic, etc.)
   const menuIconSize = 20;
 
+  const isItemActionTriggeredRef = React.useRef(false);
+
   const getToolAction = (tool: ChatToolDefinition) => {
     const toolId = tool.id;
 
     if (isToggleableToolId(toolId)) {
-      return () => handleToggle(toolStates[toolId]?.onToggle);
+      return () => {
+        isItemActionTriggeredRef.current = true;
+        handleToggle(toolStates[toolId]?.onToggle);
+      };
     }
 
     return () => {
       if (toolId === 'tokenCount') {
+        isItemActionTriggeredRef.current = true;
         toolUtilityActions.onCountTokens();
       }
     };
@@ -229,6 +235,12 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
               align="start"
               sideOffset={8}
               className="w-60 max-h-[75vh] overflow-y-auto custom-scrollbar py-1.5 shadow-premium"
+              onCloseAutoFocus={(e) => {
+                if (isItemActionTriggeredRef.current) {
+                  e.preventDefault();
+                  isItemActionTriggeredRef.current = false;
+                }
+              }}
             >
               {filteredItems.map((item) => {
                 const isEnabled = isToggleableToolId(item.id) ? !!toolStates[item.id]?.isEnabled : false;

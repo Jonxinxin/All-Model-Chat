@@ -61,6 +61,7 @@ const ChatInputContent: React.FC = () => {
         rawAppSettings={chatInput.appSettings}
         currentChatSettings={chatInput.currentChatSettings}
         isImageGenerationModel={capabilities.isImageGenerationModel}
+        isTranscribeModel={capabilities.isTranscribeModel}
         previewFile={localFileState.previewFile}
         onClosePreview={localFileState.closePreviewFile}
         inputText={inputState.inputText}

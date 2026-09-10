@@ -50,8 +50,15 @@ const LibraryListRow = React.memo<LibraryListRowProps>(
   }) => {
     return (
       <tr
+        tabIndex={0}
         onClick={() => onPreviewItem(item)}
-        className={`group cursor-pointer transition-colors ${
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && (e.target as HTMLElement).tagName !== 'BUTTON' && (e.target as HTMLElement).tagName !== 'INPUT') {
+            e.preventDefault();
+            onPreviewItem(item);
+          }
+        }}
+        className={`group cursor-pointer transition-colors focus:outline-none focus-visible:bg-[var(--theme-bg-tertiary)]/80 ${
           isSelected ? 'bg-[var(--theme-bg-tertiary)]/70' : 'hover:bg-[var(--theme-bg-tertiary)]/40'
         }`}
       >
@@ -91,15 +98,24 @@ const LibraryListRow = React.memo<LibraryListRowProps>(
               </div>
               {item.sessionTitle && (
                 <div
+                  role={onJumpToSession && item.sessionId ? 'button' : undefined}
+                  tabIndex={onJumpToSession && item.sessionId ? 0 : undefined}
                   className={`text-xs text-[var(--theme-text-tertiary)] truncate mt-0.5 ${
                     onJumpToSession && item.sessionId
-                      ? 'hover:text-[var(--theme-accent)] hover:underline cursor-pointer'
+                      ? 'hover:text-[var(--theme-accent)] hover:underline cursor-pointer focus:outline-none focus-visible:underline'
                       : ''
                   }`}
                   title={item.sessionTitle}
                   onClick={(e) => {
                     if (onJumpToSession && item.sessionId) {
                       e.stopPropagation();
+                      onJumpToSession(item.sessionId);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if ((e.key === 'Enter' || e.key === ' ') && onJumpToSession && item.sessionId) {
+                      e.stopPropagation();
+                      e.preventDefault();
                       onJumpToSession(item.sessionId);
                     }
                   }}

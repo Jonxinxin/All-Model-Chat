@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { ZoomIn, ZoomOut, RotateCcw, RotateCw, Camera, Crosshair } from 'lucide-react';
 import Panzoom, { type PanzoomObject } from '@panzoom/panzoom';
 import { type UploadedFile } from '@/types';
@@ -35,7 +35,23 @@ const ImageViewerContent: React.FC<ImageViewerProps> = ({ file, highlight }) => 
 
   const storeHighlights = useMediaNavStore((state) => state.imageHighlights);
   const storeHighlight = useMediaNavStore((state) => state.imageHighlight);
-  const currentHighlight = highlight || storeHighlight;
+  const rawHighlight = highlight || storeHighlight;
+
+  const isHighlightForFile = useCallback(
+    (hl?: ImageNavHighlight | null) => {
+      if (!hl || !hl.imageName) return true;
+      const hlName = hl.imageName.toLowerCase();
+      const fileName = file.name.toLowerCase();
+      return hlName === fileName || fileName.includes(hlName) || hlName.includes(fileName);
+    },
+    [file.name],
+  );
+
+  const currentHighlight = isHighlightForFile(rawHighlight) ? rawHighlight : null;
+  const effectiveHighlights = useMemo(
+    () => storeHighlights.filter(isHighlightForFile),
+    [storeHighlights, isHighlightForFile],
+  );
 
   const viewportRef = useRef<HTMLDivElement>(null);
   const panzoomElementRef = useRef<HTMLDivElement>(null);
@@ -246,14 +262,14 @@ const ImageViewerContent: React.FC<ImageViewerProps> = ({ file, highlight }) => 
   const handleExportAnnotated = useCallback(async () => {
     if (!file.dataUrl) return;
     const highlightsToExport =
-      storeHighlights.length > 0 ? storeHighlights : currentHighlight ? [currentHighlight] : [];
+      effectiveHighlights.length > 0 ? effectiveHighlights : currentHighlight ? [currentHighlight] : [];
     await exportAnnotatedImage({
       imageSrc: file.dataUrl,
       fileName: file.name,
       highlights: highlightsToExport,
       rotation,
     });
-  }, [file.dataUrl, file.name, currentHighlight, storeHighlights, rotation]);
+  }, [file.dataUrl, file.name, currentHighlight, effectiveHighlights, rotation]);
 
   const handleConfirmVisualSelection = useCallback(
     (box2d: [number, number, number, number]) => {
@@ -336,7 +352,7 @@ const ImageViewerContent: React.FC<ImageViewerProps> = ({ file, highlight }) => 
               draggable={false}
             />
             {currentHighlight && (
-              <ImageHighlightOverlay highlight={currentHighlight} highlights={storeHighlights} scale={scale} />
+              <ImageHighlightOverlay highlight={currentHighlight} highlights={effectiveHighlights} scale={scale} />
             )}
             {isVisualCropActive && (
               <ImageVisualCropper
@@ -359,7 +375,7 @@ const ImageViewerContent: React.FC<ImageViewerProps> = ({ file, highlight }) => 
           imageDimensions={{ width: dimensions.imgW, height: dimensions.imgH }}
           viewportDimensions={{ width: dimensions.vpW, height: dimensions.vpH }}
           rotation={rotation}
-          highlights={storeHighlights.length > 0 ? storeHighlights : currentHighlight ? [currentHighlight] : []}
+          highlights={effectiveHighlights.length > 0 ? effectiveHighlights : currentHighlight ? [currentHighlight] : []}
           onPanTo={handlePanTo}
         />
       )}

@@ -682,6 +682,15 @@ export const hydrateGraphvizIntoDocument = async (doc: Document, options: DotRen
       try {
         const parsed = new DOMParser().parseFromString(result.svg, 'image/svg+xml');
         if (parsed.querySelector('parsererror')) return;
+
+        const htmlEl = node as HTMLElement;
+        htmlEl.style.overflowX = 'auto';
+        htmlEl.style.maxWidth = '100%';
+        htmlEl.style.display = 'block';
+        htmlEl.style.cursor = 'zoom-in';
+        htmlEl.setAttribute('data-amc-graphviz-state', 'rendered');
+        htmlEl.setAttribute('title', '点击放大查看 / Click to zoom');
+
         node.replaceChildren(parsed.documentElement);
       } catch {
         // Leave the node as-is; it stays an inert placeholder in the snapshot.

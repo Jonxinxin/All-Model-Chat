@@ -14,6 +14,7 @@ import { formatFileSize } from '@/utils/file/fileSize';
 import { LibraryItemThumbnail } from '@/components/library/LibraryItemThumbnail';
 import { FilePreviewModal } from './FilePreviewModal';
 import { cleanupFilePreviewUrl } from '@/utils/file/filePreviewUrls';
+import { isTextFile, isMarkdownFile } from '@/utils/file/fileTypeClassification';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/shared/Popover';
 import {
   Library,
@@ -64,6 +65,7 @@ export const LibraryPickerModal: React.FC<LibraryPickerModalProps> = ({
 
   const [standaloneFiles, setStandaloneFiles] = useState<LibraryItem[]>([]);
   const [historicalFiles, setHistoricalFiles] = useState<LibraryItem[]>([]);
+  const [deletedFileIds, setDeletedFileIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [isImporting, setIsImporting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -81,6 +83,7 @@ export const LibraryPickerModal: React.FC<LibraryPickerModalProps> = ({
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const previewOriginalDataUrlRef = useRef<string | null>(null);
 
   // Load files when modal opens
   useEffect(() => {
@@ -90,13 +93,15 @@ export const LibraryPickerModal: React.FC<LibraryPickerModalProps> = ({
     const loadFiles = async () => {
       setIsLoading(true);
       try {
-        const [standalone, historical] = await Promise.all([
+        const [standalone, historical, deleted] = await Promise.all([
           dbService.getStandaloneLibraryFiles(),
           dbService.getAllHistoricalSessionFiles(),
+          dbService.getDeletedLibraryFileIds(),
         ]);
         if (active) {
           setStandaloneFiles(standalone);
           setHistoricalFiles(historical);
+          setDeletedFileIds(new Set(deleted));
         }
       } catch (loadError) {
         logService.error('Failed to load library files for picker', loadError);
@@ -169,7 +174,12 @@ export const LibraryPickerModal: React.FC<LibraryPickerModalProps> = ({
           const id = `lib-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
           let textContent: string | undefined;
 
-          if (file.type.startsWith('text/') || file.name.endsWith('.md') || file.name.endsWith('.txt')) {
+          const isText =
+            file.type.startsWith('text/') ||
+            isTextFile({ name: file.name, type: file.type }) ||
+            isMarkdownFile({ name: file.name, type: file.type });
+
+          if (isText && file.size <= 5 * 1024 * 1024) {
             try {
               textContent = await file.text();
             } catch {
@@ -254,6 +264,7 @@ export const LibraryPickerModal: React.FC<LibraryPickerModalProps> = ({
   // Preview handlers
   const handlePreviewItem = useCallback(async (item: LibraryItem) => {
     try {
+      previewOriginalDataUrlRef.current = item.dataUrl ?? null;
       const file = await resolveLibraryItemToUploadedFile(item, (i) => dbService.fetchLibraryFileBlob(i));
       setPreviewFile(file);
     } catch (previewError) {
@@ -263,32 +274,39 @@ export const LibraryPickerModal: React.FC<LibraryPickerModalProps> = ({
 
   const handleClosePreview = useCallback(() => {
     if (previewFile?.dataUrl) {
-      cleanupFilePreviewUrl(previewFile);
+      if (previewFile.dataUrl !== previewOriginalDataUrlRef.current) {
+        cleanupFilePreviewUrl(previewFile);
+      }
     }
+    previewOriginalDataUrlRef.current = null;
     setPreviewFile(null);
   }, [previewFile]);
 
-  // Merge items
+  // Merge items, excluding deleted items
   const allItems = useMemo(() => {
     const map = new Map<string, LibraryItem>();
 
     standaloneFiles.forEach((file) => {
-      map.set(file.id, file);
+      if (!deletedFileIds.has(file.id)) {
+        map.set(file.id, file);
+      }
     });
 
     historicalFiles.forEach((file) => {
-      if (!map.has(file.id)) {
+      if (!deletedFileIds.has(file.id) && !map.has(file.id)) {
         map.set(file.id, file);
       }
     });
 
     const inMemorySessionFiles = extractLibraryItemsFromSessions(savedSessions);
     inMemorySessionFiles.forEach((file) => {
-      map.set(file.id, file);
+      if (!deletedFileIds.has(file.id)) {
+        map.set(file.id, file);
+      }
     });
 
     return Array.from(map.values());
-  }, [standaloneFiles, historicalFiles, savedSessions]);
+  }, [standaloneFiles, historicalFiles, savedSessions, deletedFileIds]);
 
   // Filter and sort items
   const filteredItems = useMemo(() => {
@@ -308,18 +326,20 @@ export const LibraryPickerModal: React.FC<LibraryPickerModalProps> = ({
 
   const handlePrevPreview = useCallback(() => {
     if (previewIndex > 0) {
-      if (previewFile?.dataUrl) {
+      if (previewFile?.dataUrl && previewFile.dataUrl !== previewOriginalDataUrlRef.current) {
         cleanupFilePreviewUrl(previewFile);
       }
+      previewOriginalDataUrlRef.current = null;
       void handlePreviewItem(filteredItems[previewIndex - 1]);
     }
   }, [previewIndex, previewFile, filteredItems, handlePreviewItem]);
 
   const handleNextPreview = useCallback(() => {
     if (previewIndex !== -1 && previewIndex < filteredItems.length - 1) {
-      if (previewFile?.dataUrl) {
+      if (previewFile?.dataUrl && previewFile.dataUrl !== previewOriginalDataUrlRef.current) {
         cleanupFilePreviewUrl(previewFile);
       }
+      previewOriginalDataUrlRef.current = null;
       void handlePreviewItem(filteredItems[previewIndex + 1]);
     }
   }, [previewIndex, previewFile, filteredItems, handlePreviewItem]);

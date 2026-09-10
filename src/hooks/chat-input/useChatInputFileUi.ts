@@ -148,7 +148,9 @@ export const useChatInputFileUi = ({
       if (!items.length) return;
 
       const newUploadedFiles: UploadedFile[] = await Promise.all(
-        items.map((item) => resolveLibraryItemToUploadedFile(item, (i) => dbService.fetchLibraryFileBlob(i))),
+        items.map((item) =>
+          resolveLibraryItemToUploadedFile(item, (i) => dbService.fetchLibraryFileBlob(i), { generateNewId: true }),
+        ),
       );
 
       setSelectedFiles((prev) => {
@@ -176,7 +178,10 @@ export const useChatInputFileUi = ({
       }
 
       const extension = `.${finalFilename.split('.').pop()?.toLowerCase()}`;
-      const mimeType = EXTENSION_TO_MIME[extension] || 'text/plain';
+      const mimeType =
+        content instanceof Blob
+          ? (content.type || EXTENSION_TO_MIME[extension] || 'application/octet-stream')
+          : (EXTENSION_TO_MIME[extension] || 'text/plain');
       const newFile = new File([content], finalFilename, { type: mimeType });
 
       setShowCreateTextFileEditor(false);
@@ -204,9 +209,18 @@ export const useChatInputFileUi = ({
   const handleSaveTextFile = useCallback(
     async (content: string | Blob, filename: string) => {
       if (editingFile) {
-        const size = content instanceof Blob ? content.size : content.length;
-        const type = content instanceof Blob ? content.type : 'text/markdown';
-        const finalName = filename.includes('.') ? filename : `${filename}.md`;
+        const sanitizeFilename = (name: string) => name.trim().replace(/[<>:"/\\|?*]+/g, '_');
+        let finalName = filename.trim() ? sanitizeFilename(filename) : `file-${Date.now()}.txt`;
+        if (!finalName.includes('.')) {
+          finalName += '.md';
+        }
+
+        const extension = `.${finalName.split('.').pop()?.toLowerCase()}`;
+        const type =
+          content instanceof Blob
+            ? (content.type || EXTENSION_TO_MIME[extension] || 'application/octet-stream')
+            : (EXTENSION_TO_MIME[extension] || editingFile.type || 'text/plain');
+
         const nextRawFile = new File([content], finalName, { type });
         const nextDataUrl = createManagedObjectUrl(nextRawFile, { ownerId: `selected-file:${editingFile.id}` });
 
@@ -217,8 +231,9 @@ export const useChatInputFileUi = ({
                   const nextFile = {
                     ...file,
                     name: finalName,
+                    type,
                     textContent: typeof content === 'string' ? content : undefined,
-                    size,
+                    size: nextRawFile.size,
                     rawFile: nextRawFile,
                     dataUrl: nextDataUrl,
                   };

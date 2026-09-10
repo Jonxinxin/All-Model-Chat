@@ -10,6 +10,7 @@ import {
   libraryItemToUploadedFile,
   getItemExtensions,
   matchesLibrarySearchToken,
+  resolveLibraryItemToUploadedFile,
 } from './libraryFiles';
 import type { SavedChatSession, LibraryItem, LibraryFilterState } from '@/types';
 
@@ -453,6 +454,73 @@ describe('libraryFiles utils', () => {
       // 10. Non-matching extension: ".gif"
       const noMatch = filterAndSortLibraryItems(sampleItems, { ...baseFilter, searchQuery: '.gif' });
       expect(noMatch).toHaveLength(0);
+
+      // 11. Bidirectional extension aliases (e.g. searching ts finds .tsx, searching js finds .jsx)
+      const codeItems: LibraryItem[] = [
+        { id: 'c-1', name: 'Component.tsx', type: 'text/plain', size: 10, timestamp: 1, source: 'uploaded' },
+        { id: 'c-2', name: 'script.jsx', type: 'text/javascript', size: 10, timestamp: 2, source: 'uploaded' },
+        { id: 'c-3', name: 'config.yml', type: 'text/yaml', size: 10, timestamp: 3, source: 'uploaded' },
+        { id: 'c-4', name: 'readme.markdown', type: 'text/markdown', size: 10, timestamp: 4, source: 'uploaded' },
+      ];
+      const matchTs = filterAndSortLibraryItems(codeItems, { ...baseFilter, searchQuery: 'ts' });
+      expect(matchTs.map((i) => i.id)).toContain('c-1');
+
+      const matchJs = filterAndSortLibraryItems(codeItems, { ...baseFilter, searchQuery: 'js' });
+      expect(matchJs.map((i) => i.id)).toContain('c-2');
+
+      const matchYaml = filterAndSortLibraryItems(codeItems, { ...baseFilter, searchQuery: 'yaml' });
+      expect(matchYaml.map((i) => i.id)).toContain('c-3');
+
+      const matchMd = filterAndSortLibraryItems(codeItems, { ...baseFilter, searchQuery: 'md' });
+      expect(matchMd.map((i) => i.id)).toContain('c-4');
+    });
+  });
+
+  describe('resolveLibraryItemToUploadedFile', () => {
+    it('generates dataUrl for PDF files and defaults uploadState to active', async () => {
+      const mockBlob = new Blob(['%PDF-1.4 test content'], { type: 'application/pdf' });
+      const item: LibraryItem = {
+        id: 'lib-pdf-1',
+        name: 'document.pdf',
+        type: 'application/pdf',
+        size: 100,
+        timestamp: Date.now(),
+        isStandalone: true,
+        source: 'uploaded',
+        rawFile: mockBlob,
+      };
+
+      const resolved = await resolveLibraryItemToUploadedFile(item);
+
+      expect(resolved.id).toBe('lib-pdf-1');
+      expect(resolved.uploadState).toBe('active');
+      expect(resolved.isProcessing).toBe(false);
+      expect(resolved.progress).toBe(100);
+      expect(resolved.dataUrl).toBeDefined();
+      expect(resolved.dataUrl?.startsWith('blob:')).toBe(true);
+      expect(resolved.rawFile).toBeInstanceOf(File);
+      expect((resolved.rawFile as File)?.name).toBe('document.pdf');
+    });
+
+    it('generates a fresh unique id when generateNewId is requested', async () => {
+      const mockBlob = new Blob(['test content'], { type: 'text/plain' });
+      const item: LibraryItem = {
+        id: 'old-session-file-id',
+        name: 'notes.txt',
+        type: 'text/plain',
+        size: 50,
+        timestamp: Date.now(),
+        isStandalone: false,
+        source: 'uploaded',
+        rawFile: mockBlob,
+      };
+
+      const resolved = await resolveLibraryItemToUploadedFile(item, undefined, { generateNewId: true });
+
+      expect(resolved.id).not.toBe('old-session-file-id');
+      expect(resolved.id.length).toBeGreaterThan(5);
+      expect(resolved.uploadState).toBe('active');
+      expect(resolved.dataUrl).toBeDefined();
     });
   });
 });

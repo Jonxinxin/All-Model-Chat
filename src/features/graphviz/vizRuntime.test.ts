@@ -454,8 +454,13 @@ describe('hydrateGraphvizIntoDocument', () => {
     );
     await hydrateGraphvizIntoDocument(doc, { themeId: 'pearl' });
 
-    const node = doc.querySelector('[data-amc-graphviz]')!;
+    const node = doc.querySelector('[data-amc-graphviz]') as HTMLElement;
     expect(node.querySelector('svg')).not.toBeNull();
+    expect(node.style.overflowX).toBe('auto');
+    expect(node.style.maxWidth).toBe('100%');
+    expect(node.style.cursor).toBe('zoom-in');
+    expect(node.getAttribute('data-amc-graphviz-state')).toBe('rendered');
+    expect(node.getAttribute('title')).toContain('放大');
   });
 
   it('leaves nodes untouched when rendering fails', async () => {

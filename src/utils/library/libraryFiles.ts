@@ -2,6 +2,7 @@ import type { SavedChatSession, UploadedFile, LibraryItem, LibraryFilterState, L
 import { getFileKindFlags } from '@/utils/file/fileTypeClassification';
 import { fileToBlobUrl } from '@/utils/file/filePreviewUrls';
 import { EXTENSION_TO_MIME, MIME_TO_EXTENSION_MAP } from '@/constants/fileTypeSupport';
+import { generateUniqueId } from '@/utils/chat/ids';
 
 export const getLibraryFileType = (type: string, name: string): LibraryFileTypeFilter => {
   const flags = getFileKindFlags({ type, name });
@@ -160,25 +161,40 @@ for (const [mime, ext] of Object.entries(MIME_TO_EXTENSION_MAP)) {
   set.add(cleanExt);
 }
 
-// Common extension aliases / family mappings
-const EXTENSION_ALIASES: Record<string, string[]> = {
-  jpg: ['jpeg'],
-  jpeg: ['jpg'],
-  yml: ['yaml'],
-  yaml: ['yml'],
-  htm: ['html'],
-  html: ['htm'],
-  md: ['markdown'],
-  markdown: ['md'],
-  doc: ['docx'],
-  docx: ['doc'],
-  xls: ['xlsx'],
-  xlsx: ['xls'],
-  ppt: ['pptx'],
-  pptx: ['ppt'],
-  js: ['jsx', 'mjs', 'cjs'],
-  ts: ['tsx'],
+const buildBidirectionalExtensionAliases = (
+  raw: Record<string, string[]>,
+): Record<string, string[]> => {
+  const result: Record<string, Set<string>> = {};
+  for (const [key, aliases] of Object.entries(raw)) {
+    const normKey = key.toLowerCase();
+    if (!result[normKey]) result[normKey] = new Set();
+    for (const alias of aliases) {
+      const normAlias = alias.toLowerCase();
+      result[normKey].add(normAlias);
+      if (!result[normAlias]) result[normAlias] = new Set();
+      result[normAlias].add(normKey);
+    }
+  }
+  const finalized: Record<string, string[]> = {};
+  for (const [key, set] of Object.entries(result)) {
+    finalized[key] = Array.from(set);
+  }
+  return finalized;
 };
+
+// Common extension aliases / family mappings (bidirectional)
+const EXTENSION_ALIASES: Record<string, string[]> = buildBidirectionalExtensionAliases({
+  jpg: ['jpeg'],
+  tif: ['tiff'],
+  yml: ['yaml'],
+  htm: ['html'],
+  md: ['markdown'],
+  doc: ['docx'],
+  xls: ['xlsx'],
+  ppt: ['pptx'],
+  js: ['jsx', 'mjs', 'cjs'],
+  ts: ['tsx', 'mts', 'cts'],
+});
 
 /**
  * Extracts all relevant extensions associated with a library item (from its filename and MIME type).
@@ -340,23 +356,23 @@ export const filterAndSortLibraryItems = (items: LibraryItem[], filters: Library
   const sorted = [...filtered];
   switch (filters.sort) {
     case 'date_asc':
-      sorted.sort((a, b) => a.timestamp - b.timestamp);
+      sorted.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
       break;
     case 'name_asc':
-      sorted.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+      sorted.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' }));
       break;
     case 'name_desc':
-      sorted.sort((a, b) => b.name.localeCompare(a.name, undefined, { numeric: true, sensitivity: 'base' }));
+      sorted.sort((a, b) => (b.name || '').localeCompare(a.name || '', undefined, { numeric: true, sensitivity: 'base' }));
       break;
     case 'size_desc':
-      sorted.sort((a, b) => b.size - a.size);
+      sorted.sort((a, b) => (b.size || 0) - (a.size || 0));
       break;
     case 'size_asc':
-      sorted.sort((a, b) => a.size - b.size);
+      sorted.sort((a, b) => (a.size || 0) - (b.size || 0));
       break;
     case 'date_desc':
     default:
-      sorted.sort((a, b) => b.timestamp - a.timestamp);
+      sorted.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
       break;
   }
 
@@ -381,9 +397,14 @@ export const libraryItemToUploadedFile = (item: LibraryItem): UploadedFile => {
   };
 };
 
+export interface ResolveLibraryItemOptions {
+  generateNewId?: boolean;
+}
+
 export const resolveLibraryItemToUploadedFile = async (
   item: LibraryItem,
   fetchBlob?: (item: LibraryItem) => Promise<Blob | null | undefined>,
+  options?: ResolveLibraryItemOptions,
 ): Promise<UploadedFile> => {
   let blob: Blob | undefined = item.rawFile;
   if (!blob && fetchBlob) {
@@ -397,25 +418,30 @@ export const resolveLibraryItemToUploadedFile = async (
   }
 
   let dataUrl = item.dataUrl;
-  if (dataUrl?.startsWith('blob:') && !item.rawFile) {
+  // If generateNewId is requested (e.g. starting a new chat or importing into chat),
+  // generate a fresh independent blob URL so it is never invalidated when other chats are cleaned up
+  if (options?.generateNewId || (dataUrl?.startsWith('blob:') && !item.rawFile)) {
     dataUrl = undefined;
   }
-  if (
-    !dataUrl &&
-    blob &&
-    (isImageFileType(item.type, item.name) ||
-      isAudioFileType(item.type, item.name) ||
-      isVideoFileType(item.type, item.name))
-  ) {
+  // Generate a valid blob URL for any resolved blob (PDF, images, audio, video, documents)
+  if (!dataUrl && blob) {
     dataUrl = fileToBlobUrl(blob);
+  } else if (!dataUrl && item.dataUrl && !item.dataUrl.startsWith('blob:')) {
+    dataUrl = item.dataUrl;
   }
 
   const rawFile =
     blob instanceof File ? blob : blob ? new File([blob], item.name, { type: item.type || blob.type }) : undefined;
 
+  const baseUploaded = libraryItemToUploadedFile(item);
+
   return {
-    ...libraryItemToUploadedFile(item),
+    ...baseUploaded,
+    id: options?.generateNewId ? generateUniqueId() : baseUploaded.id,
     rawFile,
     dataUrl,
+    uploadState: baseUploaded.uploadState || 'active',
+    isProcessing: false,
+    progress: 100,
   };
 };

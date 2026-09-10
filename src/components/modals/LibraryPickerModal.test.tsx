@@ -55,6 +55,7 @@ describe('LibraryPickerModal', () => {
     vi.clearAllMocks();
     vi.spyOn(dbService, 'getStandaloneLibraryFiles').mockResolvedValue(mockItems);
     vi.spyOn(dbService, 'getAllHistoricalSessionFiles').mockResolvedValue([]);
+    vi.spyOn(dbService, 'getDeletedLibraryFileIds').mockResolvedValue([]);
     vi.spyOn(dbService, 'fetchLibraryFileBlob').mockResolvedValue(new Blob(['test']));
     useChatStore.setState({ savedSessions: [] });
   });
@@ -278,5 +279,38 @@ describe('LibraryPickerModal', () => {
     });
 
     expect(clickSpy).toHaveBeenCalled();
+  });
+
+  it('prefilters to audio when initialCategory="audio"', async () => {
+    const onConfirm = vi.fn();
+    const onClose = vi.fn();
+
+    await act(async () => {
+      renderer.root.render(
+        <LibraryPickerModal isOpen onClose={onClose} onConfirm={onConfirm} initialCategory="audio" />,
+      );
+      await Promise.resolve();
+    });
+
+    // voice.wav should be visible, while diagram.png and notes.pdf should not
+    expect(document.body.textContent).toContain('voice.wav');
+    expect(document.body.textContent).not.toContain('diagram.png');
+    expect(document.body.textContent).not.toContain('notes.pdf');
+  });
+
+  it('excludes deleted files recorded in tombstones', async () => {
+    vi.spyOn(dbService, 'getDeletedLibraryFileIds').mockResolvedValue(['item-1', 'item-3']);
+    const onConfirm = vi.fn();
+    const onClose = vi.fn();
+
+    await act(async () => {
+      renderer.root.render(<LibraryPickerModal isOpen onClose={onClose} onConfirm={onConfirm} />);
+      await Promise.resolve();
+    });
+
+    expect(document.body.textContent).not.toContain('diagram.png');
+    expect(document.body.textContent).not.toContain('voice.wav');
+    expect(document.body.textContent).toContain('notes.pdf');
+    expect(document.body.textContent).toContain('clip.mp4');
   });
 });

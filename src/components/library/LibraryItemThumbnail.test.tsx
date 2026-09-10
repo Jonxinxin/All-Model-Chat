@@ -82,6 +82,15 @@ describe('LibraryItemThumbnail', () => {
     expect(video).toHaveAttribute('src', 'blob:mockvideo#t=0.1');
   });
 
+  it('avoids mounting video element for size="sm" to prevent hardware decoder saturation', () => {
+    act(() => {
+      renderer.root.render(<LibraryItemThumbnail item={mockVideoItem} size="sm" />);
+    });
+
+    const video = document.querySelector('video');
+    expect(video).toBeNull();
+  });
+
   it('renders cached PDF thumbnail directly from pdfThumbnailCache', () => {
     const pdfWidth = 280; // size="full"
     const cacheKey = getPdfThumbnailCacheKey(mockPdfItem, pdfWidth);

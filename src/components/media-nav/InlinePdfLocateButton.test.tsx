@@ -96,4 +96,38 @@ describe('InlinePdfLocateButton', () => {
     });
     expect(btn.getAttribute('data-active')).toBeNull();
   });
+
+  it('does not highlight docB button when docA is currently active in multi-PDF session', () => {
+    const pdfA = makePdf('pdf-a', 'docA.pdf');
+    const pdfB = makePdf('pdf-b', 'docB.pdf');
+    useChatStore.setState({
+      selectedFiles: [pdfA, pdfB],
+      activeMessages: [],
+    });
+
+    act(() => {
+      useMediaNavStore.setState({
+        isOpen: true,
+        openKind: 'pdf',
+        activeFileId: 'pdf-a',
+        currentPage: 3,
+      });
+    });
+
+    const { unmount } = render(
+      <InlinePdfLocateButton pageNumber={3} docName="docA.pdf">
+        DocA 第 3 页
+      </InlinePdfLocateButton>,
+    );
+    expect(screen.getByTestId('inline-pdf-locate-btn').getAttribute('data-active')).toBe('true');
+    unmount();
+
+    render(
+      <InlinePdfLocateButton pageNumber={3} docName="docB.pdf">
+        DocB 第 3 页
+      </InlinePdfLocateButton>,
+    );
+    expect(screen.getByTestId('inline-pdf-locate-btn').getAttribute('data-active')).toBeNull();
+  });
 });
+

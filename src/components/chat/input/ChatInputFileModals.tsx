@@ -49,6 +49,7 @@ interface ChatInputFileModalsProps {
   rawAppSettings?: AppSettings;
   currentChatSettings?: ChatSettings;
   isImageGenerationModel?: boolean;
+  isTranscribeModel?: boolean;
   previewFile: UploadedFile | null;
   onClosePreview: () => void;
   inputText: string;
@@ -91,6 +92,7 @@ export const ChatInputFileModals: React.FC<ChatInputFileModalsProps> = ({
   rawAppSettings,
   currentChatSettings,
   isImageGenerationModel,
+  isTranscribeModel,
   previewFile,
   onClosePreview,
   inputText,
@@ -138,7 +140,7 @@ export const ChatInputFileModals: React.FC<ChatInputFileModalsProps> = ({
             isOpen={showLibraryPicker}
             onClose={() => setShowLibraryPicker(false)}
             onConfirm={onImportFromLibrary}
-            initialCategory={isImageGenerationModel ? 'image' : 'all'}
+            initialCategory={isTranscribeModel ? 'audio' : isImageGenerationModel ? 'image' : 'all'}
           />
         </Suspense>
       )}

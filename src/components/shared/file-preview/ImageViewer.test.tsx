@@ -196,4 +196,19 @@ describe('ImageViewer', () => {
     const exportBtn = screen.getByTestId('image-export-annotated-btn');
     expect(exportBtn).toBeInTheDocument();
   });
+
+  it('does not render highlight belonging to a different image', async () => {
+    const foreignHighlight: ImageNavHighlight = {
+      imageName: 'other.png',
+      box2d: [150, 200, 450, 600],
+      label: 'Other Image Detection',
+    };
+
+    await act(async () => {
+      renderer.render(<ImageViewer file={mockImageFile} highlight={foreignHighlight} />);
+    });
+
+    expect(screen.queryByTestId('image-highlight-overlay')).toBeNull();
+  });
 });
+

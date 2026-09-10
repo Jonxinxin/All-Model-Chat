@@ -119,4 +119,44 @@ describe('seekSessionPdf', () => {
     expect(updated.isVideoNavEnabled).toBe(false);
     expect(updated.systemInstruction).toBe('');
   });
+
+  it('accurately selects docB when docName is specified in multi-PDF session', () => {
+    const pdfA = makePdf('pdf-a', 'docA.pdf');
+    const pdfB = makePdf('pdf-b', 'docB.pdf');
+    useChatStore.setState({
+      selectedFiles: [pdfA, pdfB],
+      activeMessages: [],
+    });
+
+    const success = seekSessionPdf({ pageNumber: 2, docName: 'docB.pdf' });
+    expect(success).toBe(true);
+    const state = useMediaNavStore.getState();
+    expect(state.isOpen).toBe(true);
+    expect(state.activeFileId).toBe('pdf-b');
+    expect(state.targetPage).toBe(2);
+  });
+
+  it('extracts docName from message pdf-locate tag in multi-PDF session', () => {
+    const pdfA = makePdf('pdf-a', 'docA.pdf');
+    const pdfB = makePdf('pdf-b', 'docB.pdf');
+    const modelMsg: ChatMessage = {
+      id: 'm-reply',
+      role: 'model',
+      content: '请参阅：<pdf-locate doc="docB.pdf" page="7" box="10,20,30,40">结论</pdf-locate>',
+      timestamp: new Date(),
+    };
+    useChatStore.setState({
+      selectedFiles: [pdfA, pdfB],
+      activeMessages: [modelMsg],
+    });
+
+    const success = seekSessionPdf({ pageNumber: 7, messageId: 'm-reply' });
+    expect(success).toBe(true);
+    const state = useMediaNavStore.getState();
+    expect(state.isOpen).toBe(true);
+    expect(state.activeFileId).toBe('pdf-b');
+    expect(state.targetPage).toBe(7);
+    expect(state.highlight?.snippet).toBe('结论');
+  });
 });
+

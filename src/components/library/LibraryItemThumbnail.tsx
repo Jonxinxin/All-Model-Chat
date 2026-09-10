@@ -741,6 +741,17 @@ const LibraryItemThumbnailComponent: React.FC<LibraryItemThumbnailProps> = ({ it
       );
     }
 
+    if (size === 'sm') {
+      return (
+        <div
+          ref={containerRef}
+          className={`relative ${videoSizeClasses} overflow-hidden bg-black/80 flex-shrink-0 flex items-center justify-center border border-[var(--theme-border-secondary)] ${containerClassName}`}
+        >
+          <Video size={16} className="text-white/80" />
+        </div>
+      );
+    }
+
     return (
       <div
         ref={containerRef}
@@ -783,11 +794,9 @@ const LibraryItemThumbnailComponent: React.FC<LibraryItemThumbnailProps> = ({ it
           aria-label={item.name}
         />
         <div
-          className={`absolute ${
-            size === 'sm' ? 'bottom-0.5 left-0.5 p-0.5' : 'bottom-2 left-2 px-1.5 py-0.5'
-          } rounded bg-black/60 backdrop-blur-xs flex items-center gap-1 pointer-events-none text-white shadow-xs`}
+          className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-xs flex items-center gap-1 pointer-events-none text-white shadow-xs"
         >
-          <Video size={size === 'sm' ? 9 : 12} strokeWidth={2} />
+          <Video size={12} strokeWidth={2} />
         </div>
       </div>
     );
