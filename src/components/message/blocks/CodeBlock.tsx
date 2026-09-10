@@ -46,6 +46,7 @@ interface CodeBlockProps {
   disableRun?: boolean;
   files?: UploadedFile[];
   messageId?: string;
+  onImageClick?: (file: UploadedFile) => void;
 }
 
 type GeneratedFileEntry = {
@@ -324,6 +325,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = (props) => {
         baseFontSize={props.liveArtifactFontSize}
         themeId={props.themeId}
         onFollowUp={props.onLiveArtifactFollowUp}
+        onImageClick={props.onImageClick}
         onOpenPreview={() =>
           props.onOpenHtmlPreview(resolvedCodeText, {
             privilege: 'sanitized',

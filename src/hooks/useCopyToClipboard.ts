@@ -1,4 +1,4 @@
-import { copyTextToClipboard } from '@/utils/clipboard';
+import { copyTextToClipboard, copyRichTableToClipboard, type RichTableClipboardContent } from '@/utils/clipboard';
 import { useState, useCallback, useEffect, useRef } from 'react';
 
 export const useCopyToClipboard = (resetDuration = 2000) => {
@@ -6,8 +6,9 @@ export const useCopyToClipboard = (resetDuration = 2000) => {
   const timeoutRef = useRef<number | null>(null);
 
   const copyToClipboard = useCallback(
-    async (text: string): Promise<boolean> => {
-      const success = await copyTextToClipboard(text);
+    async (content: string | RichTableClipboardContent): Promise<boolean> => {
+      const success =
+        typeof content === 'string' ? await copyTextToClipboard(content) : await copyRichTableToClipboard(content);
       if (success) {
         setIsCopied(true);
 

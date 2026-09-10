@@ -12,6 +12,8 @@ import { interpolate } from '@/i18n/interpolate';
 import type { LiveArtifactFollowupPayload } from '@/utils/live-artifacts/liveArtifactFollowup';
 import { DEFAULT_HTML_PREVIEW_PRIVILEGE, type HtmlPreviewPrivilege } from '@/utils/html-preview/previewPrivilege';
 
+import { type UploadedFile } from '@/types';
+
 interface HtmlPreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -21,6 +23,7 @@ interface HtmlPreviewModalProps {
   themeId?: string;
   baseFontSize?: number;
   onLiveArtifactFollowUp?: (payload: LiveArtifactFollowupPayload) => void;
+  onImageClick?: (file: UploadedFile) => void;
 }
 
 export const HtmlPreviewModal: React.FC<HtmlPreviewModalProps> = ({
@@ -32,6 +35,7 @@ export const HtmlPreviewModal: React.FC<HtmlPreviewModalProps> = ({
   themeId,
   baseFontSize,
   onLiveArtifactFollowUp,
+  onImageClick,
 }) => {
   const { t } = useI18n();
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -73,6 +77,7 @@ export const HtmlPreviewModal: React.FC<HtmlPreviewModalProps> = ({
     themeId,
     iframeRef,
     onLiveArtifactFollowUp: privilege === 'sanitized' ? onLiveArtifactFollowUp : undefined,
+    onImageClick,
   });
 
   const handleCopyCode = useCallback(async () => {

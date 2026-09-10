@@ -39,6 +39,7 @@ interface MessageListModalsProps {
     updates: { videoMetadata?: VideoMetadata; mediaResolution?: MediaResolution },
   ) => void;
   isGemini3: boolean;
+  onImageClick?: (file: UploadedFile) => void;
 }
 
 export const MessageListModals: React.FC<MessageListModalsProps> = ({
@@ -58,6 +59,7 @@ export const MessageListModals: React.FC<MessageListModalsProps> = ({
   setConfiguringFile,
   handleSaveFileConfig,
   isGemini3,
+  onImageClick,
 }) => {
   const activePreviewFile = previewFile ?? genericPreviewFile ?? markdownPreviewFile ?? null;
 
@@ -87,6 +89,7 @@ export const MessageListModals: React.FC<MessageListModalsProps> = ({
             themeId={htmlPreview.themeId}
             baseFontSize={htmlPreview.baseFontSize}
             onLiveArtifactFollowUp={htmlPreview.privilege === 'sanitized' ? handleLiveArtifactFollowUp : undefined}
+            onImageClick={onImageClick}
           />
         </Suspense>
       )}

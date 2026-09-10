@@ -54,4 +54,24 @@ describe('useCopyToClipboard', () => {
     expect(success).toBe(false);
     expect(result.current.isCopied).toBe(false);
   });
+
+  it('delegates to copyRichTableToClipboard when given rich content object', async () => {
+    const copyRichSpy = vi.spyOn(clipboardModule, 'copyRichTableToClipboard').mockResolvedValue(true);
+    const { result } = renderHook(() => useCopyToClipboard());
+
+    let success: boolean = false;
+    await act(async () => {
+      success = await result.current.copyToClipboard({
+        plainText: '| a | b |',
+        html: '<table><tr><td>a</td><td>b</td></tr></table>',
+      });
+    });
+
+    expect(success).toBe(true);
+    expect(result.current.isCopied).toBe(true);
+    expect(copyRichSpy).toHaveBeenCalledWith({
+      plainText: '| a | b |',
+      html: '<table><tr><td>a</td><td>b</td></tr></table>',
+    });
+  });
 });

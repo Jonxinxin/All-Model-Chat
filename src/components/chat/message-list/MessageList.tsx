@@ -264,6 +264,7 @@ const MessageListComponent: React.FC = () => {
         setConfiguringFile={setConfiguringFile}
         handleSaveFileConfig={handleSaveFileConfig}
         isGemini3={isGemini3}
+        onImageClick={handleFileClick}
       />
     </>
   );

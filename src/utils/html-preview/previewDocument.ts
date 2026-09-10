@@ -10,6 +10,7 @@ export {
   HTML_PREVIEW_CLEAR_SELECTION_EVENT,
   HTML_PREVIEW_COPY_EVENT,
   HTML_PREVIEW_DIAGNOSTIC_EVENT,
+  HTML_PREVIEW_DIAGRAM_CLICK_EVENT,
   HTML_PREVIEW_GRAPHVIZ_RENDER_REQUEST_EVENT,
   HTML_PREVIEW_GRAPHVIZ_RENDER_RESPONSE_EVENT,
   HTML_PREVIEW_MESSAGE_CHANNEL,
@@ -368,7 +369,7 @@ const buildPreviewThemeStyle = (themeId?: string, options: { varsOnly?: boolean 
   // expands to the iframe viewport and reports a locked tall height (blank under content).
   // Surface tokens must be soft fills (bgInfo/bgSuccess/…), never solid interactive fills like bgAccent.
   // bgAccent equals textLink on pearl (#2563eb); pairing accent text on accent-surface would be invisible.
-  return `<style ${PREVIEW_THEME_ATTRIBUTE}="true">:root{color-scheme:${colorScheme};${cssVars};}html,body{margin:0;padding:0;height:auto!important;min-height:0!important;max-height:none!important;background:transparent!important;color:var(--amc-live-artifact-text);}body{overflow-x:auto;}</style>`;
+  return `<style ${PREVIEW_THEME_ATTRIBUTE}="true">:root{color-scheme:${colorScheme};${cssVars};}html,body{margin:0;padding:0;height:auto!important;min-height:0!important;max-height:none!important;background:transparent!important;color:var(--amc-live-artifact-text);}body{overflow-x:auto;}[data-amc-graphviz][data-amc-graphviz-state="rendered"]{cursor:zoom-in;}</style>`;
 };
 
 const injectPreviewTheme = (srcDoc: string, themeId?: string): string => {

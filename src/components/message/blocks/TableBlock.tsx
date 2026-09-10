@@ -109,12 +109,18 @@ export const TableBlock: React.FC<TableBlockProps> = ({ children, className, nod
       // placeholders and the structure is lost. Fall back to raw HTML so a copy
       // always round-trips the actual table content.
       if (tableRef.current.querySelector('[rowspan],[colspan]')) {
-        await copyToClipboard(tableRef.current.outerHTML);
+        await copyToClipboard({
+          plainText: tableRef.current.outerHTML,
+          html: tableRef.current.outerHTML,
+        });
         return;
       }
       const { convertHtmlToMarkdown } = await import('@/utils/htmlToMarkdown');
       const markdown = convertHtmlToMarkdown(tableRef.current.outerHTML);
-      await copyToClipboard(markdown);
+      await copyToClipboard({
+        plainText: markdown,
+        html: tableRef.current.outerHTML,
+      });
     } catch (error) {
       logService.error('Failed to copy markdown table', error);
     }
@@ -144,15 +150,12 @@ export const TableBlock: React.FC<TableBlockProps> = ({ children, className, nod
 
   const handleDownloadExcel = async () => {
     if (!tableRef.current) return;
-
-    const tableHtml = tableRef.current.outerHTML;
-    const template = `
-            <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-            <head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Sheet1</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--><meta charset="utf-8"></head>
-            <body>${tableHtml}</body></html>`;
-    const blob = new Blob([template], { type: 'application/vnd.ms-excel' });
-    const url = createManagedObjectUrl(blob);
-    triggerDownload(url, `table-export-${Date.now()}.xls`);
+    try {
+      const { exportTableToExcel } = await import('@/utils/export/tableExcel');
+      await exportTableToExcel(tableRef.current);
+    } catch (error) {
+      logService.error('Failed to export table to Excel', error);
+    }
   };
 
   const isRichHtmlTable = hasRawHtmlInlineStyle(node) || hasInlineStyle(children);

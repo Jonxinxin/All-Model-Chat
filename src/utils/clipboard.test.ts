@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { copyTextToClipboard } from './clipboard';
+import { copyTextToClipboard, copyRichTableToClipboard } from './clipboard';
 
 describe('copyTextToClipboard', () => {
   const originalClipboard = navigator.clipboard;
@@ -99,9 +99,95 @@ describe('copyTextToClipboard', () => {
       writable: true,
     });
 
-    document.execCommand = vi.fn().mockReturnValue(false);
+    document.execCommand = vi.fn().mockImplementation(() => {
+      throw new Error('execCommand disabled');
+    });
 
-    const result = await copyTextToClipboard('will fail');
+    const result = await copyTextToClipboard('all fail');
     expect(result).toBe(false);
+  });
+});
+
+describe('copyRichTableToClipboard', () => {
+  const originalClipboard = navigator.clipboard;
+  const originalClipboardItem = globalThis.ClipboardItem;
+
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  afterEach(() => {
+    Object.defineProperty(navigator, 'clipboard', {
+      value: originalClipboard,
+      configurable: true,
+      writable: true,
+    });
+    if (originalClipboardItem) {
+      globalThis.ClipboardItem = originalClipboardItem;
+    } else {
+      // @ts-expect-error cleanup mock
+      delete globalThis.ClipboardItem;
+    }
+  });
+
+  it('returns false when plainText is empty', async () => {
+    const result = await copyRichTableToClipboard({ plainText: '' });
+    expect(result).toBe(false);
+  });
+
+  it('writes both text/plain and text/html when ClipboardItem is available', async () => {
+    const writeMock = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { write: writeMock },
+      configurable: true,
+      writable: true,
+    });
+
+    class MockClipboardItem {
+      items: Record<string, Blob>;
+      constructor(items: Record<string, Blob>) {
+        this.items = items;
+      }
+    }
+    // @ts-expect-error mock ClipboardItem
+    globalThis.ClipboardItem = MockClipboardItem;
+
+    const result = await copyRichTableToClipboard({
+      plainText: '| a | b |\n|---|---|\n| 1 | 2 |',
+      html: '<table><tr><td>1</td><td>2</td></tr></table>',
+    });
+
+    expect(result).toBe(true);
+    expect(writeMock).toHaveBeenCalledTimes(1);
+    const passedItem = writeMock.mock.calls[0][0][0] as MockClipboardItem;
+    expect(passedItem.items['text/plain']).toBeDefined();
+    expect(passedItem.items['text/html']).toBeDefined();
+  });
+
+  it('falls back to plainText copy when navigator.clipboard.write fails', async () => {
+    const writeMock = vi.fn().mockRejectedValue(new Error('Write failed'));
+    const writeTextMock = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { write: writeMock, writeText: writeTextMock },
+      configurable: true,
+      writable: true,
+    });
+
+    class MockClipboardItem {
+      items: Record<string, Blob>;
+      constructor(items: Record<string, Blob>) {
+        this.items = items;
+      }
+    }
+    // @ts-expect-error mock ClipboardItem
+    globalThis.ClipboardItem = MockClipboardItem;
+
+    const result = await copyRichTableToClipboard({
+      plainText: '| a | b |',
+      html: '<table><tr><td>a</td></tr></table>',
+    });
+
+    expect(result).toBe(true);
+    expect(writeTextMock).toHaveBeenCalledWith('| a | b |');
   });
 });

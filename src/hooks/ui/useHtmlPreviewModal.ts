@@ -19,6 +19,9 @@ import { LIVE_ARTIFACT_CLEAR_SELECTION_EVENT } from '@/utils/text-selection/live
 import { useHtmlPreviewBridge } from './useHtmlPreviewBridge';
 import { formatI18nErrorMessage } from '@/i18n/interpolate';
 
+import { type UploadedFile } from '@/types';
+import { svgToUploadedFile } from '@/utils/export/svgToUploadedFile';
+
 const ZOOM_STEP = 0.1;
 const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 3.0;
@@ -33,6 +36,7 @@ interface UseHtmlPreviewModalProps {
   themeId?: string;
   iframeRef: RefObject<HTMLIFrameElement>;
   onLiveArtifactFollowUp?: (payload: LiveArtifactFollowupPayload) => void;
+  onImageClick?: (file: UploadedFile) => void;
 }
 
 type DocumentWithWebkitFullscreen = Document & {
@@ -63,6 +67,7 @@ export const useHtmlPreviewModal = ({
   themeId,
   iframeRef,
   onLiveArtifactFollowUp,
+  onImageClick,
 }: UseHtmlPreviewModalProps) => {
   const { t } = useI18n();
   const [isTrueFullscreen, setIsTrueFullscreen] = useState(false);
@@ -189,6 +194,20 @@ export const useHtmlPreviewModal = ({
     setDiagnostics([]);
   }, []);
 
+  const handleBridgeDiagramClick = useCallback(
+    ({ svg, title }: { svg: string; title?: string }) => {
+      if (!onImageClick || !svg) return;
+      onClose();
+      const diagramId = `artifact-diagram-${Math.random().toString(36).substring(2, 9)}`;
+      const file = svgToUploadedFile(svg, {
+        id: diagramId,
+        name: title ? `${title}.svg` : 'diagram.svg',
+      });
+      onImageClick(file);
+    },
+    [onClose, onImageClick],
+  );
+
   useHtmlPreviewBridge({
     iframeRef,
     targetWindow,
@@ -201,6 +220,7 @@ export const useHtmlPreviewModal = ({
       onEscape: handleBridgeEscape,
       onFollowUp: onLiveArtifactFollowUp,
       onDiagnostic: handleBridgeDiagnostic,
+      onDiagramClick: handleBridgeDiagramClick,
     },
   });
 

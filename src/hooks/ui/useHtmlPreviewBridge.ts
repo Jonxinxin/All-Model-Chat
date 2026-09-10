@@ -31,6 +31,8 @@ export interface HtmlPreviewBridgeHandlers {
   onFollowUp?: (payload: LiveArtifactFollowupPayload) => void;
   /** A diagnostic, runtime error, or resource error arrived from the iframe. */
   onDiagnostic?: (payload: unknown) => void;
+  /** A rendered diagram in the preview iframe was clicked for fullscreen inspection. */
+  onDiagramClick?: (payload: { svg: string; title?: string }) => void;
 }
 
 interface UseHtmlPreviewBridgeOptions {
@@ -69,7 +71,7 @@ export const useHtmlPreviewBridge = ({
 }: UseHtmlPreviewBridgeOptions) => {
   // Destructure so effect re-subscription tracks the individual handler
   // identities rather than the (usually fresh-per-render) container object.
-  const { onReady, onResize, onEscape, onCopy, onFollowUp, onDiagnostic } = handlers;
+  const { onReady, onResize, onEscape, onCopy, onFollowUp, onDiagnostic, onDiagramClick } = handlers;
 
   useEffect(() => {
     if (!enabled) {
@@ -130,6 +132,12 @@ export const useHtmlPreviewBridge = ({
       if (resolved.kind === 'diagnostic') {
         logService.warn('Live Artifact preview diagnostic:', resolved.payload);
         onDiagnostic?.(resolved.payload);
+        return;
+      }
+
+      if (resolved.kind === 'diagram-click') {
+        onDiagramClick?.({ svg: resolved.svg, title: resolved.title });
+        return;
       }
     };
 
@@ -142,6 +150,7 @@ export const useHtmlPreviewBridge = ({
     iframeRef,
     onCopy,
     onDiagnostic,
+    onDiagramClick,
     onEscape,
     onFollowUp,
     onReady,

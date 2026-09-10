@@ -19,6 +19,8 @@ import { useHtmlPreviewBridge } from '@/hooks/ui/useHtmlPreviewBridge';
 import { useHtmlPreviewGraphvizRelay } from '@/hooks/ui/useHtmlPreviewGraphvizRelay';
 import { type LiveArtifactFollowupPayload } from '@/utils/live-artifacts/liveArtifactFollowup';
 import { LIVE_ARTIFACT_CLEAR_SELECTION_EVENT } from '@/utils/text-selection/liveArtifactSelection';
+import { type UploadedFile } from '@/types';
+import { svgToUploadedFile } from '@/utils/export/svgToUploadedFile';
 
 interface ArtifactFrameProps {
   html: string;
@@ -28,6 +30,7 @@ interface ArtifactFrameProps {
   themeId?: string;
   onFollowUp?: (payload: LiveArtifactFollowupPayload) => void;
   onOpenPreview?: () => void;
+  onImageClick?: (file: UploadedFile) => void;
 }
 
 const MIN_FRAME_HEIGHT = 120;
@@ -78,6 +81,7 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
   themeId,
   onFollowUp,
   onOpenPreview,
+  onImageClick,
 }) => {
   const { t } = useI18n();
   const { window: targetWindow } = useWindowContext();
@@ -288,6 +292,19 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
     [contentHeightCacheKey, heightCacheKey, isLoading, streamingHeightCacheKey],
   );
 
+  const handleDiagramClick = useCallback(
+    ({ svg, title }: { svg: string; title?: string }) => {
+      if (!onImageClick || !svg) return;
+      const diagramId = `artifact-diagram-${Math.random().toString(36).substring(2, 9)}`;
+      const file = svgToUploadedFile(svg, {
+        id: diagramId,
+        name: title ? `${title}.svg` : 'diagram.svg',
+      });
+      onImageClick(file);
+    },
+    [onImageClick],
+  );
+
   useHtmlPreviewBridge({
     iframeRef,
     targetWindow,
@@ -297,6 +314,7 @@ export const ArtifactFrame: React.FC<ArtifactFrameProps> = ({
       onResize: handleBridgeResize,
       onCopy: copyToParentClipboard,
       onFollowUp,
+      onDiagramClick: handleDiagramClick,
     },
   });
 
