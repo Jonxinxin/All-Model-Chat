@@ -90,7 +90,127 @@ html {
 
 .hero:not(:has(> img)) .actions {
   justify-content: center !important;
-  margin-top: 0.75rem !important;
+  margin-top: 1.25rem !important;
+  gap: 0.875rem !important;
+}
+
+/* Hero CTA Actions 精致工程感设计（去 AI 感，极客现代工艺） */
+.hero .actions .sl-link-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+  padding: 0.625rem 1.25rem !important;
+  font-size: 0.9375rem !important;
+  font-weight: 500 !important;
+  line-height: 1.4 !important;
+  letter-spacing: -0.01em !important;
+  border-radius: 8px !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.hero .actions .sl-link-button svg {
+  width: 1rem !important;
+  height: 1rem !important;
+  transition: transform 0.2s ease !important;
+}
+
+/* Primary 按钮：高对比纯净现代操作（深色模式下为精致微光白色） */
+.hero .actions .sl-link-button.primary {
+  background: #f8fafc !important;
+  color: #090d16 !important;
+  border: 1px solid rgba(255, 255, 255, 0.9) !important;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.05) !important;
+}
+
+.hero .actions .sl-link-button.primary:hover {
+  background: #ffffff !important;
+  color: #000000 !important;
+  border-color: #ffffff !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 14px rgba(255, 255, 255, 0.2) !important;
+}
+
+.hero .actions .sl-link-button.primary:hover svg {
+  transform: translateX(2px) !important;
+}
+
+/* Secondary 按钮：暗色微磨砂微边框（克制、高阶质感） */
+.hero .actions .sl-link-button.secondary {
+  background: rgba(255, 255, 255, 0.04) !important;
+  color: var(--sl-color-gray-1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  backdrop-filter: blur(12px) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+}
+
+.hero .actions .sl-link-button.secondary:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.28) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+}
+
+.hero .actions .sl-link-button.secondary:hover svg {
+  transform: translate(1px, -1px) !important;
+}
+
+/* Minimal 按钮 (GitHub)：克制内敛的辅助操作，统一视觉规格 */
+.hero .actions .sl-link-button.minimal {
+  background: transparent !important;
+  color: var(--sl-color-gray-3) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.hero .actions .sl-link-button.minimal:hover {
+  background: rgba(255, 255, 255, 0.04) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* 亮色模式适配 (Light Theme) */
+:root:not([data-theme='dark']) .hero .actions .sl-link-button.primary {
+  background: #0f172a !important;
+  color: #ffffff !important;
+  border: 1px solid #0f172a !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.2) !important;
+}
+
+:root:not([data-theme='dark']) .hero .actions .sl-link-button.primary:hover {
+  background: #1e293b !important;
+  border-color: #1e293b !important;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25) !important;
+}
+
+:root:not([data-theme='dark']) .hero .actions .sl-link-button.secondary {
+  background: #ffffff !important;
+  color: #334155 !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+:root:not([data-theme='dark']) .hero .actions .sl-link-button.secondary:hover {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  border-color: #94a3b8 !important;
+}
+
+:root:not([data-theme='dark']) .hero .actions .sl-link-button.minimal {
+  background: transparent !important;
+  color: #64748b !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+:root:not([data-theme='dark']) .hero .actions .sl-link-button.minimal:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
 }
 
 /* 产品界面预览框容器 */

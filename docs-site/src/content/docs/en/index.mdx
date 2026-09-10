@@ -4,18 +4,19 @@ description: All-in-one Model Console WebUI featuring native Google Gemini capab
 template: splash
 hero:
   title: AMC WebUI
-  tagline: Next-generation AI Console engineered for power users · Harness native Google Gemini deep reasoning, real-time Live API, and open tool ecosystems.
+  tagline: Advanced model console engineered for deep workflows · Native Google Gemini reasoning, real-time Live API, and OpenAI-compatible ecosystem.
   actions:
-    - text: 🚀 Getting Started
+    - text: Get Started
       link: /en/getting-started/introduction/
       icon: right-arrow
       variant: primary
-    - text: 🌐 Live Demo
+    - text: Live Demo
       link: https://all-model-chat.pages.dev/
       icon: external
-    - text: ⭐️ GitHub Repo
+      variant: secondary
+    - text: GitHub
       link: https://github.com/yeahhe365/AMC-WebUI
-      icon: external
+      icon: github
       variant: minimal
 ---
 
@@ -30,35 +31,29 @@ import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
 ## Core Capabilities
 
 <CardGrid stagger>
-  <Card title="🧠 Deep Reasoning (Thinking)" icon="open-book">
-    Visualized chain-of-thought for Gemini 3.x models, custom token budgets, and real-time thought translation.
-    
-    [Explore Thinking Mode & Translation →](/en/models/thinking/)
+  <Card title="Deep Reasoning (Thinking)" icon="open-book">
+    Visualized chain-of-thought for Gemini 3.x models, custom token budgets, and real-time thought translation. [Explore
+    Thinking Mode & Translation →](/en/models/thinking/)
   </Card>
-  <Card title="🎙️ Real-time Audio & Video (Live API)" icon="laptop">
-    Bidirectional streaming voice calls, screen sharing, camera vision input, and AudioWorklet visualization.
-    
-    [Learn about Live API Voice & Vision →](/en/models/live-api/)
+  <Card title="Real-time Audio & Video (Live API)" icon="laptop">
+    Bidirectional streaming voice calls, screen sharing, camera vision input, and AudioWorklet visualization. [Learn
+    about Live API Voice & Vision →](/en/models/live-api/)
   </Card>
-  <Card title="🧩 Live Artifacts" icon="puzzle">
-    Automatic sandbox rendering of interactive HTML/SVG with Apache ECharts, Mermaid flowcharts, and Graphviz.
-    
-    [Explore Chart Sandbox & Visualizations →](/en/tools/live-artifacts/)
+  <Card title="Live Artifacts" icon="puzzle">
+    Automatic sandbox rendering of interactive HTML/SVG with Apache ECharts, Mermaid flowcharts, and Graphviz. [Explore
+    Chart Sandbox & Visualizations →](/en/tools/live-artifacts/)
   </Card>
-  <Card title="🐍 Local Python Sandbox (Pyodide)" icon="setting">
-    Browser-side WASM environment with numpy/pandas preloaded, dynamic package installation, and plot capture.
-    
-    [Discover WASM Python with Pyodide →](/en/tools/code-and-sandbox/)
+  <Card title="Local Python Sandbox (Pyodide)" icon="setting">
+    Browser-side WASM environment with numpy/pandas preloaded, dynamic package installation, and plot capture. [Discover
+    WASM Python with Pyodide →](/en/tools/code-and-sandbox/)
   </Card>
-  <Card title="🔌 Model Context Protocol (MCP)" icon="add-document">
-    Full MCP client supporting local stdio and remote SSE/Stream servers with human-in-the-loop tool approvals.
-    
-    [Connect Stdio & SSE MCP Servers →](/en/tools/mcp/)
+  <Card title="Model Context Protocol (MCP)" icon="add-document">
+    Full MCP client supporting local stdio and remote SSE/Stream servers with human-in-the-loop tool approvals. [Connect
+    Stdio & SSE MCP Servers →](/en/tools/mcp/)
   </Card>
-  <Card title="🛡️ Local-First Architecture" icon="bars">
-    IndexedDB persistence with Web Locks API concurrency control; Gemini and OpenAI settings strictly isolated.
-    
-    [Read Local Storage & Security Specs →](/en/deployment/architecture/)
+  <Card title="Local-First Architecture" icon="bars">
+    IndexedDB persistence with Web Locks API concurrency control; Gemini and OpenAI settings strictly isolated. [Read
+    Local Storage & Security Specs →](/en/deployment/architecture/)
   </Card>
 </CardGrid>
 
@@ -68,7 +63,7 @@ import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 Find documentation, guides, and best practices tailored to your workflow:
 
-### 🔰 Getting Started
+### Getting Started
 
 <CardGrid>
   <LinkCard
@@ -93,7 +88,7 @@ Find documentation, guides, and best practices tailored to your workflow:
   />
 </CardGrid>
 
-### ⚡ Productivity & Power User
+### Productivity & Tools
 
 <CardGrid>
   <LinkCard
@@ -118,7 +113,7 @@ Find documentation, guides, and best practices tailored to your workflow:
   />
 </CardGrid>
 
-### 🚢 Self-Hosting & DevOps
+### Deployment & Operations
 
 <CardGrid>
   <LinkCard
@@ -142,4 +137,3 @@ Find documentation, guides, and best practices tailored to your workflow:
     href="/en/faq/storage-and-reset/"
   />
 </CardGrid>
-
