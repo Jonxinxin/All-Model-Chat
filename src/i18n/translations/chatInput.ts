@@ -2134,8 +2134,8 @@ export const chatInputTranslations = {
   },
   createTextAiNaming: {
     en: 'Generating...',
-    zh: '提炼中...',
-    ja: '生成中...',
+    zh: '提炼中…',
+    ja: '生成中…',
     de: 'Generierung...',
     fr: 'Génération...',
     es: 'Generando...',
