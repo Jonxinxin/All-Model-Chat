@@ -6,7 +6,7 @@ vi.mock('@/services/objectUrlManager', () => ({
   releaseManagedObjectUrl: vi.fn(),
 }));
 
-vi.mock('@/utils/export/core', () => ({
+vi.mock('./core', () => ({
   triggerDownload: vi.fn(),
 }));
 
@@ -48,7 +48,7 @@ describe('tableExcel', () => {
     });
 
     it('exports 2D array data to .xlsx and triggers download', async () => {
-      const { triggerDownload } = await import('@/utils/export/core');
+      const { triggerDownload } = await import('./core');
       const { createManagedObjectUrl } = await import('@/services/objectUrlManager');
 
       const data = [
@@ -69,7 +69,7 @@ describe('tableExcel', () => {
     });
 
     it('exports HTMLTableElement directly to .xlsx', async () => {
-      const { triggerDownload } = await import('@/utils/export/core');
+      const { triggerDownload } = await import('./core');
 
       const table = document.createElement('table');
       table.innerHTML = `
