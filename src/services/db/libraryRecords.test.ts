@@ -279,4 +279,3 @@ describe('libraryRecords service', () => {
     expect(current).toEqual(['del-1', 'del-2', 'del-3']);
   });
 });
-

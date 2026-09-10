@@ -793,9 +793,7 @@ const LibraryItemThumbnailComponent: React.FC<LibraryItemThumbnailProps> = ({ it
           preload="metadata"
           aria-label={item.name}
         />
-        <div
-          className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-xs flex items-center gap-1 pointer-events-none text-white shadow-xs"
-        >
+        <div className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-xs flex items-center gap-1 pointer-events-none text-white shadow-xs">
           <Video size={12} strokeWidth={2} />
         </div>
       </div>

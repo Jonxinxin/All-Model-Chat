@@ -130,4 +130,3 @@ describe('InlinePdfLocateButton', () => {
     expect(screen.getByTestId('inline-pdf-locate-btn').getAttribute('data-active')).toBeNull();
   });
 });
-

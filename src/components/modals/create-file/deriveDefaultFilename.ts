@@ -15,8 +15,6 @@ export const formatTimestampFilename = (date: Date = new Date()): string => {
   return `${year}-${month}-${day}_${hours}-${minutes}-${seconds}`;
 };
 
-export const getDefaultTimestampFilename = formatTimestampFilename;
-
 /**
  * Standard default filename generator. Content-based title guessing is disabled
  * in favor of consistent, conflict-free timestamp naming.

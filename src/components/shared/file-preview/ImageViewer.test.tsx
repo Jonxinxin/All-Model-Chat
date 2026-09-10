@@ -211,4 +211,3 @@ describe('ImageViewer', () => {
     expect(screen.queryByTestId('image-highlight-overlay')).toBeNull();
   });
 });
-

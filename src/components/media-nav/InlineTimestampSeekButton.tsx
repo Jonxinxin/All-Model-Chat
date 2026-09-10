@@ -81,12 +81,12 @@ export const InlineTimestampSeekButton: React.FC<InlineTimestampSeekButtonProps>
 
   const isActive = Boolean(
     isOpen &&
-      (isAudio ? openKind === 'audio' : openKind === 'video') &&
-      activeMediaMatches &&
-      currentPlayTime !== null &&
-      (endSeconds !== undefined
-        ? currentPlayTime >= startSeconds - 0.5 && currentPlayTime <= endSeconds + 0.5
-        : currentPlayTime >= startSeconds - 0.5 && currentPlayTime <= startSeconds + 2.5),
+    (isAudio ? openKind === 'audio' : openKind === 'video') &&
+    activeMediaMatches &&
+    currentPlayTime !== null &&
+    (endSeconds !== undefined
+      ? currentPlayTime >= startSeconds - 0.5 && currentPlayTime <= endSeconds + 0.5
+      : currentPlayTime >= startSeconds - 0.5 && currentPlayTime <= startSeconds + 2.5),
   );
 
   const handleClick = (e: React.MouseEvent) => {

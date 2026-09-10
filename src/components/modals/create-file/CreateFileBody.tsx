@@ -82,7 +82,6 @@ export const CreateFileBody: React.FC<CreateFileBodyProps> = ({
     onSaveKeyDown(event);
   };
 
-
   return (
     <div className="flex-grow flex flex-col p-4 min-h-0 bg-[var(--theme-bg-primary)]">
       <div className="flex-grow flex flex-col lg:flex-row gap-4 min-h-0 h-full">

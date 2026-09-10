@@ -10,4 +10,3 @@ export const normalizeConvertedMarkdown = (markdown: string): string =>
     .replace(/\\?\[!\\?\[([^\]]*?)\\?\]\(([^)]+)\)[\s\S]{0,200}?\\?\]\((https?:[^)]+)\)/g, '![$1]($2)')
     .replace(/^([ \t]*)[•·●○▪][ \t]+/gm, '$1- ')
     .replace(/^[—–]{3,}$/gm, '---');
-

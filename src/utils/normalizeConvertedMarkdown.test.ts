@@ -37,4 +37,3 @@ describe('normalizeConvertedMarkdown', () => {
     expect(normalizeConvertedMarkdown('–––')).toBe('---');
   });
 });
-

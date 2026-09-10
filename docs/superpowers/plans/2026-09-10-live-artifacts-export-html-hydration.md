@@ -13,31 +13,33 @@
 ### Task 1: Update `dom.test.ts` with Failing Tests for HTML Export Hydration
 
 **Files:**
+
 - Modify: `src/utils/export/dom.test.ts:67-97`
 
 **Interfaces:**
+
 - Consumes: `prepareElementForExport(container, { forPng: false, expandDetails: false })`
 - Produces: Assertion that `iframe` is replaced by `.is-exporting-png` snapshot container and contains hydrated artifact content, even when `forPng: false`.
 
 - [ ] **Step 1: Update the test in `dom.test.ts` to assert that HTML export (`forPng=false`) also replaces iframe with static snapshot**
 
 ```typescript
-  it('replaces iframe srcdoc with static snapshot when forPng=false (HTML export path)', async () => {
-    const container = document.createElement('div');
-    container.appendChild(buildArtifactFrame('<div>Hello HTML Export</div>'));
+it('replaces iframe srcdoc with static snapshot when forPng=false (HTML export path)', async () => {
+  const container = document.createElement('div');
+  container.appendChild(buildArtifactFrame('<div>Hello HTML Export</div>'));
 
-    const clone = await prepareElementForExport(container, {
-      expandDetails: false,
-      forPng: false,
-    });
-
-    const iframe = clone.querySelector('iframe');
-    expect(iframe).toBeNull();
-
-    const snapshotContainer = clone.querySelector('.is-exporting-png');
-    expect(snapshotContainer).not.toBeNull();
-    expect(snapshotContainer?.textContent).toContain('Hello HTML Export');
+  const clone = await prepareElementForExport(container, {
+    expandDetails: false,
+    forPng: false,
   });
+
+  const iframe = clone.querySelector('iframe');
+  expect(iframe).toBeNull();
+
+  const snapshotContainer = clone.querySelector('.is-exporting-png');
+  expect(snapshotContainer).not.toBeNull();
+  expect(snapshotContainer?.textContent).toContain('Hello HTML Export');
+});
 ```
 
 - [ ] **Step 2: Run Vitest to verify it fails**
@@ -50,15 +52,18 @@ Expected: FAIL because `prepareElementForExport` currently preserves the iframe 
 ### Task 2: Implement Live Artifact Hydration for All Export Paths
 
 **Files:**
+
 - Modify: `src/utils/export/dom.ts:108-141,347-352`
 
 **Interfaces:**
+
 - Consumes: `createStaticPreviewSnapshotContainer(html, targetDocument, { themeId })` from `@/utils/html-preview/previewDocument`
 - Produces: `prepareElementForExport(sourceElement, options)` replacing all `[data-live-artifact-frame="true"]` nodes with clean, inline static containers regardless of `forPng`.
 
 - [ ] **Step 1: Update `replaceLiveArtifactIframes` styling in `src/utils/export/dom.ts`**
 
 Configure `container.style` to ensure clean responsiveness and theme inheritance:
+
 - `background: 'transparent'` (prevents forced `#ffffff` in dark theme)
 - `overflow: 'visible'` (prevents clipping of wide diagrams and tables)
 - `height: 'auto'` (allows container to naturally wrap rendered contents without frozen viewport height or trailing whitespace)
@@ -66,19 +71,22 @@ Configure `container.style` to ensure clean responsiveness and theme inheritance
 - [ ] **Step 2: Call `replaceLiveArtifactIframes` unconditionally in `prepareElementForExport`**
 
 Replace:
+
 ```typescript
-  // Replace sandboxed artifact iframes with same-origin static snapshots for PNG export.
-  // HTML export preserves the iframe srcdoc so the artifact remains runnable when reopened.
-  if (forPng) {
-    await replaceLiveArtifactIframes(clone, sourceElement.ownerDocument, themeId);
-  }
-```
-with:
-```typescript
-  // Replace sandboxed artifact iframes with same-origin static snapshots for both PNG and HTML export.
-  // Sandboxed iframes cannot load external vendor scripts (/vendor/echarts.min.js) or receive
-  // parent window Graphviz postMessage relays when exported as standalone HTML documents.
+// Replace sandboxed artifact iframes with same-origin static snapshots for PNG export.
+// HTML export preserves the iframe srcdoc so the artifact remains runnable when reopened.
+if (forPng) {
   await replaceLiveArtifactIframes(clone, sourceElement.ownerDocument, themeId);
+}
+```
+
+with:
+
+```typescript
+// Replace sandboxed artifact iframes with same-origin static snapshots for both PNG and HTML export.
+// Sandboxed iframes cannot load external vendor scripts (/vendor/echarts.min.js) or receive
+// parent window Graphviz postMessage relays when exported as standalone HTML documents.
+await replaceLiveArtifactIframes(clone, sourceElement.ownerDocument, themeId);
 ```
 
 - [ ] **Step 3: Run Vitest on `dom.test.ts` to verify tests pass**
@@ -91,6 +99,7 @@ Expected: PASS (all tests green).
 ### Task 3: Comprehensive Regression Testing & Full Verification
 
 **Files:**
+
 - Test: `src/utils/export/*.test.ts`
 - Test: `src/components/message/buttons/export/*.test.tsx`
 - Test: `src/hooks/data-management/useChatSessionExport.test.tsx`
@@ -108,6 +117,7 @@ Expected: 0 TypeScript errors.
 - [ ] **Step 3: Verify with real-world exported HTML sample**
 
 Generate an exported HTML using the updated logic on the user's sample payload, load in headless Chrome, and verify:
+
 - Console error for `file:///vendor/echarts.min.js` is gone.
 - `data-amc-chart` is replaced by `<svg>` with rendered bars.
 - `data-amc-graphviz` is replaced by `<svg>` with rendered nodes and edges.

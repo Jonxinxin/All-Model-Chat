@@ -525,4 +525,3 @@ describe('createMarkdownPdfBlob', () => {
     expectPdfBodyText('- 第二条', 'fillThenStroke');
   });
 });
-

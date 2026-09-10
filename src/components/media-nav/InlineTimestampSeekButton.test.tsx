@@ -171,4 +171,3 @@ describe('InlineTimestampSeekButton', () => {
     expect(btnB.getAttribute('data-active')).toBeNull();
   });
 });
-

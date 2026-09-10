@@ -380,10 +380,7 @@ const FILE_TITLE_SOURCE_MAX_CHARS = 4000;
 const clampForFileTitle = (text: string) =>
   text.length > FILE_TITLE_SOURCE_MAX_CHARS ? `${text.slice(0, FILE_TITLE_SOURCE_MAX_CHARS)}…` : text;
 
-const buildFileTitleContents = (
-  documentContent: string,
-  language: SupportedLanguage,
-): StructuredTextContent => {
+const buildFileTitleContents = (documentContent: string, language: SupportedLanguage): StructuredTextContent => {
   const instruction =
     language === 'zh'
       ? `作为文件命名与内容提炼专家，请基于后续提供的文档内容，提炼一个简练、精准的文件名（不含扩展名）。

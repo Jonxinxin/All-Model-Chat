@@ -38,7 +38,6 @@ const getCodeFillColor = (themeId: string) => (isDarkThemeId(themeId) ? [39, 39,
 const normalizeWhitespace = (value: string): string => value.replace(/\s+/g, ' ').trim();
 const normalizeLineWhitespace = (value: string): string => value.replace(/[^\S\r\n]+/g, ' ').trim();
 
-
 const collectInlineText = (node: MarkdownNode): string => {
   if (node.type === 'text' || node.type === 'inlineCode') {
     return node.value ?? '';
@@ -166,8 +165,12 @@ export class MarkdownPdfRenderer {
     this.doc.setDrawColor(color[0], color[1], color[2]);
 
     const strokeWidth = this.shouldUseCjkFont
-      ? (isBold ? CJK_HEADING_STROKE_WIDTH : CJK_TEXT_STROKE_WIDTH)
-      : (isBold ? 0.12 : TEXT_STROKE_WIDTH);
+      ? isBold
+        ? CJK_HEADING_STROKE_WIDTH
+        : CJK_TEXT_STROKE_WIDTH
+      : isBold
+        ? 0.12
+        : TEXT_STROKE_WIDTH;
 
     this.doc.setLineWidth(strokeWidth);
 
@@ -236,7 +239,6 @@ export class MarkdownPdfRenderer {
 
     return lines.length > 0 ? lines : [''];
   }
-
 
   private async renderBlocks(nodes: MarkdownNode[], options: { indent?: number } = {}) {
     for (const node of nodes) {
@@ -364,7 +366,6 @@ export class MarkdownPdfRenderer {
     this.cursorY += 3;
   }
 
-
   private async renderImage(node: MarkdownNode, options: { indent?: number }) {
     const src = node.url;
     const label = node.alt || 'image';
@@ -488,7 +489,6 @@ export class MarkdownPdfRenderer {
     this.doc.line(PAGE.marginX + indent - 3, startY, PAGE.marginX + indent - 3, endY);
     this.cursorY += 2;
   }
-
 
   private renderRule() {
     this.ensureSpace(8);

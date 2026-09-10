@@ -36,7 +36,12 @@ interface LibraryViewProps {
   themeId?: string;
 }
 
-export const LibraryView: React.FC<LibraryViewProps> = ({ onNewChat, onSelectSession, onClose, themeId = 'default' }) => {
+export const LibraryView: React.FC<LibraryViewProps> = ({
+  onNewChat,
+  onSelectSession,
+  onClose,
+  themeId = 'default',
+}) => {
   const { t } = useI18n();
   const savedSessions = useChatStore((state) => state.savedSessions);
   const setSelectedFiles = useChatStore((state) => state.setSelectedFiles);
@@ -234,8 +239,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onNewChat, onSelectSes
       const extension = safeFilename.includes('.') ? `.${safeFilename.split('.').pop()?.toLowerCase()}` : '.md';
       const resolvedMime =
         content instanceof Blob
-          ? (content.type || EXTENSION_TO_MIME[extension] || 'application/octet-stream')
-          : (EXTENSION_TO_MIME[extension] || (extension === '.md' ? 'text/markdown' : 'text/plain'));
+          ? content.type || EXTENSION_TO_MIME[extension] || 'application/octet-stream'
+          : EXTENSION_TO_MIME[extension] || (extension === '.md' ? 'text/markdown' : 'text/plain');
 
       const blob = typeof content === 'string' ? new Blob([content], { type: resolvedMime }) : content;
       const textContent = typeof content === 'string' ? content : undefined;
@@ -263,11 +268,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onNewChat, onSelectSes
   // Download item
   const handleDownloadItem = useCallback(async (item: LibraryItem) => {
     // Prevent cross-origin download navigation for YouTube or external links
-    if (
-      item.type === 'video/youtube' ||
-      item.dataUrl?.startsWith('http://') ||
-      item.dataUrl?.startsWith('https://')
-    ) {
+    if (item.type === 'video/youtube' || item.dataUrl?.startsWith('http://') || item.dataUrl?.startsWith('https://')) {
       if (item.dataUrl) {
         window.open(item.dataUrl, '_blank', 'noopener,noreferrer');
       }
@@ -309,10 +310,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onNewChat, onSelectSes
 
     if (deleteConfirmTarget === 'selected') {
       const ids = Array.from(selectedFileIds);
-      await Promise.all([
-        dbService.deleteStandaloneLibraryFiles(ids),
-        dbService.addDeletedLibraryFileIds(ids),
-      ]);
+      await Promise.all([dbService.deleteStandaloneLibraryFiles(ids), dbService.addDeletedLibraryFileIds(ids)]);
       setDeletedFileIds((prev) => new Set([...prev, ...ids]));
       setHistoricalFiles((prev) => prev.filter((i) => !selectedFileIds.has(i.id)));
       clearSelection();
@@ -403,11 +401,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onNewChat, onSelectSes
         </div>
       )}
 
-      <LibraryHeader
-        onUploadFiles={handleUploadFiles}
-        onCreateNote={() => setShowCreateNote(true)}
-        onClose={onClose}
-      />
+      <LibraryHeader onUploadFiles={handleUploadFiles} onCreateNote={() => setShowCreateNote(true)} onClose={onClose} />
 
       <LibraryToolbar
         selectedCount={selectedFileIds.size}

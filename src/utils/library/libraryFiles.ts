@@ -161,9 +161,7 @@ for (const [mime, ext] of Object.entries(MIME_TO_EXTENSION_MAP)) {
   set.add(cleanExt);
 }
 
-const buildBidirectionalExtensionAliases = (
-  raw: Record<string, string[]>,
-): Record<string, string[]> => {
+const buildBidirectionalExtensionAliases = (raw: Record<string, string[]>): Record<string, string[]> => {
   const result: Record<string, Set<string>> = {};
   for (const [key, aliases] of Object.entries(raw)) {
     const normKey = key.toLowerCase();
@@ -359,10 +357,14 @@ export const filterAndSortLibraryItems = (items: LibraryItem[], filters: Library
       sorted.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
       break;
     case 'name_asc':
-      sorted.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' }));
+      sorted.sort((a, b) =>
+        (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' }),
+      );
       break;
     case 'name_desc':
-      sorted.sort((a, b) => (b.name || '').localeCompare(a.name || '', undefined, { numeric: true, sensitivity: 'base' }));
+      sorted.sort((a, b) =>
+        (b.name || '').localeCompare(a.name || '', undefined, { numeric: true, sensitivity: 'base' }),
+      );
       break;
     case 'size_desc':
       sorted.sort((a, b) => (b.size || 0) - (a.size || 0));

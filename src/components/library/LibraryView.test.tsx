@@ -565,8 +565,11 @@ describe('LibraryView', () => {
       fireEvent.change(filenameInput, { target: { value: 'settings' } });
     });
 
-    const saveBtn = Array.from(noteModal.querySelectorAll('button')).find((b) =>
-      b.getAttribute('title') === 'Create file' || b.getAttribute('title') === '创建文件' || b.textContent?.includes('Create'),
+    const saveBtn = Array.from(noteModal.querySelectorAll('button')).find(
+      (b) =>
+        b.getAttribute('title') === 'Create file' ||
+        b.getAttribute('title') === '创建文件' ||
+        b.textContent?.includes('Create'),
     );
     expect(saveBtn).toBeTruthy();
 
@@ -582,4 +585,3 @@ describe('LibraryView', () => {
     expect(savedItems[0].textContent).toBe('{"key": "value"}');
   });
 });
-

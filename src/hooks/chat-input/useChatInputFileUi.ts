@@ -180,8 +180,8 @@ export const useChatInputFileUi = ({
       const extension = `.${finalFilename.split('.').pop()?.toLowerCase()}`;
       const mimeType =
         content instanceof Blob
-          ? (content.type || EXTENSION_TO_MIME[extension] || 'application/octet-stream')
-          : (EXTENSION_TO_MIME[extension] || 'text/plain');
+          ? content.type || EXTENSION_TO_MIME[extension] || 'application/octet-stream'
+          : EXTENSION_TO_MIME[extension] || 'text/plain';
       const newFile = new File([content], finalFilename, { type: mimeType });
 
       setShowCreateTextFileEditor(false);
@@ -218,8 +218,8 @@ export const useChatInputFileUi = ({
         const extension = `.${finalName.split('.').pop()?.toLowerCase()}`;
         const type =
           content instanceof Blob
-            ? (content.type || EXTENSION_TO_MIME[extension] || 'application/octet-stream')
-            : (EXTENSION_TO_MIME[extension] || editingFile.type || 'text/plain');
+            ? content.type || EXTENSION_TO_MIME[extension] || 'application/octet-stream'
+            : EXTENSION_TO_MIME[extension] || editingFile.type || 'text/plain';
 
         const nextRawFile = new File([content], finalName, { type });
         const nextDataUrl = createManagedObjectUrl(nextRawFile, { ownerId: `selected-file:${editingFile.id}` });

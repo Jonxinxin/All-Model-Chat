@@ -453,4 +453,3 @@ describe('CreateTextFileEditor UI', () => {
     expect(input.value).toBe('Q3-Financial-Report');
   });
 });
-

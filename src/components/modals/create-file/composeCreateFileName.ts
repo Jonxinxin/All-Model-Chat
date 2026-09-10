@@ -36,9 +36,7 @@ const stripKnownExtension = (filename: string, activeExtension?: string): string
     ? [activeExtension, ...KNOWN_FILENAME_EXTENSIONS]
     : KNOWN_FILENAME_EXTENSIONS;
 
-  const matchedExtension = candidateExtensions.find((extension) =>
-    lowerFilename.endsWith(extension.toLowerCase()),
-  );
+  const matchedExtension = candidateExtensions.find((extension) => lowerFilename.endsWith(extension.toLowerCase()));
 
   return matchedExtension ? filename.slice(0, filename.length - matchedExtension.length) : filename;
 };
@@ -56,7 +54,6 @@ const sanitizeStem = (rawStem: string): string => {
   return cleaned;
 };
 
-
 export const composeCreateFileName = (
   filenameBase: string,
   derivedFilename?: string | null,
@@ -69,4 +66,3 @@ export const composeCreateFileName = (
 
   return `${stem}${extension}`;
 };
-

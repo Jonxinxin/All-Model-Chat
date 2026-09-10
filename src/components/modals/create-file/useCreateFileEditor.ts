@@ -29,7 +29,6 @@ interface UseCreateFileEditorProps {
   isPasteRichTextAsMarkdownEnabled: boolean;
 }
 
-
 const EDITOR_CONTENT_DEBOUNCE_MS = 300;
 const EDITOR_FOCUS_DELAY_MS = 100;
 
@@ -165,7 +164,6 @@ export const useCreateFileEditor = ({
     }
   };
 
-
   const handleDownloadPdf = async () => {
     if (saveLockRef.current || isExportingPdf) return;
     if (!textContent.trim()) return;
@@ -294,7 +292,6 @@ export const useCreateFileEditor = ({
     },
     [isPasteRichTextAsMarkdownEnabled, supportsRichPreview, insertImageFile, textContent],
   );
-
 
   const handleDrop = useCallback(
     (event: React.DragEvent) => {

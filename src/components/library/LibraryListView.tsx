@@ -53,7 +53,11 @@ const LibraryListRow = React.memo<LibraryListRowProps>(
         tabIndex={0}
         onClick={() => onPreviewItem(item)}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' && (e.target as HTMLElement).tagName !== 'BUTTON' && (e.target as HTMLElement).tagName !== 'INPUT') {
+          if (
+            e.key === 'Enter' &&
+            (e.target as HTMLElement).tagName !== 'BUTTON' &&
+            (e.target as HTMLElement).tagName !== 'INPUT'
+          ) {
             e.preventDefault();
             onPreviewItem(item);
           }
