@@ -31,6 +31,16 @@ describe('seekSessionPdf', () => {
     expect(useMediaNavStore.getState().isOpen).toBe(false);
   });
 
+  it('returns false when pageNumber is invalid (NaN, 0, or negative)', () => {
+    const pdf = makePdf('pdf-1', 'annual-report.pdf');
+    useChatStore.setState({ selectedFiles: [pdf], activeMessages: [] });
+
+    expect(seekSessionPdf({ pageNumber: NaN })).toBe(false);
+    expect(seekSessionPdf({ pageNumber: 0 })).toBe(false);
+    expect(seekSessionPdf({ pageNumber: -1 })).toBe(false);
+    expect(useMediaNavStore.getState().isOpen).toBe(false);
+  });
+
   it('opens PDF navigation and jumps to target page with highlight', () => {
     const pdf = makePdf('pdf-1', 'annual-report.pdf');
     const message: ChatMessage = {

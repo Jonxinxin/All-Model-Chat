@@ -10,6 +10,7 @@ import { Tooltip } from '@/components/shared/Tooltip';
 import { useChatStore } from '@/stores/chatStore';
 import { useMediaNavStore } from '@/stores/mediaNavStore';
 import { collectSessionMediaFiles, resolveNamedFile } from '@/utils/media-nav/sessionMediaFiles';
+import { focusChatInput } from '@/utils/chat-input/focus';
 
 interface InlineTimestampSeekButtonProps {
   startSeconds: number;
@@ -118,6 +119,11 @@ export const InlineTimestampSeekButton: React.FC<InlineTimestampSeekButtonProps>
         kind: mediaKind,
       });
     }
+    focusChatInput(0, { caret: 'end', retries: 4 });
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
   };
 
   const labelText = extractTextFromNode(children);
@@ -149,6 +155,7 @@ export const InlineTimestampSeekButton: React.FC<InlineTimestampSeekButtonProps>
     <Tooltip text={tooltipPreview} side="top" align="center" asChild delayDuration={300}>
       <button
         type="button"
+        onMouseDown={handleMouseDown}
         onClick={handleClick}
         className={`inline-flex items-center gap-1 px-1.5 py-0.5 -my-0.5 mx-0.5 rounded-[5px] font-mono text-[0.82em] active:scale-[0.97] transition-all cursor-pointer align-baseline ${
           isActive

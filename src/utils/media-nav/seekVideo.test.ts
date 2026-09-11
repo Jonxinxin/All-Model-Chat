@@ -30,6 +30,12 @@ describe('seekSessionVideo', () => {
     expect(result).toBe(false);
   });
 
+  it('returns false when startSeconds is invalid (NaN or negative)', () => {
+    expect(seekSessionVideo({ startSeconds: NaN })).toBe(false);
+    expect(seekSessionVideo({ startSeconds: -1 })).toBe(false);
+    expect(useMediaNavStore.getState().isOpen).toBe(false);
+  });
+
   it('seeks to timestamp on session video', () => {
     const result = seekSessionVideo({ startSeconds: 15, endSeconds: 25 });
     expect(result).toBe(true);

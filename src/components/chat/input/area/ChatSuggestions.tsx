@@ -6,6 +6,7 @@ import { SUGGESTION_CHIP_ACTIVE_CLASS, SUGGESTION_CHIP_CLASS } from '@/constants
 import { SuggestionIcon } from './SuggestionIcon';
 import { NavChip } from './NavChip';
 import { type translations } from '@/i18n/translations';
+import { focusChatInput } from '@/utils/chat-input/focus';
 
 /** Scroll-arrow chrome shared by both directions. */
 const SUGGESTION_SCROLL_ARROW_CLASSES =
@@ -119,6 +120,7 @@ const ChatSuggestionsComponent: React.FC<ChatSuggestionsProps> = ({
             <React.Fragment key={index}>
               <button
                 type="button"
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => {
                   const text = t(suggestion.descKey as keyof typeof translations);
                   if (isOrganize && onOrganizeInfoClick) {
@@ -126,6 +128,7 @@ const ChatSuggestionsComponent: React.FC<ChatSuggestionsProps> = ({
                   } else if (onSuggestionClick) {
                     onSuggestionClick(text);
                   }
+                  focusChatInput(0, { caret: 'end', retries: 4 });
                 }}
                 className={SUGGESTION_CHIP_CLASS}
                 data-testid={isOrganize ? 'organize-info-chip' : undefined}
@@ -151,7 +154,11 @@ const ChatSuggestionsComponent: React.FC<ChatSuggestionsProps> = ({
                       {onToggleBBox && (
                         <button
                           type="button"
-                          onClick={onToggleBBox}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => {
+                            onToggleBBox();
+                            focusChatInput(0, { caret: 'end', retries: 4 });
+                          }}
                           className={isBBoxModeActive ? SUGGESTION_CHIP_ACTIVE_CLASS : SUGGESTION_CHIP_CLASS}
                           aria-label={t('bboxButtonTitle')}
                           aria-pressed={!!isBBoxModeActive}
@@ -165,7 +172,11 @@ const ChatSuggestionsComponent: React.FC<ChatSuggestionsProps> = ({
                       {onToggleGuide && (
                         <button
                           type="button"
-                          onClick={onToggleGuide}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => {
+                            onToggleGuide();
+                            focusChatInput(0, { caret: 'end', retries: 4 });
+                          }}
                           className={isGuideModeActive ? SUGGESTION_CHIP_ACTIVE_CLASS : SUGGESTION_CHIP_CLASS}
                           aria-label={t('guideButtonTitle')}
                           aria-pressed={!!isGuideModeActive}

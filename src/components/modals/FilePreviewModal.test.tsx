@@ -161,6 +161,24 @@ describe('FilePreviewModal', () => {
     uploadState: 'active',
   });
 
+  const createPdfFile = (): UploadedFile => ({
+    id: 'pdf-1',
+    name: 'document.pdf',
+    type: 'application/pdf',
+    size: 2048,
+    dataUrl: 'blob:pdf-preview',
+    uploadState: 'active',
+  });
+
+  const createVideoFile = (): UploadedFile => ({
+    id: 'vid-1',
+    name: 'video.mp4',
+    type: 'video/mp4',
+    size: 4096,
+    dataUrl: 'blob:video-preview',
+    uploadState: 'active',
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     mockCreatedObjectUrls.length = 0;
@@ -372,5 +390,117 @@ describe('FilePreviewModal', () => {
     const iframe = document.querySelector('iframe');
     expect(iframe).not.toBeNull();
     expect(iframe?.getAttribute('src')).toBe('https://www.youtube.com/embed/MkaZ4OrbQn8');
+  });
+
+  it('does not trigger prev/next file navigation when an editable input is focused', async () => {
+    const onPrev = vi.fn();
+    const onNext = vi.fn();
+
+    await act(async () => {
+      renderer.root.render(
+        <FilePreviewModal
+          file={createMarkdownFile()}
+          onClose={() => {}}
+          onPrev={onPrev}
+          onNext={onNext}
+          hasPrev={true}
+          hasNext={true}
+        />,
+      );
+    });
+
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    input.focus();
+
+    await act(async () => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    });
+
+    expect(onPrev).not.toHaveBeenCalled();
+    expect(onNext).not.toHaveBeenCalled();
+
+    document.body.removeChild(input);
+  });
+
+  it('does not hijack unmodified ArrowLeft/ArrowRight when previewing a PDF file', async () => {
+    const onPrev = vi.fn();
+    const onNext = vi.fn();
+
+    await act(async () => {
+      renderer.root.render(
+        <FilePreviewModal
+          file={createPdfFile()}
+          onClose={() => {}}
+          onPrev={onPrev}
+          onNext={onNext}
+          hasPrev={true}
+          hasNext={true}
+        />,
+      );
+    });
+
+    await act(async () => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    });
+
+    expect(onPrev).not.toHaveBeenCalled();
+    expect(onNext).not.toHaveBeenCalled();
+  });
+
+  it('does not hijack unmodified ArrowLeft/ArrowRight when previewing a video file', async () => {
+    const onPrev = vi.fn();
+    const onNext = vi.fn();
+
+    await act(async () => {
+      renderer.root.render(
+        <FilePreviewModal
+          file={createVideoFile()}
+          onClose={() => {}}
+          onPrev={onPrev}
+          onNext={onNext}
+          hasPrev={true}
+          hasNext={true}
+        />,
+      );
+    });
+
+    await act(async () => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    });
+
+    expect(onPrev).not.toHaveBeenCalled();
+    expect(onNext).not.toHaveBeenCalled();
+  });
+
+  it('triggers onPrev and onNext when previewing markdown file with unmodified ArrowLeft/ArrowRight', async () => {
+    const onPrev = vi.fn();
+    const onNext = vi.fn();
+
+    await act(async () => {
+      renderer.root.render(
+        <FilePreviewModal
+          file={createMarkdownFile()}
+          onClose={() => {}}
+          onPrev={onPrev}
+          onNext={onNext}
+          hasPrev={true}
+          hasNext={true}
+        />,
+      );
+    });
+
+    await act(async () => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+    });
+    expect(onPrev).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    });
+    expect(onNext).toHaveBeenCalledTimes(1);
   });
 });

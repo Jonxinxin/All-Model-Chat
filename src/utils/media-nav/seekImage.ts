@@ -3,6 +3,7 @@ import { useMediaNavStore } from '@/stores/mediaNavStore';
 import { collectSessionMediaFiles, isImageFile, resolveNamedFile } from './sessionMediaFiles';
 import { parseLocateMarkers, toImageNavHighlight } from './locateMarker';
 import { applyMediaNavKindToSettings } from './mediaNavSettings';
+import { focusChatInput } from '@/utils/chat-input/focus';
 
 export interface SeekSessionImageParams {
   fileName?: string;
@@ -118,6 +119,7 @@ export const seekSessionImage = (params: SeekSessionImageParams): boolean => {
   if (typeof chatStore.setCurrentChatSettings === 'function') {
     chatStore.setCurrentChatSettings((prev) => applyMediaNavKindToSettings(prev, 'image'));
   }
+  focusChatInput(0, { caret: 'end', retries: 4 });
 
   return true;
 };

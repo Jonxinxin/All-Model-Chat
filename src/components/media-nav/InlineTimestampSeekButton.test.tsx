@@ -6,6 +6,7 @@ import * as seekAudioModule from '@/utils/media-nav/seekAudio';
 import { useMediaNavStore } from '@/stores/mediaNavStore';
 import { useChatStore } from '@/stores/chatStore';
 import type { UploadedFile } from '@/types';
+import * as focusModule from '@/utils/chat-input/focus';
 
 vi.mock('@/utils/media-nav/seekVideo', () => ({
   seekSessionVideo: vi.fn(),
@@ -169,5 +170,22 @@ describe('InlineTimestampSeekButton', () => {
     );
     const btnB = containerB.querySelector('[data-testid="inline-timestamp-seek-btn"]')!;
     expect(btnB.getAttribute('data-active')).toBeNull();
+  });
+
+  it('focuses chat input after clicking the timestamp seek button', () => {
+    const focusSpy = vi.spyOn(focusModule, 'focusChatInput');
+    const { container } = render(
+      <InlineTimestampSeekButton startSeconds={15} endSeconds={30} videoName="test.mp4">
+        00:15 - 00:30
+      </InlineTimestampSeekButton>,
+    );
+
+    const btn = container.querySelector('[data-testid="inline-timestamp-seek-btn"]')!;
+    const mdEvent = new MouseEvent('mousedown', { cancelable: true, bubbles: true });
+    btn.dispatchEvent(mdEvent);
+    expect(mdEvent.defaultPrevented).toBe(true);
+
+    fireEvent.click(btn);
+    expect(focusSpy).toHaveBeenCalledWith(0, { caret: 'end', retries: 4 });
   });
 });

@@ -10,6 +10,10 @@ vi.mock('./MediaNavView', () => ({
   MediaNavView: ({ file }: { file: UploadedFile }) => <div data-testid="mock-media-nav-view">{file.name}</div>,
 }));
 
+vi.mock('@/components/shared/file-preview/PdfViewerEntry', () => ({
+  PdfViewer: ({ file }: { file: UploadedFile }) => <div data-testid="mock-pdf-viewer">{file.name}</div>,
+}));
+
 const mockVideoFile: UploadedFile = {
   id: 'vid-1',
   name: 'clip.mp4',
@@ -121,5 +125,34 @@ describe('MediaNavPanel', () => {
     expect(nextSettings.isAudioNavEnabled).toBe(true);
     expect(nextSettings.isVideoNavEnabled).toBe(false);
     expect(nextSettings.systemInstruction).toBe('');
+  });
+
+  it('renders empty state hint and clears activeFileId when requested openKind has no matching files in session', () => {
+    const pdfFile: UploadedFile = {
+      id: 'pdf-1',
+      name: 'doc.pdf',
+      type: 'application/pdf',
+      size: 1024,
+    };
+    useMediaNavStore.setState({
+      isOpen: true,
+      openKind: 'video',
+      activeFileId: null,
+    });
+    useChatStore.setState({
+      selectedFiles: [pdfFile],
+      activeMessages: [],
+    });
+
+    renderer.render(<MediaNavPanel />);
+
+    expect(screen.queryByTestId('mock-media-nav-view')).toBeNull();
+    expect(screen.queryByTestId('mock-pdf-viewer')).toBeNull();
+    expect(
+      screen.getByText(
+        'Attach a PDF, video, audio, or image with the attachment button to browse it here while chatting.',
+      ),
+    ).toBeDefined();
+    expect(useMediaNavStore.getState().activeFileId).toBeNull();
   });
 });

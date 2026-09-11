@@ -107,22 +107,33 @@ const FilePreviewModalContent: React.FC<FilePreviewModalContentProps> = ({
     }
   }, [previewFile]);
 
+  const { isImage, isPdf, isVideo, isYoutube, isAudio } = getFileKindFlags(file);
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (isEditing) return;
 
+      const activeElement = document.activeElement as HTMLElement | null;
+      if (activeElement && isEditableElement(activeElement)) {
+        return;
+      }
+
       if ((event.ctrlKey || event.metaKey) && event.key === 'c') {
         const selection = window.getSelection();
         const hasActiveSelection = !!selection && !selection.isCollapsed && selection.toString().length > 0;
-        const activeElement = document.activeElement as HTMLElement | null;
-        const isEditingFieldFocused = !!activeElement && isEditableElement(activeElement);
 
-        if (hasActiveSelection || isEditingFieldFocused) {
+        if (hasActiveSelection) {
           return;
         }
 
         event.preventDefault();
         void handleCopyShortcut();
+        return;
+      }
+
+      const isUnmodifiedArrowKey =
+        (event.key === 'ArrowLeft' || event.key === 'ArrowRight') && !event.ctrlKey && !event.metaKey && !event.altKey;
+      if ((isPdf || isVideo) && isUnmodifiedArrowKey) {
         return;
       }
 
@@ -137,7 +148,7 @@ const FilePreviewModalContent: React.FC<FilePreviewModalContentProps> = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [appSettings, handleCopyShortcut, hasNext, hasPrev, isEditing, onNext, onPrev]);
+  }, [appSettings, handleCopyShortcut, hasNext, hasPrev, isEditing, isPdf, isVideo, onNext, onPrev]);
 
   const handleSave = useCallback(() => {
     if (!onSaveText) {
@@ -160,7 +171,6 @@ const FilePreviewModalContent: React.FC<FilePreviewModalContentProps> = ({
     setIsEditing(true);
   }, [file, isEditing]);
 
-  const { isImage, isPdf, isVideo, isYoutube, isAudio } = getFileKindFlags(file);
   const isDocx = !isImage && !isPdf && !isVideo && !isYoutube && !isAudio && isDocxCandidate;
   const isSpreadsheet =
     !isImage && !isPdf && !isVideo && !isYoutube && !isAudio && (isSpreadsheetFile?.(file) ?? false);

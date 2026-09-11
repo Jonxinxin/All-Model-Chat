@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useChatStore } from '@/stores/chatStore';
 import { useMediaNavStore } from '@/stores/mediaNavStore';
 import type { ChatMessage, UploadedFile } from '@/types';
+import * as focusModule from '@/utils/chat-input/focus';
 import { InlinePdfLocateButton } from './InlinePdfLocateButton';
 
 const makePdf = (id: string, name: string): UploadedFile => ({
@@ -128,5 +129,25 @@ describe('InlinePdfLocateButton', () => {
       </InlinePdfLocateButton>,
     );
     expect(screen.getByTestId('inline-pdf-locate-btn').getAttribute('data-active')).toBeNull();
+  });
+
+  it('focuses chat input after clicking the locate button', () => {
+    const focusSpy = vi.spyOn(focusModule, 'focusChatInput');
+    const pdf = makePdf('p-1', 'doc.pdf');
+    useChatStore.setState({ selectedFiles: [pdf], activeMessages: [] });
+
+    render(
+      <InlinePdfLocateButton pageNumber={4} docName="doc.pdf">
+        第 4 页
+      </InlinePdfLocateButton>,
+    );
+
+    const btn = screen.getByTestId('inline-pdf-locate-btn');
+    const mdEvent = new MouseEvent('mousedown', { cancelable: true, bubbles: true });
+    btn.dispatchEvent(mdEvent);
+    expect(mdEvent.defaultPrevented).toBe(true);
+
+    fireEvent.click(btn);
+    expect(focusSpy).toHaveBeenCalledWith(0, { caret: 'end', retries: 4 });
   });
 });

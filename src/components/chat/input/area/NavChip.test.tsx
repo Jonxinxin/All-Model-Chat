@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useMediaNavStore } from '@/stores/mediaNavStore';
 import { useChatStore } from '@/stores/chatStore';
 import type { UploadedFile } from '@/types';
+import * as focusModule from '@/utils/chat-input/focus';
 
 import { NavChip } from './NavChip';
 
@@ -96,7 +97,8 @@ describe('NavChip', () => {
     expect(chip?.textContent).toContain('Video Navigation');
   });
 
-  it('notifies the toggle handler on click', () => {
+  it('notifies the toggle handler on click and refocuses chat input', () => {
+    const focusSpy = vi.spyOn(focusModule, 'focusChatInput');
     const onToggle = vi.fn();
     const chip = renderChip({
       labelKey: 'pdfNavLabel',
@@ -106,10 +108,15 @@ describe('NavChip', () => {
       isEnabled: false,
       onToggle,
     });
+    const mdEvent = new MouseEvent('mousedown', { cancelable: true, bubbles: true });
+    chip?.dispatchEvent(mdEvent);
+    expect(mdEvent.defaultPrevented).toBe(true);
+
     act(() => {
       chip?.click();
     });
     expect(onToggle).toHaveBeenCalledTimes(1);
+    expect(focusSpy).toHaveBeenCalledWith(0, { caret: 'end', retries: 4 });
   });
 
   it('hints at a missing PDF for the pdf chip only when no PDF exists', () => {

@@ -19,6 +19,7 @@ import { loadNamedComponent } from '@/utils/lazyNamedComponent';
 import { InlineTimestampSeekButton } from '@/components/media-nav/InlineTimestampSeekButton';
 import { InlinePdfLocateButton } from '@/components/media-nav/InlinePdfLocateButton';
 import { InlineImageLocateButton } from '@/components/media-nav/InlineImageLocateButton';
+import { normalizeBoxCoordinates, normalizePointCoordinates } from '@/utils/media-nav/coordinateSniffer';
 
 const loadMermaidBlock = () => loadNamedComponent(() => import('./blocks/MermaidBlock'), 'MermaidBlock');
 const loadGraphvizBlock = () => loadNamedComponent(() => import('./blocks/GraphvizBlock'), 'GraphvizBlock');
@@ -228,50 +229,16 @@ export const BaseMarkdownRenderer: React.FC<BaseMarkdownRendererProps> = React.m
                   ? ('video' as const)
                   : undefined;
 
-            let annotation:
-              { point?: [number, number]; box2d?: [number, number, number, number]; snippet?: string } | undefined;
-            if (pointParam || boxParam || snippetParam) {
-              let point: [number, number] | undefined;
-              if (pointParam) {
-                const pointParts = pointParam
-                  .replace(/[()[\]]/g, '')
-                  .split(/[,;\s]+/)
-                  .map((v) => Number.parseFloat(v.trim()))
-                  .filter(Number.isFinite);
-                if (pointParts.length === 2) {
-                  const isZeroToOne =
-                    pointParts.every((v) => v >= 0 && v <= 1.0) && pointParts.some((v) => v > 0 && v < 1.0);
-                  const scale = isZeroToOne ? 1000 : 1;
-                  point = [Math.round(pointParts[0] * scale), Math.round(pointParts[1] * scale)];
-                }
-              }
-
-              let box2d: [number, number, number, number] | undefined;
-              if (boxParam) {
-                const boxParts = boxParam
-                  .replace(/[()[\]]/g, '')
-                  .split(/[,;\s]+/)
-                  .map((v) => Number.parseFloat(v.trim()))
-                  .filter(Number.isFinite);
-                if (boxParts.length === 4) {
-                  const isZeroToOne =
-                    boxParts.every((v) => v >= 0 && v <= 1.0) && boxParts.some((v) => v > 0 && v < 1.0);
-                  const scale = isZeroToOne ? 1000 : 1;
-                  box2d = [
-                    Math.round(boxParts[0] * scale),
-                    Math.round(boxParts[1] * scale),
-                    Math.round(boxParts[2] * scale),
-                    Math.round(boxParts[3] * scale),
-                  ];
-                }
-              }
-
-              annotation = {
-                point,
-                box2d,
-                snippet: snippetParam,
-              };
-            }
+            const box2d = normalizeBoxCoordinates(boxParam) ?? undefined;
+            const point = normalizePointCoordinates(pointParam) ?? undefined;
+            const annotation =
+              point || box2d || snippetParam
+                ? {
+                    point,
+                    box2d,
+                    snippet: snippetParam,
+                  }
+                : undefined;
 
             return (
               <InlineTimestampSeekButton
@@ -297,39 +264,8 @@ export const BaseMarkdownRenderer: React.FC<BaseMarkdownRendererProps> = React.m
             const pointParam = searchParams.get('point');
             const snippetParam = searchParams.get('snippet') || undefined;
 
-            let box2d: [number, number, number, number] | undefined;
-            if (boxParam) {
-              const boxParts = boxParam
-                .replace(/[()[\]]/g, '')
-                .split(/[,;\s]+/)
-                .map((v) => Number.parseFloat(v.trim()))
-                .filter(Number.isFinite);
-              if (boxParts.length === 4) {
-                const isZeroToOne = boxParts.every((v) => v >= 0 && v <= 1.0) && boxParts.some((v) => v > 0 && v < 1.0);
-                const scale = isZeroToOne ? 1000 : 1;
-                box2d = [
-                  Math.round(boxParts[0] * scale),
-                  Math.round(boxParts[1] * scale),
-                  Math.round(boxParts[2] * scale),
-                  Math.round(boxParts[3] * scale),
-                ];
-              }
-            }
-
-            let point: [number, number] | undefined;
-            if (pointParam) {
-              const pointParts = pointParam
-                .replace(/[()[\]]/g, '')
-                .split(/[,;\s]+/)
-                .map((v) => Number.parseFloat(v.trim()))
-                .filter(Number.isFinite);
-              if (pointParts.length === 2) {
-                const isZeroToOne =
-                  pointParts.every((v) => v >= 0 && v <= 1.0) && pointParts.some((v) => v > 0 && v < 1.0);
-                const scale = isZeroToOne ? 1000 : 1;
-                point = [Math.round(pointParts[0] * scale), Math.round(pointParts[1] * scale)];
-              }
-            }
+            const box2d = normalizeBoxCoordinates(boxParam) ?? undefined;
+            const point = normalizePointCoordinates(pointParam) ?? undefined;
 
             return (
               <InlinePdfLocateButton
@@ -356,39 +292,8 @@ export const BaseMarkdownRenderer: React.FC<BaseMarkdownRendererProps> = React.m
             const labelParam = searchParams.get('label') || undefined;
             const snippetParam = searchParams.get('snippet') || undefined;
 
-            let box2d: [number, number, number, number] | undefined;
-            if (boxParam) {
-              const boxParts = boxParam
-                .replace(/[()[\]]/g, '')
-                .split(/[,;\s]+/)
-                .map((v) => Number.parseFloat(v.trim()))
-                .filter(Number.isFinite);
-              if (boxParts.length === 4) {
-                const isZeroToOne = boxParts.every((v) => v >= 0 && v <= 1.0) && boxParts.some((v) => v > 0 && v < 1.0);
-                const scale = isZeroToOne ? 1000 : 1;
-                box2d = [
-                  Math.round(boxParts[0] * scale),
-                  Math.round(boxParts[1] * scale),
-                  Math.round(boxParts[2] * scale),
-                  Math.round(boxParts[3] * scale),
-                ];
-              }
-            }
-
-            let point: [number, number] | undefined;
-            if (pointParam) {
-              const pointParts = pointParam
-                .replace(/[()[\]]/g, '')
-                .split(/[,;\s]+/)
-                .map((v) => Number.parseFloat(v.trim()))
-                .filter(Number.isFinite);
-              if (pointParts.length === 2) {
-                const isZeroToOne =
-                  pointParts.every((v) => v >= 0 && v <= 1.0) && pointParts.some((v) => v > 0 && v < 1.0);
-                const scale = isZeroToOne ? 1000 : 1;
-                point = [Math.round(pointParts[0] * scale), Math.round(pointParts[1] * scale)];
-              }
-            }
+            const box2d = normalizeBoxCoordinates(boxParam) ?? undefined;
+            const point = normalizePointCoordinates(pointParam) ?? undefined;
 
             return (
               <InlineImageLocateButton

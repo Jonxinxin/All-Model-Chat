@@ -13,6 +13,7 @@ import { getChatInputAreaLayout } from './chatInputAreaLayout';
 import { closeMediaNavPanel, useMediaNavStore, type MediaNavKind } from '@/stores/mediaNavStore';
 import { CHAT_INPUT_MAX_WIDTH_CLASS, FOCUS_BLOCKING_SELECTOR } from '@/constants/layout';
 import { applyMediaNavKindToSettings } from '@/utils/media-nav/mediaNavSettings';
+import { focusChatInput } from '@/utils/chat-input/focus';
 import { useI18n } from '@/contexts/I18nContext';
 import { useChatInputContext } from './ChatInputContext';
 import { ChatInputExpandCorner } from './ChatInputExpandCorner';
@@ -63,8 +64,10 @@ export const ChatInputArea: React.FC = () => {
         closeMediaNavPanel();
       }
       setCurrentChatSettings((prev) => applyMediaNavKindToSettings(prev, next ? kind : null));
+      focusChatInput(0, { caret: 'end', retries: 4 });
+      inputState.textareaRef.current?.focus();
     },
-    [chatInput, setCurrentChatSettings],
+    [chatInput, setCurrentChatSettings, inputState.textareaRef],
   );
 
   const handleToggleImageNav = useCallback(

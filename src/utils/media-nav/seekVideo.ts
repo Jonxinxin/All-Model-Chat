@@ -4,6 +4,7 @@ import { collectSessionMediaFiles, isNavigableVideoFile, resolveNamedFile } from
 import { parseLocateMarkers } from './locateMarker';
 import { seekSessionAudio } from './seekAudio';
 import { applyMediaNavKindToSettings } from './mediaNavSettings';
+import { focusChatInput } from '@/utils/chat-input/focus';
 
 export interface SeekSessionVideoParams {
   startSeconds: number;
@@ -24,6 +25,7 @@ export interface SeekSessionVideoParams {
  * Seamlessly delegates to seekSessionAudio when navigating audio or in audio-only sessions.
  */
 export const seekSessionVideo = (params: SeekSessionVideoParams): boolean => {
+  if (!Number.isFinite(params.startSeconds) || params.startSeconds < 0) return false;
   const { selectedFiles, activeMessages } = useChatStore.getState();
   const { videos, audios } = collectSessionMediaFiles(selectedFiles, activeMessages);
   const store = useMediaNavStore.getState();
@@ -109,6 +111,7 @@ export const seekSessionVideo = (params: SeekSessionVideoParams): boolean => {
   if (typeof chatStore.setCurrentChatSettings === 'function') {
     chatStore.setCurrentChatSettings((prev) => applyMediaNavKindToSettings(prev, 'video'));
   }
+  focusChatInput(0, { caret: 'end', retries: 4 });
 
   return true;
 };

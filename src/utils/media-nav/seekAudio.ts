@@ -3,6 +3,7 @@ import { useMediaNavStore } from '@/stores/mediaNavStore';
 import { collectSessionAudioFiles, isAudioFile, resolveNamedFile } from './sessionMediaFiles';
 import { parseLocateMarkers } from './locateMarker';
 import { applyMediaNavKindToSettings } from './mediaNavSettings';
+import { focusChatInput } from '@/utils/chat-input/focus';
 
 export interface SeekSessionAudioParams {
   startSeconds: number;
@@ -17,6 +18,7 @@ export interface SeekSessionAudioParams {
  * Automatically resolves the audio file and updates media nav store.
  */
 export const seekSessionAudio = (params: SeekSessionAudioParams): boolean => {
+  if (!Number.isFinite(params.startSeconds) || params.startSeconds < 0) return false;
   const { selectedFiles, activeMessages } = useChatStore.getState();
   const audios = collectSessionAudioFiles(selectedFiles, activeMessages);
   if (audios.length === 0) return false;
@@ -70,6 +72,7 @@ export const seekSessionAudio = (params: SeekSessionAudioParams): boolean => {
   if (typeof chatStore.setCurrentChatSettings === 'function') {
     chatStore.setCurrentChatSettings((prev) => applyMediaNavKindToSettings(prev, 'audio'));
   }
+  focusChatInput(0, { caret: 'end', retries: 4 });
 
   return true;
 };

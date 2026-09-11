@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useChatStore } from '@/stores/chatStore';
 import { useMediaNavStore } from '@/stores/mediaNavStore';
 import type { ChatMessage, UploadedFile } from '@/types';
+import * as focusModule from '@/utils/chat-input/focus';
 import { InlineImageLocateButton } from './InlineImageLocateButton';
 
 const makeImage = (id: string, name: string): UploadedFile => ({
@@ -126,5 +127,25 @@ describe('InlineImageLocateButton', () => {
       });
     });
     expect(btn.getAttribute('data-active')).toBeNull();
+  });
+
+  it('focuses chat input after clicking the image locate button', () => {
+    const focusSpy = vi.spyOn(focusModule, 'focusChatInput');
+    const img = makeImage('img-1', 'chart.png');
+    useChatStore.setState({ selectedFiles: [img], activeMessages: [] });
+
+    render(
+      <InlineImageLocateButton imageName="chart.png" box2d={[100, 200, 300, 400]}>
+        图表区域
+      </InlineImageLocateButton>,
+    );
+
+    const btn = screen.getByTestId('inline-image-locate-btn');
+    const mdEvent = new MouseEvent('mousedown', { cancelable: true, bubbles: true });
+    btn.dispatchEvent(mdEvent);
+    expect(mdEvent.defaultPrevented).toBe(true);
+
+    fireEvent.click(btn);
+    expect(focusSpy).toHaveBeenCalledWith(0, { caret: 'end', retries: 4 });
   });
 });

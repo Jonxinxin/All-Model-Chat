@@ -10,6 +10,7 @@ import { type VideoAnnotation } from './VideoHighlightOverlay';
 import { VideoPlayer, type VideoPlayerHandle } from '@/components/shared/file-preview/VideoPlayer';
 import { isYoutubeVideoFile } from '@/utils/media-nav/sessionMediaFiles';
 import { YoutubeNavPlayer } from './YoutubeNavPlayer';
+import { focusChatInput } from '@/utils/chat-input/focus';
 
 interface MediaNavViewProps {
   file: UploadedFile;
@@ -262,6 +263,7 @@ const MediaNavViewComponent: React.FC<MediaNavViewProps> = ({ file, kind }) => {
                       <button
                         key={marker.id}
                         type="button"
+                        onMouseDown={(e) => e.preventDefault()}
                         onClick={() => {
                           if (audioRef.current) {
                             audioRef.current.currentTime = Math.max(0, marker.time);
@@ -274,6 +276,7 @@ const MediaNavViewComponent: React.FC<MediaNavViewProps> = ({ file, kind }) => {
                               // Fallback for mock environments
                             }
                           }
+                          focusChatInput(0, { caret: 'end', retries: 4 });
                         }}
                         className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono bg-[var(--theme-bg-tertiary)] hover:bg-[var(--theme-bg-accent)] hover:text-white transition-all cursor-pointer border border-[var(--theme-border-secondary)] shadow-sm"
                         title={marker.snippet}

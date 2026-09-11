@@ -5,6 +5,8 @@ import { SuggestionIcon } from './SuggestionIcon';
 import { useChatStore } from '@/stores/chatStore';
 import { collectSessionMediaFiles } from '@/utils/media-nav/sessionMediaFiles';
 
+import { focusChatInput } from '@/utils/chat-input/focus';
+
 interface NavChipProps {
   /** SuggestionIcon icon name rendering before the label. */
   iconName: string;
@@ -47,7 +49,14 @@ const NavChipComponent: React.FC<NavChipProps> = ({
   return (
     <button
       type="button"
-      onClick={onToggle}
+      onMouseDown={(e) => {
+        // Prevent button from stealing focus from the chat input
+        e.preventDefault();
+      }}
+      onClick={() => {
+        onToggle();
+        focusChatInput(0, { caret: 'end', retries: 4 });
+      }}
       className={isEnabled ? SUGGESTION_CHIP_ACTIVE_CLASS : SUGGESTION_CHIP_CLASS}
       aria-label={label}
       aria-pressed={isEnabled}

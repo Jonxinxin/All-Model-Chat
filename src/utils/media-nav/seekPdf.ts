@@ -3,6 +3,7 @@ import { useMediaNavStore } from '@/stores/mediaNavStore';
 import { collectSessionMediaFiles, isPdfFile, resolveNamedFile } from './sessionMediaFiles';
 import { parseLocateMarkers, toPdfNavHighlight } from './locateMarker';
 import { applyMediaNavKindToSettings } from './mediaNavSettings';
+import { focusChatInput } from '@/utils/chat-input/focus';
 
 export interface SeekSessionPdfParams {
   pageNumber: number;
@@ -117,6 +118,7 @@ export const getRotatedCoords = (
  * Automatically resolves the active PDF document in the current session.
  */
 export const seekSessionPdf = (params: SeekSessionPdfParams): boolean => {
+  if (!Number.isFinite(params.pageNumber) || params.pageNumber < 1) return false;
   const { selectedFiles, activeMessages } = useChatStore.getState();
   const { pdfs } = collectSessionMediaFiles(selectedFiles, activeMessages);
   if (pdfs.length === 0) return false;
@@ -170,6 +172,7 @@ export const seekSessionPdf = (params: SeekSessionPdfParams): boolean => {
   if (typeof chatStore.setCurrentChatSettings === 'function') {
     chatStore.setCurrentChatSettings((prev) => applyMediaNavKindToSettings(prev, 'pdf'));
   }
+  focusChatInput(0, { caret: 'end', retries: 4 });
 
   return true;
 };

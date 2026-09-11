@@ -31,6 +31,12 @@ describe('seekSessionAudio', () => {
     expect(result).toBe(false);
   });
 
+  it('returns false when startSeconds is invalid (NaN or negative)', () => {
+    expect(seekSessionAudio({ startSeconds: NaN })).toBe(false);
+    expect(seekSessionAudio({ startSeconds: -1 })).toBe(false);
+    expect(useMediaNavStore.getState().isOpen).toBe(false);
+  });
+
   it('seeks to timestamp on session audio and opens panel as audio', () => {
     const result = seekSessionAudio({ startSeconds: 25, endSeconds: 45 });
     expect(result).toBe(true);

@@ -1,8 +1,13 @@
 import { CHAT_INPUT_TEXTAREA_SELECTOR, HISTORY_SIDEBAR_ROOT_SELECTOR } from '@/constants/layout';
 
-type FocusChatInputOptions = {
+export type FocusChatInputOptions = {
   /** Place the caret at the end of the current input value after focusing. */
   caret?: 'end';
+  /**
+   * Number of retry attempts to reinforce focus against browser focus stealing
+   * (e.g. mouseup completion, Radix tooltips, layout shifts, or panel slide animations).
+   */
+  retries?: number;
 };
 
 const placeCaretAtEnd = (textarea: HTMLTextAreaElement) => {
@@ -11,7 +16,7 @@ const placeCaretAtEnd = (textarea: HTMLTextAreaElement) => {
   textarea.scrollTop = textarea.scrollHeight;
 };
 
-// 侧边栏内的可编辑控件（如会话重命名输入框）。
+// 侧边栏内的可编辑控件（如双击标题重命名会话）。
 // 注意：链接/按钮（例如「新聊天」）不在此列——它们只是动作入口，
 // 点击后应正常把焦点移到聊天输入框。
 export const isEditableElement = (element: HTMLElement): boolean =>
@@ -21,7 +26,7 @@ export const isEditableElement = (element: HTMLElement): boolean =>
   element.isContentEditable;
 
 export const focusChatInput = (delayMs = 50, options?: FocusChatInputOptions) => {
-  setTimeout(() => {
+  const doFocus = () => {
     if (typeof document === 'undefined') {
       return;
     }
@@ -39,9 +44,25 @@ export const focusChatInput = (delayMs = 50, options?: FocusChatInputOptions) =>
       return;
     }
 
-    textarea.focus();
+    try {
+      textarea.focus({ preventScroll: true });
+    } catch {
+      textarea.focus();
+    }
+
     if (options?.caret === 'end') {
       placeCaretAtEnd(textarea);
+    }
+  };
+
+  setTimeout(() => {
+    doFocus();
+
+    const retries = options?.retries ?? 0;
+    if (retries > 0) {
+      for (let i = 1; i <= retries; i++) {
+        setTimeout(doFocus, i * 60);
+      }
     }
   }, delayMs);
 };

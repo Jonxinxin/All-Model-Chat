@@ -10,6 +10,7 @@ import { FOCUS_VISIBLE_RING_PRIMARY_OFFSET_CLASS } from '@/constants/focusClasse
 import { lazyNamedComponent } from '@/utils/lazyNamedComponent';
 import type { UploadedFile } from '@/types';
 import { applyMediaNavKindToSettings } from '@/utils/media-nav/mediaNavSettings';
+import { focusChatInput } from '@/utils/chat-input/focus';
 import { MediaNavView } from './MediaNavView';
 import { ImageViewer } from '@/components/shared/file-preview/ImageViewer';
 
@@ -47,6 +48,7 @@ const MediaNavPanelComponent: React.FC = () => {
 
   const handleClose = useCallback(() => {
     close();
+    focusChatInput(0, { caret: 'end', retries: 4 });
   }, [close]);
 
   const media = useMemo(() => collectSessionMediaFiles(selectedFiles, activeMessages), [selectedFiles, activeMessages]);
@@ -65,24 +67,40 @@ const MediaNavPanelComponent: React.FC = () => {
 
   // Keep the active document valid. When the panel was opened from (or jumped
   // to) a specific navigation kind, prefer the first file of that kind;
-  // otherwise fall back to the first available file.
+  // if openKind is specified and no files match, clear the active file.
+  // When openKind is unspecified, fall back to the first available file.
   useEffect(() => {
     if (entries.length === 0) {
       if (activeFileId !== null) setActiveFile(null);
       return;
     }
+    if (openKind) {
+      const matchingKindEntries = entries.filter((entry) => entry.kind === openKind);
+      if (matchingKindEntries.length === 0) {
+        if (activeFileId !== null) setActiveFile(null);
+        return;
+      }
+      const activeEntry = matchingKindEntries.find((entry) => entry.file.id === activeFileId);
+      if (!activeEntry) {
+        setActiveFile(matchingKindEntries[0].file.id);
+      }
+      return;
+    }
+
     const activeEntry = entries.find((entry) => entry.file.id === activeFileId);
-    const preferredKind = openKind ?? activeEntry?.kind;
-    const preferred = (preferredKind && entries.find((entry) => entry.kind === preferredKind)) || entries[0];
-    if (!activeEntry || activeEntry.kind !== preferred.kind) {
-      setActiveFile(preferred.file.id);
+    if (!activeEntry) {
+      setActiveFile(entries[0].file.id);
     }
   }, [entries, activeFileId, openKind, setActiveFile]);
 
-  const activeEntry: MediaEntry | undefined = useMemo(
-    () => entries.find((entry) => entry.file.id === activeFileId) ?? entries[0],
-    [entries, activeFileId],
-  );
+  const activeEntry: MediaEntry | undefined = useMemo(() => {
+    if (openKind) {
+      const matching = entries.filter((entry) => entry.kind === openKind);
+      if (matching.length === 0) return undefined;
+      return matching.find((entry) => entry.file.id === activeFileId) ?? matching[0];
+    }
+    return entries.find((entry) => entry.file.id === activeFileId) ?? entries[0];
+  }, [entries, activeFileId, openKind]);
   const isPdfActive = activeEntry ? activeEntry.kind === 'pdf' : openKind === 'pdf' || openKind === null;
 
   const startResizing = useCallback((e: React.MouseEvent) => {
@@ -248,6 +266,7 @@ const MediaNavPanelComponent: React.FC = () => {
 
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={handleClose}
             className={`p-2 text-[var(--theme-text-tertiary)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] rounded-lg transition-colors flex-shrink-0 ${FOCUS_VISIBLE_RING_PRIMARY_OFFSET_CLASS}`}
             aria-label={t('close')}

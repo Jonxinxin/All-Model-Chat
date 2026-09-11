@@ -2,6 +2,8 @@ import { act } from 'react';
 import { setupTestRenderer } from '@/test/render/renderer';
 import { describe, expect, it, vi } from 'vitest';
 import { renderBasicMarkdown, type BasicMarkdownRendererTestProps } from '@/test/message/basicMarkdownRenderer';
+import { useMediaNavStore } from '@/stores/mediaNavStore';
+import { useChatStore } from '@/stores/chatStore';
 
 describe('BasicMarkdownRenderer', () => {
   const renderer = setupTestRenderer();
@@ -338,5 +340,108 @@ describe('BasicMarkdownRenderer', () => {
     const button = renderer.container.querySelector('[data-testid="inline-image-locate-btn"]');
     expect(button).not.toBeNull();
     expect(button?.textContent).toContain('图表定位');
+  });
+
+  it('normalizes 0-1 bounding box coordinates like [0, 0, 1, 1] to [0, 0, 1000, 1000] for image-seek', () => {
+    useMediaNavStore.setState({
+      isOpen: false,
+      openKind: null,
+      activeFileId: null,
+      imageHighlight: null,
+    });
+    useChatStore.setState({
+      selectedFiles: [
+        {
+          id: 'img-1',
+          name: 'chart.png',
+          type: 'image/png',
+          size: 100,
+        },
+      ],
+      activeMessages: [],
+    });
+
+    renderMarkdown({
+      content: '[全图定位](#image-seek?file=chart.png&box=0%2C0%2C1%2C1)',
+    });
+
+    const button = renderer.container.querySelector('[data-testid="inline-image-locate-btn"]');
+    expect(button).not.toBeNull();
+    act(() => {
+      button?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    const state = useMediaNavStore.getState();
+    expect(state.isOpen).toBe(true);
+    expect(state.imageHighlight?.box2d).toEqual([0, 0, 1000, 1000]);
+  });
+
+  it('normalizes 0-1 bounding box coordinates like [0, 0, 1, 1] to [0, 0, 1000, 1000] for pdf-seek', () => {
+    useMediaNavStore.setState({
+      isOpen: false,
+      openKind: null,
+      activeFileId: null,
+      highlight: null,
+    });
+    useChatStore.setState({
+      selectedFiles: [
+        {
+          id: 'pdf-1',
+          name: 'paper.pdf',
+          type: 'application/pdf',
+          size: 100,
+        },
+      ],
+      activeMessages: [],
+    });
+
+    renderMarkdown({
+      content: '[PDF全页](#pdf-seek?page=1&doc=paper.pdf&box=0%2C0%2C1%2C1)',
+    });
+
+    const button = renderer.container.querySelector('[data-testid="inline-pdf-locate-btn"]');
+    expect(button).not.toBeNull();
+    act(() => {
+      button?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    const state = useMediaNavStore.getState();
+    expect(state.isOpen).toBe(true);
+    expect(state.highlight?.box2d).toEqual([0, 0, 1000, 1000]);
+  });
+
+  it('normalizes 0-1 bounding box coordinates and points for video-seek', () => {
+    useMediaNavStore.setState({
+      isOpen: false,
+      openKind: null,
+      activeFileId: null,
+      videoTarget: null,
+    });
+    useChatStore.setState({
+      selectedFiles: [
+        {
+          id: 'vid-1',
+          name: 'demo.mp4',
+          type: 'video/mp4',
+          size: 100,
+        },
+      ],
+      activeMessages: [],
+    });
+
+    renderMarkdown({
+      content: '[视频目标](#video-seek?start=5&video=demo.mp4&box=0%2C0%2C1%2C1&point=0%2C1)',
+    });
+
+    const button = renderer.container.querySelector('[data-testid="inline-timestamp-seek-btn"]');
+    expect(button).not.toBeNull();
+    act(() => {
+      button?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    const state = useMediaNavStore.getState();
+    expect(state.isOpen).toBe(true);
+    expect(state.videoTarget?.box2d).toEqual([0, 0, 1000, 1000]);
+    expect(state.videoTarget?.point).toEqual([0, 1000]);
   });
 });

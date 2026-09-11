@@ -10,6 +10,7 @@ describe('focusChatInput', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    delete (document as unknown as { activeElement?: unknown }).activeElement;
     document.body.innerHTML = '';
   });
 
@@ -154,5 +155,25 @@ describe('focusChatInput', () => {
       focusChatInput(0);
       vi.runOnlyPendingTimers();
     }).not.toThrow();
+  });
+
+  it('retries focusing the textarea according to the retries option', () => {
+    const textarea = document.createElement('textarea');
+    textarea.setAttribute('data-chat-input-textarea', 'true');
+    document.body.appendChild(textarea);
+    const focusSpy = vi.spyOn(textarea, 'focus');
+
+    focusChatInput(0, { retries: 3 });
+    vi.runOnlyPendingTimers(); // runs initial tick at 0ms
+    expect(focusSpy).toHaveBeenCalledTimes(1);
+
+    vi.advanceTimersByTime(60); // retry 1
+    expect(focusSpy).toHaveBeenCalledTimes(2);
+
+    vi.advanceTimersByTime(60); // retry 2
+    expect(focusSpy).toHaveBeenCalledTimes(3);
+
+    vi.advanceTimersByTime(60); // retry 3
+    expect(focusSpy).toHaveBeenCalledTimes(4);
   });
 });
